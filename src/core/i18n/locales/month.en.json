@@ -1,0 +1,20 @@
+{
+  "month": {
+    "emptyTitle": "{{month}} is still empty",
+    "emptyText": "Add a daily income or expense table to start tracking this month.",
+    "addTable": "Add table",
+    "carryStart": "Carried-in opening balance",
+    "carryRunning": "Running balance for the month",
+    "entro": "In",
+    "salio": "Out",
+    "teQueda": "Left",
+    "goal": "Goal",
+    "goalReached": "Reached",
+    "quickAddAria": "Quick add entry",
+    "table": "Table",
+    "concept": "Item",
+    "conceptPlaceholder": "Item…",
+    "amount": "Amount",
+    "added": "Added to {{name}}"
+  }
+}

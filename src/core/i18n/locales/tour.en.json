@@ -1,0 +1,23 @@
+{
+  "tour": {
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "done": "Got it",
+    "progress": "Step {{n}} of {{total}}",
+    "welcomeTitle": "Welcome to Caja",
+    "welcomeBody": "Here are the basics in a few seconds. You can skip this anytime.",
+    "businessesTitle": "Your businesses",
+    "businessesBody": "Each business keeps its own cash box. Create as many as you need here.",
+    "viewsTitle": "Switch views",
+    "viewsBody": "The monthly Board, the Panel with charts, and the Year summary.",
+    "kpiTitle": "The month at a glance",
+    "kpiBody": "At a glance: how much came in, how much went out, and what's left.",
+    "addTableTitle": "Add tables",
+    "addTableBody": "Record your income, your expenses, or your bank account ledger.",
+    "monthsTitle": "Month by month",
+    "monthsBody": "Tap a month to view or enter its information.",
+    "settingsTitle": "Make it yours",
+    "settingsBody": "Change the theme, color, language, and currency from Settings."
+  }
+}

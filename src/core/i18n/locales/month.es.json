@@ -1,0 +1,20 @@
+{
+  "month": {
+    "emptyTitle": "{{month}} todavía está vacío",
+    "emptyText": "Agrega una tabla de ingresos diarios o de gastos para empezar a registrar este mes.",
+    "addTable": "Agregar tabla",
+    "carryStart": "Saldo inicial arrastrado",
+    "carryRunning": "Saldo acumulado del mes",
+    "entro": "Entró",
+    "salio": "Salió",
+    "teQueda": "Te queda",
+    "goal": "Meta",
+    "goalReached": "Lograda",
+    "quickAddAria": "Agregar registro rápido",
+    "table": "Tabla",
+    "concept": "Concepto",
+    "conceptPlaceholder": "Concepto…",
+    "amount": "Monto",
+    "added": "Agregado a {{name}}"
+  }
+}

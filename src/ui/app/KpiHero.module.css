@@ -1,0 +1,108 @@
+.hero {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.icon {
+  display: inline-flex;
+}
+.label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.value {
+  font-family: var(--font-num);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* tones — accent on text/icon; the "te queda" card is the one filled surface */
+.income .icon,
+.income .value {
+  color: var(--income);
+}
+.expense .icon,
+.expense .value {
+  color: var(--expense);
+}
+
+.accent {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+}
+.accent .label,
+.accent .icon,
+.accent .value {
+  color: var(--accent-contrast);
+}
+.accent .label {
+  opacity: 0.9;
+}
+
+/* monthly-goal progress (lives inside the accent "Te queda" card) */
+.goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.goalTrack {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.24);
+  overflow: hidden;
+}
+.goalFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--accent-contrast);
+  transition: width 320ms ease;
+}
+.goalCaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--accent-contrast);
+}
+.goalMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0.9;
+}
+.goalPct {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goalFill {
+    transition: none;
+  }
+}

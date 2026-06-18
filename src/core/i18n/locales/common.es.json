@@ -1,0 +1,17 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "done": "Listo",
+    "add": "Agregar",
+    "delete": "Eliminar",
+    "duplicate": "Duplicar",
+    "close": "Cerrar",
+    "edit": "Editar",
+    "remove": "Quitar",
+    "create": "Crear",
+    "restore": "Restaurar…",
+    "optional": "Opcional",
+    "help": "Ayuda"
+  }
+}

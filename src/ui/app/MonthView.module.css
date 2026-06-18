@@ -1,0 +1,96 @@
+.wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.heroBand {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) var(--space-4);
+}
+
+/* carry-over (saldo acumulado) strip */
+.carryStrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-weak);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.carryItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.carryItem b {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+.carrySep {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* non-scrolling region (used to center the empty state) */
+.region {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* scrolling region (list view) */
+.regionScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--space-6) var(--space-6);
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 760px;
+}
+
+/* empty state */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+}
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  color: var(--text-subtle);
+  margin-bottom: var(--space-2);
+}
+.emptyTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.emptyText {
+  max-width: 42ch;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-2);
+}

@@ -1,0 +1,31 @@
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { cn } from "./cn";
+import styles from "./Button.module.css";
+
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md";
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** Leading icon (kept at a fixed small size — never scaled up). */
+  icon?: ReactNode;
+  block?: boolean;
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "secondary", size = "md", icon, block, className, children, type = "button", ...rest },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={cn(styles.btn, styles[variant], styles[size], block && styles.block, className)}
+      {...rest}
+    >
+      {icon && <span className={styles.icon}>{icon}</span>}
+      {children != null && <span className={styles.label}>{children}</span>}
+    </button>
+  );
+});

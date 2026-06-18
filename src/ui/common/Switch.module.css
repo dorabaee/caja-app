@@ -1,0 +1,55 @@
+.track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.track:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+
+.knob {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-50%);
+  transition: transform 150ms ease-out;
+}
+
+.on {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+}
+
+.on .knob {
+  transform: translate(16px, -50%);
+  background: var(--accent-contrast);
+}
+
+.track:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
+}

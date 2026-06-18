@@ -1,0 +1,153 @@
+.sidebar {
+  width: 248px;
+  flex: none;
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-2);
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+.wordmark {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: var(--space-2);
+}
+.sectionTitle {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding-left: var(--space-2);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* business rows */
+.bizRow {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+.bizRow:hover {
+  background: var(--surface-hover);
+}
+.bizButton {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 38px;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+.bizIcon {
+  flex: none;
+  color: var(--text-subtle);
+}
+.bizName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bizMenu {
+  opacity: 0;
+}
+.bizRow:hover .bizMenu,
+.bizActive .bizMenu {
+  opacity: 1;
+}
+.bizActive {
+  background: var(--accent-weak);
+}
+.bizActive .bizButton {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.bizActive .bizIcon {
+  color: var(--accent-strong);
+}
+
+/* nav items */
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 38px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  font-weight: 500;
+  width: 100%;
+}
+.navItem:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.navItem svg {
+  color: var(--text-subtle);
+  flex: none;
+}
+.navActive {
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+}
+.navActive:hover {
+  color: var(--accent-strong);
+}
+.navActive svg {
+  color: var(--accent-strong);
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.footerRow {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+}

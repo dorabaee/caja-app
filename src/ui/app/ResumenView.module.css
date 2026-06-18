@@ -1,0 +1,89 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.tableCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-5);
+}
+.thMonth,
+.thNum {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  border-bottom: 1px solid var(--border);
+}
+.thMonth {
+  text-align: left;
+}
+.thNum {
+  text-align: right;
+}
+
+.tdMonth {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.tdNum {
+  text-align: right;
+  font-family: var(--font-num);
+  color: var(--text-subtle);
+}
+.table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.activeRow .tdMonth {
+  color: var(--text);
+  font-weight: 600;
+}
+.income {
+  color: var(--income);
+}
+.expense {
+  color: var(--expense);
+}
+.saldo {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.totalRow {
+  border-top: 1px solid var(--border-strong);
+  background: var(--surface-2);
+}
+.totalRow .tdMonth {
+  color: var(--text);
+  font-weight: 700;
+}
+.totalRow .tdNum {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}

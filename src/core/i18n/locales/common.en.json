@@ -1,0 +1,17 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "done": "Done",
+    "add": "Add",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "close": "Close",
+    "edit": "Edit",
+    "remove": "Remove",
+    "create": "Create",
+    "restore": "Restore…",
+    "optional": "Optional",
+    "help": "Help"
+  }
+}

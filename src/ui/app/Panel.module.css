@@ -1,0 +1,132 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ---------- stat row ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* base card (the custom best/worst-month tile; KPI tiles use StatCard) */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+/* shown inside the accent StatCard's sub slot */
+.statSubLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* best/worst month card */
+.monthsCard {
+  justify-content: center;
+  gap: 0;
+}
+.monthRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.monthBadge {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--income-weak);
+  color: var(--income);
+  flex: none;
+}
+.monthBadgeDown {
+  background: var(--expense-weak);
+  color: var(--expense);
+}
+.monthLabel {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.monthValue {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.monthDivider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-2) 0;
+}
+
+/* ---------- charts bento ---------- */
+.charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.goalHint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+/* ---------- empty state ---------- */
+.emptyState {
+  margin: var(--space-12) auto;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+}
+.emptyTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.emptyText {
+  font-size: var(--text-base);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

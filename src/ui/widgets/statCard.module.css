@@ -1,0 +1,68 @@
+/* Shared dashboard KPI tile (Panel + Todos los negocios). */
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.statHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.statIcon {
+  display: inline-flex;
+}
+.statLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.statValue {
+  font-family: var(--font-num);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.statSub {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+/* tones */
+.income .statIcon,
+.income .statValue {
+  color: var(--income);
+}
+.expense .statIcon,
+.expense .statValue {
+  color: var(--expense);
+}
+.accent {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+}
+.accent .statLabel,
+.accent .statIcon,
+.accent .statValue {
+  color: var(--accent-contrast);
+}
+.accent .statLabel {
+  opacity: 0.9;
+}
+.accent .statSub {
+  color: var(--accent-contrast);
+  opacity: 0.85;
+}
+.plain .statIcon {
+  color: var(--text-subtle);
+}

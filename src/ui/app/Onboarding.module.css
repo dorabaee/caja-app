@@ -1,0 +1,79 @@
+.screen {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: var(--bg);
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-8);
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  margin-bottom: var(--space-5);
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sub {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  text-align: left;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.choice:hover {
+  background: var(--surface-hover);
+}
+.choiceOn {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.choiceTitle {
+  font-weight: 600;
+}
+.choiceDesc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.45;
+}

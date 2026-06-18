@@ -1,0 +1,46 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.btn:not(:disabled):hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.btn :global(svg) {
+  width: 18px;
+  height: 18px;
+}
+
+.md {
+  width: 36px;
+  height: 36px;
+}
+.sm {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+}
+.sm :global(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.active {
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+}
+.active:hover {
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+}

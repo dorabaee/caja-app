@@ -1,0 +1,126 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--border);
+}
+.section:first-child {
+  padding-top: 0;
+}
+.section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.heading {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  background: var(--accent-weak);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text);
+}
+.chipRemove {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  transition: opacity 120ms ease;
+}
+.chipRemove:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.addRow {
+  display: flex;
+  gap: var(--space-2);
+}
+.addRow > :first-child {
+  flex: 1;
+}
+
+.fieldLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.select {
+  height: 36px;
+  padding: 0 var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-base);
+}
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.breakdownRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+}
+.breakdownLabel {
+  color: var(--text);
+}
+.dots {
+  flex: 1;
+  height: 0;
+  border-bottom: 1px dotted var(--border-strong);
+  transform: translateY(-3px);
+}
+.breakdownValue {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text);
+}

@@ -1,0 +1,23 @@
+{
+  "tour": {
+    "next": "Siguiente",
+    "back": "Atrás",
+    "skip": "Saltar",
+    "done": "Entendido",
+    "progress": "Paso {{n}} de {{total}}",
+    "welcomeTitle": "Te damos la bienvenida a Caja",
+    "welcomeBody": "Te mostramos lo básico en unos segundos. Puedes saltarlo cuando quieras.",
+    "businessesTitle": "Tus negocios",
+    "businessesBody": "Cada negocio lleva su propia caja por separado. Crea los que necesites aquí.",
+    "viewsTitle": "Cambia de vista",
+    "viewsBody": "El Tablero del mes, el Panel con gráficas y el Resumen del año.",
+    "kpiTitle": "Lo esencial del mes",
+    "kpiBody": "De un vistazo: cuánto entró, cuánto salió y cuánto te queda.",
+    "addTableTitle": "Agrega tablas",
+    "addTableBody": "Registra tus ingresos, tus gastos o el libro de tu cuenta bancaria.",
+    "monthsTitle": "Mes con mes",
+    "monthsBody": "Toca un mes para ver o capturar su información.",
+    "settingsTitle": "A tu manera",
+    "settingsBody": "Cambia el tema, el color, el idioma y la moneda desde Ajustes."
+  }
+}
