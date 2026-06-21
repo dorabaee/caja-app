@@ -1,17 +1,24 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { TrendingUp, TrendingDown, Landmark, Table2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Landmark, Table2, ClipboardPaste, FileStack } from "lucide-react";
 import { useStore, useUI } from "@core/store";
 import type { TemplateKey } from "@core/model/defaults";
-import { Menu, MenuItem, MenuLabel } from "@ui/common";
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@ui/common";
 
 export function AddTableMenu({ trigger }: { trigger: ReactElement }) {
   const { t } = useTranslation();
   const monthIndex = useUI((s) => s.monthIndex);
   const select = useUI((s) => s.select);
   const addTable = useStore((s) => s.addTable);
+  const pasteTable = useStore((s) => s.pasteTable);
+  const clipboardTable = useUI((s) => s.clipboardTable);
 
   const add = (tpl: TemplateKey) => select(addTable(monthIndex, tpl));
+  const paste = (withData: boolean) => {
+    if (!clipboardTable) return;
+    select(pasteTable(monthIndex, clipboardTable, withData));
+    useUI.getState().toast(t("shell.tablePasted"), "success");
+  };
 
   return (
     <Menu trigger={trigger}>
@@ -28,6 +35,18 @@ export function AddTableMenu({ trigger }: { trigger: ReactElement }) {
       <MenuItem icon={<Table2 />} onClick={() => add("blank")}>
         {t("shell.tplBlank")}
       </MenuItem>
+      {clipboardTable && (
+        <>
+          <MenuSeparator />
+          <MenuLabel>{t("shell.clipboard")}</MenuLabel>
+          <MenuItem icon={<ClipboardPaste />} onClick={() => paste(true)}>
+            {t("shell.pasteWithData", { title: clipboardTable.title })}
+          </MenuItem>
+          <MenuItem icon={<FileStack />} onClick={() => paste(false)}>
+            {t("shell.pasteStructure", { title: clipboardTable.title })}
+          </MenuItem>
+        </>
+      )}
     </Menu>
   );
 }

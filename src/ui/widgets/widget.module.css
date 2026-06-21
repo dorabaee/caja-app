@@ -128,10 +128,13 @@
 /* ---------- grid ---------- */
 .scroll {
   overflow: auto;
-  max-height: 360px;
+  max-height: 420px;
 }
+/* No min-width: max-content — columns flex to the widget width (#2). When the sum of
+   column minima exceeds the width, the rows overflow equally and .scroll scrolls them
+   together, so header / body / total stay column-aligned. */
 .grid {
-  min-width: max-content;
+  min-width: 0;
 }
 .headRow,
 .row,
@@ -157,21 +160,49 @@
 }
 
 .headCell {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-1);
   padding: 0 var(--space-2);
-  height: 38px;
+  height: 40px;
   border-right: 1px solid var(--border);
   min-width: 0;
 }
 .headCell:last-child {
   border-right: none;
 }
+
+/* drag-to-resize handle straddling the column's right edge (#2) */
+.colResize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 8px;
+  height: 100%;
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+}
+.colResize::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  right: 3px;
+  width: 2px;
+  height: 64%;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color 120ms ease;
+}
+.headCell:hover .colResize::after,
+.colResize:hover::after {
+  background: var(--accent);
+}
 .colInput {
   flex: 1;
   min-width: 0;
-  height: 28px;
+  height: 30px;
   padding: 0 var(--space-2);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -221,7 +252,7 @@
   flex: 1;
   width: 100%;
   min-width: 0;
-  height: 40px;
+  height: 44px;
   padding: 0 var(--space-3);
   background: transparent;
   border: none;
@@ -240,6 +271,8 @@
   text-align: right;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  font-size: var(--text-md); /* numbers carry the hierarchy — most legible figure (#1) */
+  letter-spacing: -0.01em;
 }
 .inputDate {
   font-family: var(--font-num);
@@ -282,6 +315,46 @@
   opacity: 1;
 }
 
+/* #7 send-a-value: per-cell send button (money cells with a value) */
+.sendBtn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-xs);
+  color: var(--text-subtle);
+  background: var(--surface);
+  opacity: 0;
+  transition:
+    opacity 100ms ease,
+    color 100ms ease,
+    background-color 100ms ease;
+}
+.cell:hover .sendBtn {
+  opacity: 0.7;
+}
+.sendBtn:hover {
+  opacity: 1;
+  color: var(--accent-strong);
+  background: var(--surface-2);
+}
+/* destination cells "light up" while a send flow is active */
+.cellReceiving {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--accent-weak);
+}
+.receiveOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: pointer;
+  background: transparent;
+  border-radius: var(--radius-xs);
+}
+
 /* row actions */
 .actionsCell {
   display: flex;
@@ -294,6 +367,138 @@
 }
 .row:hover .actionBtn {
   opacity: 1;
+}
+
+/* #14 per-row category tag */
+.tagBtn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-subtle);
+  opacity: 0;
+  transition:
+    opacity 100ms ease,
+    color 100ms ease,
+    background-color 100ms ease;
+}
+.row:hover .tagBtn {
+  opacity: 0.7;
+}
+.tagBtn:hover {
+  opacity: 1;
+  color: var(--text);
+  background: var(--surface-2);
+}
+/* a set tag stays visible and accent-colored */
+.tagBtnSet,
+.row:hover .tagBtnSet {
+  opacity: 1;
+  color: var(--accent-strong);
+  background: var(--accent-weak);
+}
+
+.tagPop {
+  z-index: var(--z-overlay);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-2);
+  width: 220px;
+}
+.tagPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tagList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow: auto;
+}
+.tagOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+.tagOption:hover {
+  background: var(--surface-hover);
+}
+.tagOption svg {
+  color: var(--text-subtle);
+  flex: none;
+}
+.tagOptionOn {
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.tagOptionOn svg {
+  color: var(--accent-strong);
+}
+.tagEmpty {
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+  padding: var(--space-1) var(--space-2);
+}
+.tagCreate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+.tagInput {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 var(--space-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.tagInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+.tagAddBtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  color: var(--accent-strong);
+  background: var(--accent-weak);
+}
+.tagAddBtn:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.tagClear {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+}
+.tagClear:hover {
+  color: var(--expense);
+  background: var(--expense-weak);
 }
 
 /* recurring (read-time) rows */
@@ -315,15 +520,18 @@
   opacity: 1;
 }
 
-/* ---------- total row ---------- */
+/* ---------- total row (rendered inside .grid: sticky to the bottom, shares --cols) ---------- */
 .totalRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   border-top: 1px solid var(--border-strong);
   background: var(--surface-2);
 }
 .totalCell {
   display: flex;
   align-items: center;
-  height: 42px;
+  height: 46px;
   padding: 0 var(--space-3);
   border-right: 1px solid var(--border);
   font-weight: 600;
@@ -339,6 +547,8 @@
   justify-content: flex-end;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  font-size: var(--text-md);
+  letter-spacing: -0.01em;
   color: var(--text);
 }
 

@@ -133,13 +133,17 @@ export function Tour() {
         aria-describedby={bodyId}
         tabIndex={-1}
       >
-        <div className={styles.progress}>{t("tour.progress", { n: i + 1, total: STEPS.length })}</div>
-        <h2 id={titleId} className={styles.title}>
-          {t(step.titleKey)}
-        </h2>
-        <p id={bodyId} className={styles.body}>
-          {t(step.bodyKey)}
-        </p>
+        {/* Keyed on step index so the message content re-mounts and fades/slides in on
+            each step change (the nav buttons below stay stable). */}
+        <div key={i} className={styles.step}>
+          <div className={styles.progress}>{t("tour.progress", { n: i + 1, total: STEPS.length })}</div>
+          <h2 id={titleId} className={styles.title}>
+            {t(step.titleKey)}
+          </h2>
+          <p id={bodyId} className={styles.body}>
+            {t(step.bodyKey)}
+          </p>
+        </div>
         <div className={styles.actions}>
           <button type="button" className={styles.skip} onClick={finish}>
             {t("tour.skip")}

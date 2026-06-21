@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { type Draft, produce } from "immer";
 import {
   type AppDoc,
-  type Attachment,
   type ChartType,
   type ColumnType,
   type Project,
@@ -13,6 +12,7 @@ import {
   type WidgetLayout,
 } from "../model/types";
 import {
+  cloneTable,
   id,
   makeChart,
   makeColumn,
@@ -21,8 +21,11 @@ import {
   newAppDoc,
   newProject,
   newTemplateProject,
+  nextWidgetSlot,
+  MIN_COLUMN_WIDTH,
   type TemplateKey,
 } from "../model/defaults";
+import { nextRowValues } from "../compute/rows";
 
 const HISTORY_LIMIT = 60;
 
@@ -43,6 +46,8 @@ export interface StoreState {
   deleteProject(projectId: string): void;
   selectProject(projectId: string): void;
   updateProject(projectId: string, patch: Partial<Project>): void;
+  /** Move a business before another in the sidebar list (persisted + undoable). */
+  reorderProjects(fromId: string, toId: string): void;
 
   // recurring entries (per project)
   addRecurring(projectId: string, def: Omit<RecurringDef, "id">): string;
@@ -60,7 +65,10 @@ export interface StoreState {
   // tables (current project)
   addTable(monthIndex: number, template: TemplateKey): string;
   removeTable(monthIndex: number, tableId: string): void;
-  duplicateTable(monthIndex: number, tableId: string): void;
+  /** Clone a table into the same month; returns the new table's id (for auto-select). */
+  duplicateTable(monthIndex: number, tableId: string): string;
+  /** Paste a (copied) table into a month, with or without its data; returns the new id. */
+  pasteTable(dstMonthIndex: number, table: Table, withData: boolean): string;
   setTableTitle(monthIndex: number, tableId: string, title: string): void;
   setTableKind(monthIndex: number, tableId: string, kind: TableKind): void;
   setTableInitialBalance(monthIndex: number, tableId: string, value: number): void;
@@ -73,6 +81,8 @@ export interface StoreState {
   setColumnType(monthIndex: number, tableId: string, columnId: string, type: ColumnType): void;
   /** Mark a column as the table's category column (clears the flag from others). */
   setColumnCategory(monthIndex: number, tableId: string, columnId: string | null): void;
+  /** Set a fixed px width for a column (drag-resize), or null to revert to flex. */
+  setColumnWidth(monthIndex: number, tableId: string, columnId: string, width: number | null): void;
 
   // rows
   addRow(monthIndex: number, tableId: string): void;
@@ -81,16 +91,14 @@ export interface StoreState {
   duplicateRow(monthIndex: number, tableId: string, rowId: string): void;
   setCell(monthIndex: number, tableId: string, rowId: string, columnId: string, value: string): void;
   setNote(monthIndex: number, tableId: string, rowId: string, columnId: string, note: string): void;
-  addAttachment(monthIndex: number, tableId: string, rowId: string, attachment: Attachment): void;
-  removeAttachment(monthIndex: number, tableId: string, rowId: string, attachmentId: string): void;
 
   // charts
-  addChart(monthIndex: number, linkedTableId: string | null): string;
+  addChart(monthIndex: number, linkedTableIds?: string[]): string;
   removeChart(monthIndex: number, chartId: string): void;
   updateChart(
     monthIndex: number,
     chartId: string,
-    patch: Partial<{ type: ChartType; title: string; linkedTableId: string | null; xColumnId: string | null; valueColumnId: string | null }>,
+    patch: Partial<{ type: ChartType; title: string; linkedTableIds: string[]; xColumnId: string | null; valueColumnId: string | null }>,
   ): void;
 
   // history
@@ -167,6 +175,18 @@ export const useStore = create<StoreState>()((set, get) => {
         if (p) Object.assign(p, patch);
       }),
 
+    reorderProjects: (fromId, toId) =>
+      commit((d) => {
+        if (fromId === toId) return;
+        const from = d.projects.findIndex((p) => p.id === fromId);
+        if (from < 0) return;
+        const [moved] = d.projects.splice(from, 1);
+        // Recompute the target index *after* removing the dragged item, then insert
+        // before it (matching the Vista-tabs drop). Bad target → restore in place.
+        const to = d.projects.findIndex((p) => p.id === toId);
+        d.projects.splice(to < 0 ? from : to, 0, moved);
+      }),
+
     addRecurring: (projectId, def) => {
       const newId = id();
       commit((d) => {
@@ -214,11 +234,10 @@ export const useStore = create<StoreState>()((set, get) => {
       commit((d) => {
         const month = currentProject(d)?.months[monthIndex];
         if (!month) return;
-        const count = month.tables.length + month.charts.length;
-        const t = makeTableFromTemplate(template, {
-          x: 24 + (count % 3) * 432,
-          y: 24 + Math.floor(count / 3) * 460,
-        });
+        const t = makeTableFromTemplate(template);
+        const slot = nextWidgetSlot([...month.tables, ...month.charts], t.layout);
+        t.layout.x = slot.x;
+        t.layout.y = slot.y;
         t.id = newId;
         month.tables.push(t);
       });
@@ -230,33 +249,40 @@ export const useStore = create<StoreState>()((set, get) => {
         const month = currentProject(d)?.months[monthIndex];
         if (!month) return;
         month.tables = month.tables.filter((t) => t.id !== tableId);
+        // Drop the deleted table from every chart that referenced it.
         month.charts.forEach((c) => {
-          if (c.linkedTableId === tableId) c.linkedTableId = null;
+          c.linkedTableIds = c.linkedTableIds.filter((id) => id !== tableId);
         });
       }),
 
-    duplicateTable: (monthIndex, tableId) =>
+    duplicateTable: (monthIndex, tableId) => {
+      let newId = "";
       commit((d) => {
         const month = currentProject(d)?.months[monthIndex];
         const src = month?.tables.find((t) => t.id === tableId);
         if (!month || !src) return;
-        const clone: Table = JSON.parse(JSON.stringify(src));
-        clone.id = id();
-        clone.title = `${src.title} (copia)`;
-        clone.columns = clone.columns.map((c) => ({ ...c, id: id() }));
-        // remap cells to new column ids
-        const idMap = new Map(src.columns.map((c, i) => [c.id, clone.columns[i].id]));
-        clone.rows = clone.rows.map((r) => {
-          const cells: Record<string, string> = {};
-          for (const [oldId, val] of Object.entries(r.cells)) {
-            const nid = idMap.get(oldId);
-            if (nid) cells[nid] = val;
-          }
-          return { id: id(), cells, notes: {}, links: {} };
-        });
+        const clone = cloneTable(src, { withData: true, titleSuffix: " (copia)" });
+        newId = clone.id;
         clone.layout = { ...src.layout, x: src.layout.x + 32, y: src.layout.y + 32 };
         month.tables.push(clone);
-      }),
+      });
+      return newId;
+    },
+
+    pasteTable: (dstMonthIndex, table, withData) => {
+      let newId = "";
+      commit((d) => {
+        const month = currentProject(d)?.months[dstMonthIndex];
+        if (!month) return;
+        const clone = cloneTable(table, { withData });
+        newId = clone.id;
+        // Shelf-place by real size so it never lands on top of an existing widget.
+        const slot = nextWidgetSlot([...month.tables, ...month.charts], clone.layout);
+        clone.layout = { ...clone.layout, x: slot.x, y: slot.y };
+        month.tables.push(clone);
+      });
+      return newId;
+    },
 
     setTableTitle: (monthIndex, tableId, title) =>
       commit((d) => {
@@ -329,10 +355,18 @@ export const useStore = create<StoreState>()((set, get) => {
         }
       }),
 
+    setColumnWidth: (monthIndex, tableId, columnId, width) =>
+      commit((d) => {
+        const c = findTable(d, monthIndex, tableId)?.columns.find((x) => x.id === columnId);
+        if (!c) return;
+        if (width == null) delete c.width;
+        else c.width = Math.max(MIN_COLUMN_WIDTH, Math.round(width));
+      }),
+
     addRow: (monthIndex, tableId) =>
       commit((d) => {
         const t = findTable(d, monthIndex, tableId);
-        if (t) t.rows.push(makeRow(t.columns));
+        if (t) t.rows.push(makeRow(t.columns, nextRowValues(t.columns, t.rows)));
       }),
 
     addRowWithValues: (monthIndex, tableId, values) => {
@@ -383,31 +417,15 @@ export const useStore = create<StoreState>()((set, get) => {
         else delete r.notes[columnId];
       }),
 
-    addAttachment: (monthIndex, tableId, rowId, attachment) =>
-      commit((d) => {
-        const r = findTable(d, monthIndex, tableId)?.rows.find((x) => x.id === rowId);
-        if (!r) return;
-        if (!r.attachments) r.attachments = [];
-        r.attachments.push(attachment);
-      }),
-
-    removeAttachment: (monthIndex, tableId, rowId, attachmentId) =>
-      commit((d) => {
-        const r = findTable(d, monthIndex, tableId)?.rows.find((x) => x.id === rowId);
-        if (!r?.attachments) return;
-        r.attachments = r.attachments.filter((a) => a.id !== attachmentId);
-      }),
-
-    addChart: (monthIndex, linkedTableId) => {
+    addChart: (monthIndex, linkedTableIds = []) => {
       const newId = id();
       commit((d) => {
         const month = currentProject(d)?.months[monthIndex];
         if (!month) return;
-        const count = month.tables.length + month.charts.length;
-        const c = makeChart(linkedTableId, "bar", {
-          x: 24 + (count % 3) * 432,
-          y: 24 + Math.floor(count / 3) * 460,
-        });
+        const c = makeChart(linkedTableIds, "bar");
+        const slot = nextWidgetSlot([...month.tables, ...month.charts], c.layout);
+        c.layout.x = slot.x;
+        c.layout.y = slot.y;
         c.id = newId;
         month.charts.push(c);
       });

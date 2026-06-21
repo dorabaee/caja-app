@@ -2,20 +2,17 @@ import {
   BaseDirectory,
   exists,
   mkdir,
-  readDir,
   readFile,
   readTextFile,
-  remove,
   writeFile,
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { BlobMeta, FileDialog, Platform, ShareAdapter, StorageAdapter } from "@core/platform";
+import type { FileDialog, Platform, ShareAdapter, StorageAdapter } from "@core/platform";
 
 const BASE = { baseDir: BaseDirectory.AppData } as const;
 const ROOT = "data";
-const RECEIPTS = `${ROOT}/receipts`;
 
 function sanitize(key: string): string {
   return key.replace(/[^a-z0-9._-]/gi, "_");
@@ -39,46 +36,6 @@ const storage: StorageAdapter = {
   async writeDoc(key, value) {
     await ensureDir(ROOT);
     await writeTextFile(docPath(key), value, BASE);
-  },
-  async putBlob(id, data, meta) {
-    await ensureDir(RECEIPTS);
-    const buf = new Uint8Array(await data.arrayBuffer());
-    await writeFile(`${RECEIPTS}/${id}`, buf, BASE);
-    await writeTextFile(`${RECEIPTS}/${id}.meta.json`, JSON.stringify({ id, ...meta }), BASE);
-  },
-  async getBlob(id) {
-    const path = `${RECEIPTS}/${id}`;
-    if (!(await exists(path, BASE))) return null;
-    const bytes = await readFile(path, BASE);
-    let mime = "application/octet-stream";
-    const metaPath = `${path}.meta.json`;
-    if (await exists(metaPath, BASE)) {
-      try {
-        mime = (JSON.parse(await readTextFile(metaPath, BASE)) as BlobMeta).mime || mime;
-      } catch {
-        /* ignore */
-      }
-    }
-    return new Blob([bytes], { type: mime });
-  },
-  async deleteBlob(id) {
-    for (const p of [`${RECEIPTS}/${id}`, `${RECEIPTS}/${id}.meta.json`]) {
-      if (await exists(p, BASE)) await remove(p, BASE);
-    }
-  },
-  async listBlobs() {
-    if (!(await exists(RECEIPTS, BASE))) return [];
-    const entries = await readDir(RECEIPTS, BASE);
-    const out: BlobMeta[] = [];
-    for (const e of entries) {
-      if (!e.name.endsWith(".meta.json")) continue;
-      try {
-        out.push(JSON.parse(await readTextFile(`${RECEIPTS}/${e.name}`, BASE)) as BlobMeta);
-      } catch {
-        /* ignore */
-      }
-    }
-    return out;
   },
 };
 

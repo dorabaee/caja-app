@@ -86,11 +86,17 @@ function mapTable(t: any, i: number): Table {
 }
 
 function mapChart(c: any, i: number): Chart {
+  // Accept both the legacy single-link and the current multi-link shapes.
+  const linkedTableIds: string[] = Array.isArray(c?.linkedTableIds)
+    ? c.linkedTableIds.map(String)
+    : c?.linkedTableId
+      ? [String(c.linkedTableId)]
+      : [];
   return {
     id: String(c?.id ?? id()),
     type: ["bar", "line", "area", "pie"].includes(c?.type) ? c.type : "bar",
     title: String(c?.title ?? "Gráfica"),
-    linkedTableId: c?.linkedTableId ?? null,
+    linkedTableIds,
     xColumnId: c?.xColumnId ?? null,
     valueColumnId: c?.valueColumnId ?? null,
     layout: c?.layout?.w ? c.layout : { x: 24, y: 24 + i * 360, w: 440, h: 320 },

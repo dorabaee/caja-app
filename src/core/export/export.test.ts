@@ -99,4 +99,21 @@ describe("backup", () => {
     expect(() => parseBackup(JSON.stringify({ app: "other" }))).toThrow();
     expect(() => parseBackup(JSON.stringify({ app: "caja", doc: { nope: true } }))).toThrow();
   });
+
+  it("still parses a legacy backup that carries a base64 blobs array (#13 compat)", () => {
+    const doc = newAppDoc();
+    doc.projects.push(donaRosa());
+    const legacy = {
+      app: "caja",
+      kind: "backup",
+      version: 1,
+      schemaVersion: 1,
+      exportedAt: "2025-01-01T00:00:00.000Z",
+      doc,
+      blobs: [{ id: "b1", name: "ticket.png", mime: "image/png", size: 12, data: "AAAA" }],
+    };
+    const parsed = parseBackup(JSON.stringify(legacy));
+    expect(parsed.doc.projects).toHaveLength(1); // doc restores intact
+    expect(parsed.blobs).toHaveLength(1); // tolerated, but applyBackup ignores them
+  });
 });

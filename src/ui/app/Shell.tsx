@@ -2,6 +2,7 @@ import { useUI } from "@core/store";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { MonthStrip } from "./MonthStrip";
+import { HomeView } from "./HomeView";
 import { MonthView } from "./MonthView";
 import { ResumenView } from "./ResumenView";
 import { PanelView } from "./PanelView";
@@ -16,7 +17,9 @@ export function Shell() {
       <main className={styles.main}>
         <TopBar />
         <div className={styles.content}>
-          {nav === "panel" ? (
+          {nav === "home" ? (
+            <HomeView />
+          ) : nav === "panel" ? (
             <PanelView />
           ) : nav === "resumen" ? (
             <ResumenView />
@@ -26,7 +29,7 @@ export function Shell() {
             <MonthView />
           )}
         </div>
-        <MonthStrip />
+        {nav !== "home" && <MonthStrip />}
       </main>
     </div>
   );

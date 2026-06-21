@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
+import type { Table } from "../model/types";
 
 export type ModalKind =
   | "none"
@@ -11,8 +12,10 @@ export type ModalKind =
   | "categories"
   | "recurring";
 export type ViewMode = "canvas" | "list";
-/** Top-level screen in the main area (driven by the sidebar + month strip). */
-export type NavView = "month" | "panel" | "resumen" | "allBiz";
+/** Top-level screen in the main area (driven by the sidebar + month strip).
+ *  "home" is the businesses launcher — reached via the pinned "Inicio" row, not a
+ *  Vista tab, so it stays out of `navOrder` (and its persistence/validation). */
+export type NavView = "home" | "month" | "panel" | "resumen" | "allBiz";
 export type ToastTone = "info" | "success" | "error";
 
 export interface Toast {
@@ -24,10 +27,111 @@ export interface Toast {
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 2;
 
+// Sidebar collapsed state is a deliberate, durable preference (unlike monthIndex/zoom),
+// so it's persisted — but as a tiny UI flag in localStorage, never in the doc JSON
+// (keeps it out of undo history and off the schema). Guarded for non-browser (test) envs.
+const SIDEBAR_KEY = "caja:sidebarCollapsed";
+function readSidebarCollapsed(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeSidebarCollapsed(v: boolean): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(SIDEBAR_KEY, v ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+// User-reorderable order of the "Vista" nav tabs — a deliberate, durable preference,
+// persisted in localStorage (validated against the known keys so a corrupt/outdated
+// value falls back to the default rather than dropping or duplicating a tab).
+const NAV_ORDER_KEY = "caja:navOrder";
+const DEFAULT_NAV_ORDER: NavView[] = ["month", "panel", "resumen", "allBiz"];
+function readNavOrder(): NavView[] {
+  try {
+    if (typeof localStorage === "undefined") return [...DEFAULT_NAV_ORDER];
+    const raw = localStorage.getItem(NAV_ORDER_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length === DEFAULT_NAV_ORDER.length &&
+        DEFAULT_NAV_ORDER.every((k) => parsed.includes(k))
+      ) {
+        return parsed as NavView[];
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return [...DEFAULT_NAV_ORDER];
+}
+function writeNavOrder(order: NavView[]): void {
+  try {
+    if (typeof localStorage !== "undefined")
+      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(order));
+  } catch {
+    /* ignore */
+  }
+}
+
+// The active month tab + top-level view are "resume where I left off" state: persisted
+// as tiny localStorage flags (never in the doc) so reopening the app lands on the month
+// and view the user was last on, instead of snapping back to today's month every time.
+const MONTH_KEY = "caja:monthIndex";
+function readMonthIndex(): number {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(MONTH_KEY) : null;
+    const n = raw == null ? NaN : Number(raw);
+    return Number.isInteger(n) && n >= 0 && n <= 11 ? n : new Date().getMonth();
+  } catch {
+    return new Date().getMonth();
+  }
+}
+function writeMonthIndex(i: number): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(MONTH_KEY, String(i));
+  } catch {
+    /* ignore */
+  }
+}
+
+const NAV_KEY = "caja:nav";
+const NAV_VALUES: NavView[] = ["home", "month", "panel", "resumen", "allBiz"];
+function readNav(): NavView {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(NAV_KEY) : null;
+    return raw && (NAV_VALUES as string[]).includes(raw) ? (raw as NavView) : "home";
+  } catch {
+    return "home";
+  }
+}
+function writeNav(nav: NavView): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(NAV_KEY, nav);
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface UIState {
   monthIndex: number;
   /** Which top-level screen is shown in the main area. */
   nav: NavView;
+  /** Collapsed (icon-only) sidebar — persisted preference. */
+  sidebarCollapsed: boolean;
+  /** Order of the "Vista" nav tabs — drag-reorderable, persisted preference. */
+  navOrder: NavView[];
+  /** Table ids opted out of their KPI total — an ephemeral "what-if" for the month view. */
+  kpiExclusions: ReadonlySet<string>;
+  /** A copied table held in a session clipboard (never persisted to the doc) for paste-into-month. */
+  clipboardTable: Table | null;
+  /** Active "send a value" flow (#7): the value picked up + the source cell key to exclude. */
+  sendValue: { value: string; sourceKey: string } | null;
   selectedWidgetId: string | null;
   zoom: number;
   view: ViewMode;
@@ -41,6 +145,13 @@ export interface UIState {
 
   setMonth(i: number): void;
   goTo(nav: NavView): void;
+  toggleSidebar(): void;
+  setSidebarCollapsed(collapsed: boolean): void;
+  setNavOrder(order: NavView[]): void;
+  toggleKpiExclusion(tableId: string): void;
+  copyTableToClipboard(table: Table): void;
+  startSendValue(value: string, sourceKey: string): void;
+  cancelSendValue(): void;
   editProject(projectId: string | null): void;
   select(widgetId: string | null): void;
   setZoom(z: number): void;
@@ -58,8 +169,13 @@ export interface UIState {
 const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
 
 export const useUI = create<UIState>((set, get) => ({
-  monthIndex: new Date().getMonth(),
-  nav: "month",
+  monthIndex: readMonthIndex(),
+  nav: readNav(),
+  sidebarCollapsed: readSidebarCollapsed(),
+  navOrder: readNavOrder(),
+  kpiExclusions: new Set<string>(),
+  clipboardTable: null,
+  sendValue: null,
   selectedWidgetId: null,
   zoom: 1,
   view: "canvas",
@@ -69,9 +185,40 @@ export const useUI = create<UIState>((set, get) => ({
   quickAddOpen: false,
   toasts: [],
 
-  setMonth: (i) =>
-    set({ monthIndex: Math.max(0, Math.min(11, i)), nav: "month", selectedWidgetId: null }),
-  goTo: (nav) => set({ nav, selectedWidgetId: null }),
+  setMonth: (i) => {
+    const monthIndex = Math.max(0, Math.min(11, i));
+    writeMonthIndex(monthIndex);
+    writeNav("month");
+    set({ monthIndex, nav: "month", selectedWidgetId: null });
+  },
+  goTo: (nav) => {
+    writeNav(nav);
+    set({ nav, selectedWidgetId: null });
+  },
+  toggleSidebar: () =>
+    set((s) => {
+      const sidebarCollapsed = !s.sidebarCollapsed;
+      writeSidebarCollapsed(sidebarCollapsed);
+      return { sidebarCollapsed };
+    }),
+  setSidebarCollapsed: (sidebarCollapsed) => {
+    writeSidebarCollapsed(sidebarCollapsed);
+    set({ sidebarCollapsed });
+  },
+  setNavOrder: (navOrder) => {
+    writeNavOrder(navOrder);
+    set({ navOrder });
+  },
+  toggleKpiExclusion: (tableId) =>
+    set((s) => {
+      const next = new Set(s.kpiExclusions);
+      if (next.has(tableId)) next.delete(tableId);
+      else next.add(tableId);
+      return { kpiExclusions: next };
+    }),
+  copyTableToClipboard: (clipboardTable) => set({ clipboardTable }),
+  startSendValue: (value, sourceKey) => set({ sendValue: { value, sourceKey } }),
+  cancelSendValue: () => set({ sendValue: null }),
   editProject: (editProjectId) => set({ editProjectId }),
   select: (widgetId) => set({ selectedWidgetId: widgetId }),
   setZoom: (z) => set({ zoom: clampZoom(z) }),

@@ -4,9 +4,9 @@ import { CURRENT_SCHEMA_VERSION } from "../model/types";
 
 /**
  * Backup / restore — a single self-contained `.caja.json` file holding the whole
- * AppDoc plus any binary blobs (receipts, base64-inlined). Blobs aren't created
- * until M8, so today the file is effectively the doc; the format already carries
- * them so an old backup keeps restoring once receipts exist.
+ * AppDoc. The receipt-attachment feature was removed, so new backups carry no blobs;
+ * the `blobs` field is kept in the format and PARSED for backward compatibility, but
+ * ignored on restore (old backups still load without error).
  */
 
 export const BACKUP_VERSION = 1;
@@ -16,7 +16,7 @@ export interface BackupBlob {
   name: string;
   mime: string;
   size: number;
-  /** base64-encoded bytes. */
+  /** base64-encoded bytes (legacy only). */
   data: string;
 }
 
@@ -27,6 +27,7 @@ export interface BackupFile {
   schemaVersion: number;
   exportedAt: string;
   doc: AppDoc;
+  /** Legacy attachment payload — always [] in new backups, ignored on restore. */
   blobs: BackupBlob[];
 }
 
@@ -75,97 +76,31 @@ export function parseBackup(text: string): ParsedBackup {
   }
   const doc = (raw as BackupFile).doc;
   if (!looksLikeDoc(doc)) throw new Error("El respaldo no contiene datos de Caja.");
+  // Tolerate (but ignore) a legacy blobs array so old backups still parse.
   const blobs = Array.isArray((raw as BackupFile).blobs) ? (raw as BackupFile).blobs : [];
   const exportedAt =
     typeof (raw as BackupFile).exportedAt === "string" ? (raw as BackupFile).exportedAt : "";
   return { doc, blobs, exportedAt };
 }
 
-// ---- base64 <-> Blob --------------------------------------------------------
-
-async function blobToBase64(blob: Blob): Promise<string> {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
-
-function base64ToBlob(data: string, mime: string): Blob {
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
-
 // ---- IO (uses the active StorageAdapter) ------------------------------------
 
-/** Gather the current doc + blobs into a portable backup string. */
+/** Gather the current doc into a portable backup string. */
 export async function createBackup(): Promise<string> {
   const storage = getStorage();
   const docText = await storage.readDoc(DOC_KEY);
   if (!docText) throw new Error("Todavía no hay datos para respaldar.");
   const doc = JSON.parse(docText) as AppDoc;
-
-  const blobs: BackupBlob[] = [];
-  for (const meta of await storage.listBlobs()) {
-    const blob = await storage.getBlob(meta.id);
-    if (!blob) continue;
-    blobs.push({ id: meta.id, name: meta.name, mime: meta.mime, size: meta.size, data: await blobToBase64(blob) });
-  }
-  return serializeBackup(doc, blobs, new Date().toISOString());
-}
-
-/** All blob ids still referenced by a row attachment anywhere in the doc. */
-function referencedBlobIds(doc: AppDoc): Set<string> {
-  const ids = new Set<string>();
-  for (const p of doc.projects)
-    for (const m of p.months)
-      for (const tbl of m.tables)
-        for (const r of tbl.rows)
-          for (const a of r.attachments ?? []) ids.add(a.id);
-  return ids;
+  return serializeBackup(doc, [], new Date().toISOString());
 }
 
 /**
- * Delete blobs no longer referenced by any attachment — orphans left behind when
- * a row/table/project (or its attachments) was removed. Safe to run at boot, when
- * the undo history is empty so a deletion can't be undone back into existence.
- * Returns how many blobs were removed.
+ * Restore a parsed backup into storage; returns the doc so the caller can reload.
+ * A legacy backup's `blobs` are ignored (the attachment feature was removed) — this
+ * is the compatibility guard that lets old `.caja.json` files restore without error.
  */
-export async function gcBlobs(): Promise<number> {
-  const storage = getStorage();
-  const docText = await storage.readDoc(DOC_KEY);
-  if (!docText) return 0;
-  let doc: AppDoc;
-  try {
-    doc = JSON.parse(docText) as AppDoc;
-  } catch {
-    return 0;
-  }
-  const referenced = referencedBlobIds(doc);
-  let removed = 0;
-  for (const meta of await storage.listBlobs()) {
-    if (!referenced.has(meta.id)) {
-      await storage.deleteBlob(meta.id);
-      removed += 1;
-    }
-  }
-  return removed;
-}
-
-/** Restore a parsed backup into storage; returns the doc so the caller can reload the store. */
 export async function applyBackup(parsed: ParsedBackup): Promise<AppDoc> {
   const storage = getStorage();
   await storage.writeDoc(DOC_KEY, JSON.stringify(parsed.doc));
-  for (const b of parsed.blobs) {
-    await storage.putBlob(b.id, base64ToBlob(b.data, b.mime), {
-      name: b.name,
-      mime: b.mime,
-      size: b.size,
-    });
-  }
   return parsed.doc;
 }

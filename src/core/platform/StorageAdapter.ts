@@ -1,23 +1,10 @@
 // Platform contracts. `core` depends only on these interfaces — never on Tauri or
 // browser APIs directly. Concrete impls live in src/platform/{tauri,web}.
 
-export interface BlobMeta {
-  id: string;
-  name: string;
-  mime: string;
-  size: number;
-}
-
 export interface StorageAdapter {
   /** Structured app document (the big JSON). */
   readDoc(key: string): Promise<string | null>;
   writeDoc(key: string, value: string): Promise<void>;
-
-  /** Binary blobs (receipts/photos), addressed by opaque id. */
-  putBlob(id: string, data: Blob, meta: Omit<BlobMeta, "id">): Promise<void>;
-  getBlob(id: string): Promise<Blob | null>;
-  deleteBlob(id: string): Promise<void>;
-  listBlobs(): Promise<BlobMeta[]>;
 }
 
 export interface FileFilter {

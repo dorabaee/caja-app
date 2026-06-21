@@ -48,6 +48,9 @@ export interface ChartColors {
   barColor(i: number): string;
   /** Distinct colors for the slices of a pie (mono accent ramp / colorful cycle). */
   sliceColors(total: number): string[];
+  /** Stable color for a named category (#16): hashed → categorical set (distinct)
+   *  or an accent-ramp shade (monochrome). */
+  categoryColor(label: string, distinct: boolean): string;
   axis: string;
   grid: string;
   tooltipBg: string;
@@ -79,6 +82,12 @@ export function useChartColors(): ChartColors {
       );
     };
 
+    const hash = (s: string): number => {
+      let h = 0;
+      for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return h;
+    };
+
     const reduceMotion =
       typeof window !== "undefined" && typeof window.matchMedia === "function"
         ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -95,6 +104,12 @@ export function useChartColors(): ChartColors {
         palette === "colorful"
           ? Array.from({ length: total }, (_, i) => COLORFUL[i % COLORFUL.length])
           : monoRamp(total),
+      categoryColor: (label: string, distinct: boolean) => {
+        const h = hash(label);
+        if (distinct) return COLORFUL[h % COLORFUL.length];
+        // monochrome: a stable shade along the accent ramp
+        return rgbToCss(mix(lightRgb, strongRgb, (h % 100) / 100));
+      },
       axis: readVar("--text-subtle", "#8a909c"),
       grid: readVar("--border", "#e6e8eb"),
       tooltipBg: readVar("--surface", "#ffffff"),

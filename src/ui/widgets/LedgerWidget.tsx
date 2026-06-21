@@ -9,6 +9,7 @@ import {
   DollarSign,
   Calendar,
   Copy,
+  ClipboardCopy,
   Trash2,
 } from "lucide-react";
 import type { Table } from "@core/model/types";
@@ -89,7 +90,23 @@ export const LedgerWidget = memo(function LedgerWidget({
             {t("widgets.typeDate")}
           </MenuItem>
           <MenuSeparator />
-          <MenuItem icon={<Copy />} onClick={() => s().duplicateTable(monthIndex, table.id)}>
+          <MenuItem
+            icon={<ClipboardCopy />}
+            onClick={() => {
+              useUI.getState().copyTableToClipboard(table);
+              useUI.getState().toast(t("widgets.tableCopied"), "success");
+            }}
+          >
+            {t("widgets.copyLedger")}
+          </MenuItem>
+          <MenuItem
+            icon={<Copy />}
+            onClick={() => {
+              const newId = s().duplicateTable(monthIndex, table.id);
+              select(newId);
+              useUI.getState().toast(t("widgets.tableDuplicated"), "success");
+            }}
+          >
             {t("widgets.duplicateLedger")}
           </MenuItem>
           <MenuItem icon={<Trash2 />} danger onClick={() => s().removeTable(monthIndex, table.id)}>

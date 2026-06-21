@@ -14,12 +14,15 @@ export function KpiCard({
   tone,
   icon,
   footer,
+  menu,
 }: {
   label: string;
   value: string;
   tone: Tone;
   icon: ReactNode;
   footer?: ReactNode;
+  /** Optional control rendered top-right of the card (e.g. the #12 breakdown menu). */
+  menu?: ReactNode;
 }) {
   return (
     <div className={cn(styles.card, styles[tone])}>
@@ -28,6 +31,7 @@ export function KpiCard({
           {icon}
         </span>
         <span className={styles.label}>{label}</span>
+        {menu && <span className={styles.menu}>{menu}</span>}
       </div>
       <div className={cn(styles.value, "tnum")}>{value}</div>
       {footer}
@@ -68,11 +72,14 @@ export function KpiHero({
   totals,
   goal,
   labels,
+  menus,
 }: {
   totals: MonthlyTotals;
   /** Optional monthly profit target — renders progress under the "Te queda" card. */
   goal?: number;
   labels?: { entro: string; salio: string; teQueda: string };
+  /** Optional per-card controls (the #12 breakdown menus on Entró / Salió). */
+  menus?: { entro?: ReactNode; salio?: ReactNode };
 }) {
   const fmt = useFormat();
   const { t } = useTranslation();
@@ -83,8 +90,20 @@ export function KpiHero({
   };
   return (
     <div className={styles.hero}>
-      <KpiCard label={resolved.entro} tone="income" icon={<TrendingUp size={16} />} value={fmt.money(totals.entro)} />
-      <KpiCard label={resolved.salio} tone="expense" icon={<TrendingDown size={16} />} value={fmt.money(totals.salio)} />
+      <KpiCard
+        label={resolved.entro}
+        tone="income"
+        icon={<TrendingUp size={16} />}
+        value={fmt.money(totals.entro)}
+        menu={menus?.entro}
+      />
+      <KpiCard
+        label={resolved.salio}
+        tone="expense"
+        icon={<TrendingDown size={16} />}
+        value={fmt.money(totals.salio)}
+        menu={menus?.salio}
+      />
       <KpiCard
         label={resolved.teQueda}
         tone="accent"

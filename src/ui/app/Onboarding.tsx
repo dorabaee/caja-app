@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Wallet, Plus } from "lucide-react";
-import { useStore } from "@core/store";
+import { useStore, useUI } from "@core/store";
 import { Button, Field, TextInput, cn } from "@ui/common";
 import styles from "./Onboarding.module.css";
 
 export function Onboarding() {
   const { t } = useTranslation();
   const createProject = useStore((s) => s.createProject);
+  const setMonth = useUI((s) => s.setMonth);
   const [name, setName] = useState("");
   const [choice, setChoice] = useState<"empty" | "template">("template");
 
-  const submit = () =>
+  const submit = () => {
     createProject(name.trim() || t("shell.defaultBusinessName"), choice === "template" ? "income" : "empty");
+    // Land the brand-new business on its board (not the Home launcher) so the
+    // first-run guided tour can spotlight the KPI hero + Add-table controls.
+    setMonth(new Date().getMonth());
+  };
 
   return (
     <div className={styles.screen}>

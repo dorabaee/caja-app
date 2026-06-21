@@ -28,6 +28,10 @@
   font-weight: 500;
   color: var(--text-muted);
 }
+.menu {
+  margin-left: auto;
+  display: inline-flex;
+}
 
 .value {
   font-family: var(--font-num);

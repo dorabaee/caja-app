@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { TableProperties, Plus, ArrowRightLeft } from "lucide-react";
+import { TableProperties, Plus, ArrowRightLeft, Send, X } from "lucide-react";
 import { useUI } from "@core/store";
-import { carryOverStart, materializeMonth, monthlyTotals } from "@core/compute";
+import { carryOverStart, kpiBreakdown, materializeMonth } from "@core/compute";
 import { Button } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
@@ -10,22 +11,38 @@ import { TableWidget } from "@ui/widgets/TableWidget";
 import { LedgerWidget } from "@ui/widgets/LedgerWidget";
 import { ChartWidget } from "@ui/widgets/ChartWidget";
 import { KpiHero } from "./KpiHero";
+import { KpiBreakdownMenu } from "./KpiBreakdownMenu";
 import { AddTableMenu } from "./AddTableMenu";
 import { MonthCanvas } from "./MonthCanvas";
-import { QuickAddBar } from "./QuickAddBar";
 import styles from "./MonthView.module.css";
 
 export function MonthView() {
   const project = useCurrentProject();
   const monthIndex = useUI((s) => s.monthIndex);
   const view = useUI((s) => s.view);
+  const kpiExclusions = useUI((s) => s.kpiExclusions);
+  const sendValue = useUI((s) => s.sendValue);
+  const cancelSendValue = useUI((s) => s.cancelSendValue);
   const fmt = useFormat();
   const { t } = useTranslation();
   const months = useMonths();
 
+  // Esc cancels an in-progress "send a value" flow (#7).
+  useEffect(() => {
+    if (!sendValue) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") cancelSendValue();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sendValue, cancelSendValue]);
+
   if (!project) return null;
   const month = project.months[monthIndex];
-  const totals = monthlyTotals(materializeMonth(project, monthIndex));
+  // Breakdown drives both the totals shown and the per-card menus (#11/#12); exclusions
+  // are an ephemeral what-if applied here in the month view only.
+  const breakdown = kpiBreakdown(materializeMonth(project, monthIndex), kpiExclusions);
+  const totals = { entro: breakdown.entro, salio: breakdown.salio, teQueda: breakdown.teQueda };
   const hasWidgets = month.tables.length > 0 || month.charts.length > 0;
 
   const carry = project.carryOver ? carryOverStart(project, monthIndex) : null;
@@ -33,7 +50,14 @@ export function MonthView() {
   return (
     <div className={styles.wrap}>
       <div className={styles.heroBand} data-tour="kpi">
-        <KpiHero totals={totals} goal={project.goal?.monthlyProfitTarget} />
+        <KpiHero
+          totals={totals}
+          goal={project.goal?.monthlyProfitTarget}
+          menus={{
+            entro: <KpiBreakdownMenu kind="income" contributions={breakdown.income} monthIndex={monthIndex} />,
+            salio: <KpiBreakdownMenu kind="expense" contributions={breakdown.expense} monthIndex={monthIndex} />,
+          }}
+        />
         {carry != null && (
           <div className={styles.carryStrip}>
             <span className={styles.carryItem}>
@@ -50,8 +74,17 @@ export function MonthView() {
             </span>
           </div>
         )}
-        {hasWidgets && <QuickAddBar monthIndex={monthIndex} />}
       </div>
+
+      {sendValue && (
+        <div className={styles.sendBanner} role="status">
+          <Send size={15} aria-hidden />
+          <span>{t("month.sendBanner", { value: fmt.money(Number(sendValue.value) || 0) })}</span>
+          <button type="button" className={styles.sendCancel} onClick={cancelSendValue}>
+            <X size={14} aria-hidden /> {t("month.sendCancel")}
+          </button>
+        </div>
+      )}
 
       {!hasWidgets ? (
         <div className={styles.region}>

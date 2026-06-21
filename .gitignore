@@ -24,8 +24,10 @@ lerna-debug.log*
 # Local-only AI / build context (never publish)
 CLAUDE.md
 HANDOFF.md
+REDESIGN_PLAN.md
 .claude/
 .specstory/
+.uiaudit/
 __verify/
 
 # Editor

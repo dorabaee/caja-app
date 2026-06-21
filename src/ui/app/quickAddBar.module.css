@@ -45,3 +45,29 @@
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- compact: inline inside the top bar ---------- */
+.compact {
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+}
+/* The lightning glyph is decorative — drop it inline to reclaim width. */
+.compact .lead {
+  display: none;
+}
+.compact .pickerLabel {
+  max-width: 92px;
+}
+.conceptoCompact {
+  flex: 1 1 90px;
+  min-width: 56px;
+}
+.montoCompact {
+  width: 80px;
+}

@@ -2,7 +2,6 @@
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
   height: 64px;
   padding: 0 var(--space-6);
@@ -21,6 +20,27 @@
   color: var(--text-subtle);
   flex: none;
 }
+.crumbBack {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  height: 28px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+  border-radius: var(--radius-xs);
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.crumbBack:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+.crumbBack svg {
+  flex: none;
+}
 .crumbSep {
   color: var(--text-subtle);
   flex: none;
@@ -34,11 +54,22 @@
   white-space: nowrap;
 }
 
+/* The inline quick-add sits between the breadcrumb and the tools; it shrinks
+   under pressure (and self-hides when the month has no non-ledger tables). */
+.quickAddSlot {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 360px;
+}
+
 .tools {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex: none;
+  margin-left: auto;
 }
 
 .divider {

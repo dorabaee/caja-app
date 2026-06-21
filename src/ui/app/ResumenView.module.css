@@ -83,6 +83,213 @@
   font-weight: 700;
 }
 
+/* #16 — expenses by category */
+.catCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.catHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.catTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.catControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.searchBox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-subtle);
+}
+.searchBox:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+.searchInput {
+  width: 160px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.searchInput:focus {
+  outline: none;
+}
+.segmented {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.segBtn {
+  height: 26px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.segBtn:hover {
+  color: var(--text);
+}
+.segOn {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.colorToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.colorToggle:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+.colorSwatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-xs);
+  flex: none;
+}
+.colorSwatch[data-mode="distinct"] {
+  background: linear-gradient(90deg, #10b981, #0ea5e9, #f59e0b);
+}
+.colorSwatch[data-mode="mono"] {
+  background: linear-gradient(90deg, var(--accent-weak), var(--accent), var(--accent-strong));
+}
+.catEmpty {
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+  line-height: 1.5;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.chip:hover {
+  background: var(--surface-hover);
+}
+.chipOn {
+  color: var(--text);
+  font-weight: 600;
+}
+.chipDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  flex: none;
+}
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+.chipVal {
+  font-family: var(--font-num);
+  color: var(--text-subtle);
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.monthGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.monthGroupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-1);
+}
+.monthGroupTotal {
+  font-family: var(--font-num);
+  color: var(--expense);
+}
+.catSubRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+.catSubName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.catSubRowOn .catSubName {
+  color: var(--text);
+  font-weight: 600;
+}
+.catSubVal {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .actions {
   display: flex;
   justify-content: center;

@@ -1,6 +1,53 @@
 import { parseMoney } from "../format/money";
-import type { Project, Table } from "../model/types";
+import type { Month, Project, Table } from "../model/types";
+import { tableTotal } from "./tables";
 import { materializeMonth, materializedMonths, monthlyTotals, yearlyResumen } from "./monthly";
+
+export interface KpiTableContribution {
+  tableId: string;
+  title: string;
+  total: number;
+  /** Currently opted out of its KPI total (ephemeral, see useUI.kpiExclusions). */
+  excluded: boolean;
+}
+
+export interface KpiBreakdown {
+  income: KpiTableContribution[];
+  expense: KpiTableContribution[];
+  entro: number;
+  salio: number;
+  teQueda: number;
+}
+
+/**
+ * Which tables feed Entró / Salió, each with its contribution — the surface behind the
+ * KPI hero (#11/#12). Excluded table ids are still listed (so they can be re-included)
+ * but dropped from the sums. Ledger & "none" tables never participate.
+ */
+export function kpiBreakdown(month: Month, excluded?: ReadonlySet<string>): KpiBreakdown {
+  const income: KpiTableContribution[] = [];
+  const expense: KpiTableContribution[] = [];
+  let entro = 0;
+  let salio = 0;
+  for (const t of month.tables) {
+    if (t.kind !== "income" && t.kind !== "expense") continue;
+    const isExcluded = excluded?.has(t.id) ?? false;
+    const entry: KpiTableContribution = {
+      tableId: t.id,
+      title: t.title,
+      total: tableTotal(t),
+      excluded: isExcluded,
+    };
+    if (t.kind === "income") {
+      income.push(entry);
+      if (!isExcluded) entro += entry.total;
+    } else {
+      expense.push(entry);
+      if (!isExcluded) salio += entry.total;
+    }
+  }
+  return { income, expense, entro, salio, teQueda: entro - salio };
+}
 
 export interface CategorySlice {
   label: string;
@@ -22,6 +69,39 @@ export function categoryBreakdownForTable(table: Table): CategorySlice[] {
   return [...map.entries()]
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
+}
+
+export interface CategoryYearRow {
+  label: string;
+  /** Expense per month (length 12). */
+  byMonth: number[];
+  /** Year total for this category. */
+  total: number;
+}
+
+/**
+ * Expense categories across the year with a per-month breakdown (#16) — for the
+ * Resumen's search / sort / highlight. Aggregates every expense table's category
+ * breakdown by category name into a 12-month vector. Sorted by year total desc.
+ */
+export function monthlyExpenseCategories(project: Project): CategoryYearRow[] {
+  const map = new Map<string, number[]>();
+  materializedMonths(project).forEach((m, i) => {
+    for (const t of m.tables) {
+      if (t.kind !== "expense") continue;
+      for (const slice of categoryBreakdownForTable(t)) {
+        let arr = map.get(slice.label);
+        if (!arr) {
+          arr = new Array(12).fill(0);
+          map.set(slice.label, arr);
+        }
+        arr[i] += slice.value;
+      }
+    }
+  });
+  return [...map.entries()]
+    .map(([label, byMonth]) => ({ label, byMonth, total: byMonth.reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.total - a.total);
 }
 
 /** Expense categories across the project (or a single month). */

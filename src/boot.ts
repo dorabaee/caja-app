@@ -1,9 +1,9 @@
 import { DOC_KEY, getStorage, setPlatform } from "@core/platform";
 import { importLegacy } from "@core/migration/importLegacy";
+import { migrateDoc } from "@core/migration/migrateDoc";
 import { defaultSettings, newAppDoc } from "@core/model/defaults";
 import type { AppDoc } from "@core/model/types";
 import { startPersistence, useStore } from "@core/store";
-import { gcBlobs } from "@core/export/backup";
 import { createWebPlatform } from "@platform/web";
 import { applyTheme } from "@ui/theme/applyTheme";
 import { setLocale } from "@core/i18n/config";
@@ -42,13 +42,11 @@ export async function boot(): Promise<void> {
   }
 
   if (!doc) doc = newAppDoc();
+  doc = migrateDoc(doc);
   doc.settings = { ...defaultSettings(), ...doc.settings };
 
   applyTheme(doc.settings);
   setLocale(doc.settings.locale);
   useStore.getState().load(doc);
   startPersistence();
-
-  // Reclaim receipt blobs orphaned by deletions in a previous session.
-  void gcBlobs().catch(() => {});
 }

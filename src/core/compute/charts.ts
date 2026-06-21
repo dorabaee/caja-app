@@ -58,3 +58,51 @@ export function chartSeries(table: Table, opts: ChartSeriesOptions = {}): ChartP
   }
   return [...grouped.entries()].map(([name, value]) => ({ name, value }));
 }
+
+export interface ChartSeriesMeta {
+  /** Series key used as the recharts dataKey (the table id). */
+  key: string;
+  /** Legend / tooltip label (the table title). */
+  name: string;
+}
+
+export interface MultiChartData {
+  /** One row per merged label: `{ name, [tableId]: value, ... }`. */
+  rows: Record<string, string | number>[];
+  series: ChartSeriesMeta[];
+}
+
+/**
+ * Build one series per table for bar/line/area (#9). Rows are the union of labels
+ * across all tables (in first-seen order), so the same label compares side by side;
+ * rows that share a label within one table are summed. Per-table column choices fall
+ * back to that table's defaults when the explicit column id belongs to another table.
+ */
+export function chartSeriesMulti(tables: Table[], opts: ChartSeriesOptions = {}): MultiChartData {
+  const series: ChartSeriesMeta[] = tables.map((t) => ({ key: t.id, name: t.title }));
+  const order: string[] = [];
+  const rowMap = new Map<string, Record<string, string | number>>();
+  for (const t of tables) {
+    for (const p of chartSeries(t, opts)) {
+      let row = rowMap.get(p.name);
+      if (!row) {
+        row = { name: p.name };
+        rowMap.set(p.name, row);
+        order.push(p.name);
+      }
+      row[t.id] = (Number(row[t.id]) || 0) + p.value;
+    }
+  }
+  return { rows: order.map((n) => rowMap.get(n)!), series };
+}
+
+/** Pie across one or many tables: aggregate every table's points by label. */
+export function chartPieMulti(tables: Table[], opts: ChartSeriesOptions = {}): ChartPoint[] {
+  const grouped = new Map<string, number>();
+  for (const t of tables) {
+    for (const p of chartSeries(t, { ...opts, aggregate: true })) {
+      grouped.set(p.name, (grouped.get(p.name) ?? 0) + p.value);
+    }
+  }
+  return [...grouped.entries()].map(([name, value]) => ({ name, value }));
+}

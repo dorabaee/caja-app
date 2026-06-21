@@ -8,7 +8,7 @@ export type TableKind = "income" | "expense" | "none" | "ledger";
 /** Role of a money column inside a ledger ("Libro de cuenta bancaria"). */
 export type LedgerRole = "deposit" | "withdrawal";
 
-export type ChartType = "bar" | "line" | "area" | "pie";
+export type ChartType = "bar" | "stacked" | "line" | "area" | "combo" | "pie";
 
 export interface Column {
   id: string;
@@ -18,15 +18,8 @@ export interface Column {
   category?: boolean;
   /** Only meaningful for ledger tables. */
   role?: LedgerRole;
-}
-
-export interface Attachment {
-  id: string; // blob id resolved via StorageAdapter
-  name: string;
-  mime: string;
-  size: number;
-  w?: number;
-  h?: number;
+  /** User-set fixed width in px (drag the header edge). Unset = flex to fit (#2). */
+  width?: number;
 }
 
 export interface Row {
@@ -34,7 +27,6 @@ export interface Row {
   cells: Record<string, string>; // columnId -> raw string value
   notes?: Record<string, string>; // columnId -> note text
   links?: Record<string, string>; // columnId -> url
-  attachments?: Attachment[];
 }
 
 export interface WidgetLayout {
@@ -60,7 +52,8 @@ export interface Chart {
   id: string;
   type: ChartType;
   title: string;
-  linkedTableId: string | null;
+  /** Tables compared by this chart (one series each). Empty = blank chart. */
+  linkedTableIds: string[];
   /** Column used for the X axis / slice labels (defaults to first text/date col). */
   xColumnId?: string | null;
   /** Money column charted (defaults to first money col). */

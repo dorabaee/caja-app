@@ -17,8 +17,7 @@ Spanish by default, English in a click.
 - **Recurring entries** — a row that appears automatically every month in a range,
   editable or skippable for any single month.
 - **Carry-over balance** — chain each month's closing balance into the next.
-- **Receipts** — attach photos or PDFs to any row (downscaled, stored as separate
-  blobs so the main file stays small).
+- **Notes & tags** — a per-cell note and a per-row category tag.
 - **Dashboards** — a per-business **Panel** (trend, balance over time, profit vs. goal,
   top categories) and an **all-businesses** overview.
 - **Year summary** + an **"Estado de resultados" PDF** (three formats) and CSV / Excel export.
@@ -62,8 +61,8 @@ npm test             # unit tests (focus: the compute layer)
 ## Privacy
 
 Caja is **local-first**. Your data lives only on your machine — the document as a JSON
-file and receipts as separate files (or IndexedDB in the web preview). Nothing is sent
-anywhere. Use **Backup** to move your data between devices.
+file (or IndexedDB in the web preview). Nothing is sent anywhere. Use **Backup** to move
+your data between devices.
 
 ## License
 

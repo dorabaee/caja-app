@@ -34,6 +34,9 @@ export const MONTH_KEYS = [
 
 const DEFAULT_LAYOUT: WidgetLayout = { x: 24, y: 24, w: 400, h: 420 };
 
+/** Floor for a user-resized table column (px). */
+export const MIN_COLUMN_WIDTH = 64;
+
 export function id(): string {
   return nanoid();
 }
@@ -77,10 +80,48 @@ function withLayout(partial?: Partial<WidgetLayout>): WidgetLayout {
   return { ...DEFAULT_LAYOUT, ...partial };
 }
 
+/**
+ * Lay widgets out left-to-right on "shelves" (wrapping at ~maxWidth) and return the
+ * top-left slot for a NEW widget appended after `existing`. Now that table defaults
+ * vary in size by kind, a fixed count×step grid would overlap a wide ledger — this
+ * packs by each widget's real w/h instead. Used by addTable/pasteTable/addChart and
+ * the template seed; the user can still re-tidy with "Reacomodar".
+ */
+export function nextWidgetSlot(
+  existing: { layout: WidgetLayout }[],
+  size: { w: number; h: number },
+  opts?: { pad?: number; gap?: number; maxWidth?: number },
+): { x: number; y: number } {
+  const pad = opts?.pad ?? 24;
+  const gap = opts?.gap ?? 24;
+  const maxRight = pad + (opts?.maxWidth ?? 1400);
+  let x = pad;
+  let y = pad;
+  let rowH = 0;
+  const advance = (w: number, h: number): { x: number; y: number } => {
+    if (x > pad && x + w > maxRight) {
+      x = pad;
+      y += rowH + gap;
+      rowH = 0;
+    }
+    const slot = { x, y };
+    x += w + gap;
+    rowH = Math.max(rowH, h);
+    return slot;
+  };
+  for (const it of existing) advance(it.layout.w, it.layout.h);
+  return advance(size.w, size.h);
+}
+
+/** Number of "Día N" rows seeded into a fresh daily-income table.
+ *  Month-agnostic: 28 covers the shortest month; users extend to 29–31 by adding
+ *  rows (the day number auto-increments — see addRow). */
+export const INCOME_TABLE_DAYS = 28;
+
 /** Table templates (titles/columns mirror the original app). */
 export function makeIncomeTable(layout?: Partial<WidgetLayout>): Table {
   const cols = [makeColumn("Día", "text"), makeColumn("Efectivo recibido", "money")];
-  const rows = Array.from({ length: 15 }, (_, i) =>
+  const rows = Array.from({ length: INCOME_TABLE_DAYS }, (_, i) =>
     makeRow(cols, { [cols[0].id]: String(i + 1) }),
   );
   return {
@@ -89,7 +130,9 @@ export function makeIncomeTable(layout?: Partial<WidgetLayout>): Table {
     kind: "income",
     columns: cols,
     rows,
-    layout: withLayout(layout),
+    // Narrow + tall: 2 slim columns, room to show ~9 of the 28 day rows (wide
+    // enough that the "Ingresos diarios" title + accounting pill aren't clipped).
+    layout: withLayout({ w: 400, h: 560, ...layout }),
   };
 }
 
@@ -106,7 +149,8 @@ export function makeExpenseTable(layout?: Partial<WidgetLayout>): Table {
     kind: "expense",
     columns: cols,
     rows,
-    layout: withLayout(layout),
+    // Wider: 3 columns, gives Descripción room to breathe.
+    layout: withLayout({ w: 520, h: 420, ...layout }),
   };
 }
 
@@ -125,7 +169,9 @@ export function makeLedgerTable(layout?: Partial<WidgetLayout>): Table {
     columns: cols,
     rows,
     initialBalance: 0,
-    layout: withLayout({ ...layout, h: 460 }),
+    // Widest + tall: 4 columns so "Importe del gasto" isn't clipped, plus the
+    // saldo-inicial field and the SALDO FINAL footer.
+    layout: withLayout({ w: 620, h: 500, ...layout }),
   };
 }
 
@@ -140,6 +186,37 @@ export function makeBlankTable(layout?: Partial<WidgetLayout>): Table {
     rows,
     layout: withLayout(layout),
   };
+}
+
+/**
+ * Deep-clone a table with fresh table/column/row ids. Cell + note + link maps are
+ * remapped onto the new column ids (so they keep binding correctly); with
+ * `withData: false` the rows are kept but emptied (structure-only paste). Shared by
+ * duplicateTable (#5) and pasteTable (#6).
+ */
+export function cloneTable(src: Table, opts?: { withData?: boolean; titleSuffix?: string }): Table {
+  const withData = opts?.withData ?? true;
+  const clone: Table = JSON.parse(JSON.stringify(src));
+  clone.id = id();
+  if (opts?.titleSuffix) clone.title = `${src.title}${opts.titleSuffix}`;
+  clone.columns = clone.columns.map((c) => ({ ...c, id: id() }));
+  const idMap = new Map(src.columns.map((c, i) => [c.id, clone.columns[i].id]));
+  const remap = (rec?: Record<string, string>): Record<string, string> => {
+    const out: Record<string, string> = {};
+    if (rec)
+      for (const [oldId, val] of Object.entries(rec)) {
+        const nid = idMap.get(oldId);
+        if (nid) out[nid] = val;
+      }
+    return out;
+  };
+  clone.rows = clone.rows.map((r) => ({
+    id: id(),
+    cells: withData ? remap(r.cells) : {},
+    notes: withData ? remap(r.notes) : {},
+    links: withData ? remap(r.links) : {},
+  }));
+  return clone;
 }
 
 export type TemplateKey = "income" | "expense" | "ledger" | "blank";
@@ -158,7 +235,7 @@ export function makeTableFromTemplate(template: TemplateKey, layout?: Partial<Wi
 }
 
 export function makeChart(
-  linkedTableId: string | null,
+  linkedTableIds: string[] = [],
   type: ChartType = "bar",
   layout?: Partial<WidgetLayout>,
 ): Chart {
@@ -166,7 +243,7 @@ export function makeChart(
     id: id(),
     type,
     title: "Gráfica",
-    linkedTableId,
+    linkedTableIds,
     xColumnId: null,
     valueColumnId: null,
     layout: withLayout({ w: 440, h: 320, ...layout }),
@@ -191,11 +268,15 @@ export function newProject(name = "Negocio sin nombre"): Project {
 export function newTemplateProject(name = "Negocio sin nombre"): Project {
   const project = newProject(name);
   const seed = (m: Month) => {
-    m.tables = [
-      makeIncomeTable({ x: 24, y: 24 }),
-      makeExpenseTable({ x: 448, y: 24 }),
-      makeLedgerTable({ x: 24, y: 468 }),
-    ];
+    const placed: Table[] = [];
+    for (const make of [makeIncomeTable, makeExpenseTable, makeLedgerTable]) {
+      const t = make();
+      const slot = nextWidgetSlot(placed, t.layout);
+      t.layout.x = slot.x;
+      t.layout.y = slot.y;
+      placed.push(t);
+    }
+    m.tables = placed;
   };
   // Seed only the current month by default; others start empty.
   seed(project.months[new Date().getMonth()]);

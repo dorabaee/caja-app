@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Zap, Plus, ChevronDown } from "lucide-react";
 import { useStore, useUI } from "@core/store";
 import type { Column, Table } from "@core/model/types";
-import { Button, Menu, MenuItem, MenuLabel, TextInput } from "@ui/common";
+import { Button, Menu, MenuItem, MenuLabel, TextInput, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import styles from "./quickAddBar.module.css";
 
@@ -23,8 +23,8 @@ const rowDateISO = (year: number, monthIndex: number): string => {
   return `${year}-${mm}-${dd}`;
 };
 
-export function QuickAddBar(props: { monthIndex: number }) {
-  const { monthIndex } = props;
+export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
+  const { monthIndex, compact = false } = props;
   const { t } = useTranslation();
   const project = useCurrentProject();
   const month = project?.months[monthIndex];
@@ -79,8 +79,14 @@ export function QuickAddBar(props: { monthIndex: number }) {
     }
   };
 
+  const btnSize = compact ? "sm" : "md";
+
   return (
-    <div className={styles.bar} role="group" aria-label={t("month.quickAddAria")}>
+    <div
+      className={cn(styles.bar, compact && styles.compact)}
+      role="group"
+      aria-label={t("month.quickAddAria")}
+    >
       <span className={styles.lead} aria-hidden>
         <Zap size={16} />
       </span>
@@ -88,7 +94,7 @@ export function QuickAddBar(props: { monthIndex: number }) {
       <Menu
         align="start"
         trigger={
-          <Button variant="secondary" className={styles.picker}>
+          <Button variant="secondary" size={btnSize} className={styles.picker}>
             <span className={styles.pickerLabel}>{selected?.title ?? "—"}</span>
             <ChevronDown size={15} className={styles.chev} aria-hidden />
           </Button>
@@ -108,7 +114,7 @@ export function QuickAddBar(props: { monthIndex: number }) {
 
       <TextInput
         ref={conceptoRef}
-        className={styles.concepto}
+        className={cn(styles.concepto, compact && styles.conceptoCompact)}
         value={concepto}
         placeholder={t("month.conceptPlaceholder")}
         aria-label={t("month.concept")}
@@ -117,7 +123,7 @@ export function QuickAddBar(props: { monthIndex: number }) {
       />
 
       <TextInput
-        className={styles.monto}
+        className={cn(styles.monto, compact && styles.montoCompact)}
         value={monto}
         inputMode="decimal"
         placeholder="0.00"
@@ -126,8 +132,14 @@ export function QuickAddBar(props: { monthIndex: number }) {
         onKeyDown={onKeyDown}
       />
 
-      <Button variant="primary" icon={<Plus />} onClick={submit}>
-        {t("common.add")}
+      <Button
+        variant="primary"
+        size={btnSize}
+        icon={<Plus />}
+        onClick={submit}
+        aria-label={t("common.add")}
+      >
+        {compact ? null : t("common.add")}
       </Button>
     </div>
   );

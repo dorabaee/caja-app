@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ChevronRight,
   Plus,
   Undo2,
@@ -17,13 +18,20 @@ import { useCurrentProject } from "@ui/hooks/useProject";
 import { autoArrange } from "@ui/util/autoArrange";
 import { AddTableMenu } from "./AddTableMenu";
 import { ExportMenu } from "./ExportMenu";
+import { QuickAddBar } from "./QuickAddBar";
 import styles from "./TopBar.module.css";
 
 export function TopBar() {
   const { t } = useTranslation();
   const current = useCurrentProject();
   const nav = useUI((s) => s.nav);
+  const goTo = useUI((s) => s.goTo);
+  const projectCount = useStore((s) => s.doc.projects.length);
   const isMonth = nav === "month";
+  const isHome = nav === "home";
+  // Back to the businesses overview is meaningful only when there's more than one
+  // business and we're currently inside one (not already on the overview).
+  const canGoBack = projectCount > 1 && nav !== "allBiz";
   const view = useUI((s) => s.view);
   const setView = useUI((s) => s.setView);
   const monthIndex = useUI((s) => s.monthIndex);
@@ -56,13 +64,8 @@ export function TopBar() {
   };
 
   const onAddChart = () => {
-    const st = useStore.getState();
-    const project =
-      st.doc.projects.find((p) => p.id === st.doc.currentProjectId) ?? st.doc.projects[0];
-    const month = project?.months[monthIndex];
-    // Default-link the first regular table (fall back to ledger / unlinked).
-    const defaultTable = month?.tables.find((t) => t.kind !== "ledger") ?? month?.tables[0] ?? null;
-    select(addChart(monthIndex, defaultTable?.id ?? null));
+    // New charts start blank; the user links any/multiple tables (#9).
+    select(addChart(monthIndex));
   };
 
   const showCanvasTools = isMonth && view === "canvas";
@@ -70,14 +73,38 @@ export function TopBar() {
   return (
     <header className={styles.bar}>
       <div className={styles.crumb}>
-        <span className={styles.crumbRoot}>{t("shell.businesses")}</span>
-        <ChevronRight size={15} className={styles.crumbSep} aria-hidden />
-        <h1 className={styles.crumbCurrent}>
-          {nav === "allBiz" ? t("shell.allBusinesses") : (current?.name ?? "—")}
-        </h1>
+        {isHome ? (
+          <h1 className={styles.crumbCurrent}>{t("shell.home")}</h1>
+        ) : (
+          <>
+            {canGoBack && (
+              <>
+                <button
+                  type="button"
+                  className={styles.crumbBack}
+                  onClick={() => goTo("allBiz")}
+                  title={t("shell.backToBusinesses")}
+                >
+                  <ArrowLeft size={15} aria-hidden />
+                  <span>{t("shell.businesses")}</span>
+                </button>
+                <ChevronRight size={15} className={styles.crumbSep} aria-hidden />
+              </>
+            )}
+            <h1 className={styles.crumbCurrent}>
+              {nav === "allBiz" ? t("shell.allBusinesses") : (current?.name ?? "—")}
+            </h1>
+          </>
+        )}
       </div>
 
-      {!isMonth && (
+      {isMonth && (
+        <div className={styles.quickAddSlot}>
+          <QuickAddBar compact monthIndex={monthIndex} />
+        </div>
+      )}
+
+      {!isMonth && !isHome && (
         <div className={styles.tools}>
           <ExportMenu />
         </div>

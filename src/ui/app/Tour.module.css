@@ -33,6 +33,28 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* Glide between spotlight targets, in step with the spotlight (180ms). */
+  transition:
+    left 200ms ease-out,
+    top 200ms ease-out;
+}
+
+/* Per-step message content: fades + slides up on each step change (keyed remount). */
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: tourStepIn 260ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+@keyframes tourStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .progress {
@@ -82,7 +104,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spotlight {
+  .spotlight,
+  .card {
     transition: none;
+  }
+  .step {
+    animation: none;
   }
 }

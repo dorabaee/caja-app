@@ -1,20 +1,7 @@
-import { createStore, del, get, keys, set } from "idb-keyval";
-import type {
-  BlobMeta,
-  FileDialog,
-  OpenedFile,
-  Platform,
-  StorageAdapter,
-  ShareAdapter,
-} from "@core/platform";
+import { createStore, get, set } from "idb-keyval";
+import type { FileDialog, OpenedFile, Platform, StorageAdapter, ShareAdapter } from "@core/platform";
 
 const docStore = createStore("caja", "doc");
-const blobStore = createStore("caja-blobs", "blobs");
-
-interface StoredBlob {
-  blob: Blob;
-  meta: BlobMeta;
-}
 
 const storage: StorageAdapter = {
   async readDoc(key) {
@@ -22,26 +9,6 @@ const storage: StorageAdapter = {
   },
   async writeDoc(key, value) {
     await set(key, value, docStore);
-  },
-  async putBlob(id, data, meta) {
-    const rec: StoredBlob = { blob: data, meta: { id, ...meta } };
-    await set(id, rec, blobStore);
-  },
-  async getBlob(id) {
-    const rec = await get<StoredBlob>(id, blobStore);
-    return rec?.blob ?? null;
-  },
-  async deleteBlob(id) {
-    await del(id, blobStore);
-  },
-  async listBlobs() {
-    const ks = await keys(blobStore);
-    const out: BlobMeta[] = [];
-    for (const k of ks) {
-      const rec = await get<StoredBlob>(k, blobStore);
-      if (rec) out.push(rec.meta);
-    }
-    return out;
   },
 };
 

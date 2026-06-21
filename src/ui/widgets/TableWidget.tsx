@@ -9,6 +9,7 @@ import {
   DollarSign,
   Calendar,
   Copy,
+  ClipboardCopy,
   Trash2,
   Tags,
   Repeat,
@@ -19,7 +20,7 @@ import { useStore, useUI } from "@core/store";
 import { Button, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, cn } from "@ui/common";
 import { useFormat } from "@ui/hooks/useFormat";
 import { useRecurringRows } from "@ui/hooks/useRecurringRows";
-import { WidgetGrid, gridStyleFor } from "./WidgetGrid";
+import { WidgetGrid } from "./WidgetGrid";
 import { DRAG_HANDLE } from "./dragHandle";
 import styles from "./widget.module.css";
 
@@ -128,7 +129,23 @@ export const TableWidget = memo(function TableWidget({
             {t("widgets.recurringEntries")}
           </MenuItem>
           <MenuSeparator />
-          <MenuItem icon={<Copy />} onClick={() => s().duplicateTable(monthIndex, table.id)}>
+          <MenuItem
+            icon={<ClipboardCopy />}
+            onClick={() => {
+              useUI.getState().copyTableToClipboard(table);
+              useUI.getState().toast(t("widgets.tableCopied"), "success");
+            }}
+          >
+            {t("widgets.copyTable")}
+          </MenuItem>
+          <MenuItem
+            icon={<Copy />}
+            onClick={() => {
+              const newId = s().duplicateTable(monthIndex, table.id);
+              select(newId);
+              useUI.getState().toast(t("widgets.tableDuplicated"), "success");
+            }}
+          >
             {t("widgets.duplicateTable")}
           </MenuItem>
           <MenuItem icon={<Trash2 />} danger onClick={() => s().removeTable(monthIndex, table.id)}>
@@ -137,20 +154,25 @@ export const TableWidget = memo(function TableWidget({
         </Menu>
       </div>
 
-      <WidgetGrid monthIndex={monthIndex} table={table} recurringRows={recurringRows} />
-
-      <div className={styles.totalRow} style={gridStyleFor(table.columns)}>
-        {table.columns.map((col, i) => (
-          <div key={col.id} className={cn(styles.totalCell, col.type === "money" && styles.totalMoney)}>
-            {i === 0 ? (
-              <span className={styles.totalLabel}>{t("widgets.total")}</span>
-            ) : col.type === "money" ? (
-              fmt.moneyPlain(totals[col.id] ?? 0)
-            ) : null}
+      <WidgetGrid
+        monthIndex={monthIndex}
+        table={table}
+        recurringRows={recurringRows}
+        footer={
+          <div className={styles.totalRow}>
+            {table.columns.map((col, i) => (
+              <div key={col.id} className={cn(styles.totalCell, col.type === "money" && styles.totalMoney)}>
+                {i === 0 ? (
+                  <span className={styles.totalLabel}>{t("widgets.total")}</span>
+                ) : col.type === "money" ? (
+                  fmt.moneyPlain(totals[col.id] ?? 0)
+                ) : null}
+              </div>
+            ))}
+            <div className={styles.totalCell} aria-hidden />
           </div>
-        ))}
-        <div className={styles.totalCell} aria-hidden />
-      </div>
+        }
+      />
 
       <div className={styles.wfoot}>
         <Button variant="ghost" size="sm" icon={<Plus />} onClick={() => s().addRow(monthIndex, table.id)}>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeColumn, makeRow } from "@core/model/defaults";
 import type { Table, WidgetLayout } from "@core/model/types";
-import { chartSeries } from "@core/compute";
+import { chartPieMulti, chartSeries, chartSeriesMulti } from "@core/compute";
 
 const L: WidgetLayout = { x: 0, y: 0, w: 1, h: 1 };
 
@@ -81,5 +81,67 @@ describe("chartSeries", () => {
       layout: L,
     };
     expect(chartSeries(t)).toEqual([]);
+  });
+});
+
+// Simple [text label, money] table so the default label column is the text col.
+function catTable(id: string, title: string, rows: [string, number][]): Table {
+  const cat = makeColumn("Categoría", "text");
+  const monto = makeColumn("Monto", "money");
+  return {
+    id,
+    title,
+    kind: "expense",
+    columns: [cat, monto],
+    rows: rows.map(([c, v]) => makeRow([cat, monto], { [cat.id]: c, [monto.id]: String(v) })),
+    layout: L,
+  };
+}
+
+describe("chartSeriesMulti (#9)", () => {
+  it("one series per table, rows merged by label union", () => {
+    const a = catTable("a", "Local A", [
+      ["Luz", 100],
+      ["Renta", 300],
+    ]);
+    const b = catTable("b", "Local B", [
+      ["Renta", 500],
+      ["Agua", 50],
+    ]);
+    const { rows, series } = chartSeriesMulti([a, b]);
+    expect(series).toEqual([
+      { key: "a", name: "Local A" },
+      { key: "b", name: "Local B" },
+    ]);
+    expect(rows.map((r) => r.name)).toEqual(["Luz", "Renta", "Agua"]);
+    const renta = rows.find((r) => r.name === "Renta")!;
+    expect(renta.a).toBe(300);
+    expect(renta.b).toBe(500);
+    const agua = rows.find((r) => r.name === "Agua")!;
+    expect(agua.a).toBeUndefined(); // A has no "Agua" row
+    expect(agua.b).toBe(50);
+  });
+
+  it("sums rows that share a label within one table", () => {
+    const a = catTable("a", "A", [
+      ["Luz", 100],
+      ["Luz", 25],
+    ]);
+    const { rows } = chartSeriesMulti([a]);
+    expect(rows).toEqual([{ name: "Luz", a: 125 }]);
+  });
+});
+
+describe("chartPieMulti (#9)", () => {
+  it("aggregates every table's slices by label", () => {
+    const a = catTable("a", "A", [["Luz", 100]]);
+    const b = catTable("b", "B", [
+      ["Luz", 50],
+      ["Renta", 200],
+    ]);
+    expect(chartPieMulti([a, b])).toEqual([
+      { name: "Luz", value: 150 },
+      { name: "Renta", value: 200 },
+    ]);
   });
 });
