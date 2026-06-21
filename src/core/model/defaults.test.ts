@@ -63,10 +63,10 @@ describe("makeExpenseTable", () => {
 
 describe("table default sizes", () => {
   it("gives each kind its own default dimensions", () => {
-    expect(makeIncomeTable().layout).toMatchObject({ w: 400, h: 560 });
-    expect(makeExpenseTable().layout).toMatchObject({ w: 520, h: 420 });
-    expect(makeLedgerTable().layout).toMatchObject({ w: 620, h: 500 });
-    expect(makeBlankTable().layout).toMatchObject({ w: 400, h: 420 });
+    expect(makeIncomeTable().layout).toMatchObject({ w: 400, h: 500 });
+    expect(makeExpenseTable().layout).toMatchObject({ w: 520, h: 392 });
+    expect(makeLedgerTable().layout).toMatchObject({ w: 640, h: 400 });
+    expect(makeBlankTable().layout).toMatchObject({ w: 400, h: 340 });
   });
 
   it("lets the caller override position while keeping the kind's size", () => {
@@ -74,7 +74,7 @@ describe("table default sizes", () => {
       x: 100,
       y: 200,
       w: 400,
-      h: 560,
+      h: 500,
     });
     // ...and an explicit size still wins (spread comes last in the makers).
     expect(makeLedgerTable({ w: 700 }).layout.w).toBe(700);

@@ -72,7 +72,7 @@ describe("duplicateTable (#5)", () => {
   });
 });
 
-describe("reorderProjects", () => {
+describe("setProjectOrder", () => {
   function multiDoc(): AppDoc {
     const mk = (id: string, name: string) => {
       const p = newProject(name);
@@ -83,18 +83,18 @@ describe("reorderProjects", () => {
   }
   beforeEach(() => useStore.getState().load(multiDoc()));
 
-  it("moves a business before the target and persists the new order", () => {
-    useStore.getState().reorderProjects("c", "a"); // drop C onto A
+  it("reorders the businesses to match the given id list", () => {
+    useStore.getState().setProjectOrder(["c", "a", "b"]);
     expect(useStore.getState().doc.projects.map((p) => p.id)).toEqual(["c", "a", "b"]);
   });
 
-  it("handles a downward move (recomputes the target index)", () => {
-    useStore.getState().reorderProjects("a", "c"); // drop A onto C
-    expect(useStore.getState().doc.projects.map((p) => p.id)).toEqual(["b", "a", "c"]);
+  it("appends ids missing from the list at the end (in their original order)", () => {
+    useStore.getState().setProjectOrder(["c"]);
+    expect(useStore.getState().doc.projects.map((p) => p.id)).toEqual(["c", "a", "b"]);
   });
 
   it("is undoable", () => {
-    useStore.getState().reorderProjects("a", "c");
+    useStore.getState().setProjectOrder(["b", "c", "a"]);
     useStore.getState().undo();
     expect(useStore.getState().doc.projects.map((p) => p.id)).toEqual(["a", "b", "c"]);
   });

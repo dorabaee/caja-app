@@ -181,6 +181,7 @@
   color: var(--text-subtle);
   opacity: 0.35;
   cursor: grab;
+  touch-action: none;
   transition: opacity 120ms ease;
 }
 .grip:active {

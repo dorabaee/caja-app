@@ -46,8 +46,8 @@ export interface StoreState {
   deleteProject(projectId: string): void;
   selectProject(projectId: string): void;
   updateProject(projectId: string, patch: Partial<Project>): void;
-  /** Move a business before another in the sidebar list (persisted + undoable). */
-  reorderProjects(fromId: string, toId: string): void;
+  /** Reorder businesses to match the given id order (sidebar drag-reorder; persisted + undoable). */
+  setProjectOrder(orderedIds: string[]): void;
 
   // recurring entries (per project)
   addRecurring(projectId: string, def: Omit<RecurringDef, "id">): string;
@@ -175,16 +175,11 @@ export const useStore = create<StoreState>()((set, get) => {
         if (p) Object.assign(p, patch);
       }),
 
-    reorderProjects: (fromId, toId) =>
+    setProjectOrder: (orderedIds) =>
       commit((d) => {
-        if (fromId === toId) return;
-        const from = d.projects.findIndex((p) => p.id === fromId);
-        if (from < 0) return;
-        const [moved] = d.projects.splice(from, 1);
-        // Recompute the target index *after* removing the dragged item, then insert
-        // before it (matching the Vista-tabs drop). Bad target → restore in place.
-        const to = d.projects.findIndex((p) => p.id === toId);
-        d.projects.splice(to < 0 ? from : to, 0, moved);
+        // Stable sort by the requested order; any id not listed sorts to the end.
+        const rank = new Map(orderedIds.map((id, i) => [id, i] as const));
+        d.projects.sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
       }),
 
     addRecurring: (projectId, def) => {

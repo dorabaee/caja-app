@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   Wallet,
   Plus,
@@ -22,6 +22,7 @@ import { useStore, useUI } from "@core/store";
 import type { NavView } from "@core/store/ui";
 import { IconButton, Menu, MenuItem, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
+import { useListReorder } from "@ui/hooks/useListReorder";
 import styles from "./Sidebar.module.css";
 
 /** Vista tabs exclude "home" (that's the pinned launcher, reached separately). */
@@ -40,7 +41,7 @@ export function Sidebar() {
   const theme = useStore((s) => s.doc.settings.theme);
   const updateSettings = useStore((s) => s.updateSettings);
   const selectProject = useStore((s) => s.selectProject);
-  const reorderProjects = useStore((s) => s.reorderProjects);
+  const setProjectOrder = useStore((s) => s.setProjectOrder);
   const openModal = useUI((s) => s.openModal);
   const editProject = useUI((s) => s.editProject);
   const collapsed = useUI((s) => s.sidebarCollapsed);
@@ -48,18 +49,8 @@ export function Sidebar() {
   const nav = useUI((s) => s.nav);
   const goTo = useUI((s) => s.goTo);
 
-  // Drag-reorder the business list. The row is always draggable, but a drag only
-  // proceeds when it was started from the grip handle (armedRef, set synchronously
-  // on the grip's mousedown so `draggable` timing is never an issue).
-  const [dragBizId, setDragBizId] = useState<string | null>(null);
-  const [overBizId, setOverBizId] = useState<string | null>(null);
-  const bizArmed = useRef(false);
-  const dropBiz = (targetId: string) => {
-    if (dragBizId && dragBizId !== targetId) reorderProjects(dragBizId, targetId);
-    setDragBizId(null);
-    setOverBizId(null);
-    bizArmed.current = false;
-  };
+  // Drag-reorder the business list (pointer-based; see useListReorder).
+  const biz = useListReorder(setProjectOrder);
 
   const toggleTheme = () => updateSettings({ theme: theme === "dark" ? "light" : "dark" });
   const newProject = () => {
@@ -112,47 +103,21 @@ export function Sidebar() {
             return (
               <div
                 key={p.id}
+                data-reorder-id={p.id}
                 className={cn(
                   styles.bizRow,
                   active && styles.bizActive,
-                  dragBizId === p.id && styles.navDragging,
-                  overBizId === p.id && dragBizId && dragBizId !== p.id && styles.navDragOver,
+                  biz.dragId === p.id && styles.navDragging,
+                  biz.overId === p.id && styles.navDragOver,
                 )}
-                draggable={!collapsed}
-                onDragStart={(e) => {
-                  if (!bizArmed.current) {
-                    e.preventDefault();
-                    return;
-                  }
-                  setDragBizId(p.id);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(e) => {
-                  if (dragBizId) {
-                    e.preventDefault();
-                    setOverBizId(p.id);
-                  }
-                }}
-                onDragEnd={() => {
-                  setDragBizId(null);
-                  setOverBizId(null);
-                  bizArmed.current = false;
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  dropBiz(p.id);
-                }}
               >
                 {!collapsed && (
                   <span
                     className={styles.grip}
-                    aria-hidden
                     title={t("shell.reorderBusiness")}
-                    onMouseDown={() => {
-                      bizArmed.current = true;
-                    }}
+                    onPointerDown={(e) => biz.start(e, p.id)}
                   >
-                    <GripVertical size={14} />
+                    <GripVertical size={14} aria-hidden />
                   </span>
                 )}
                 <button
@@ -249,10 +214,14 @@ function ViewNav() {
   const collapsed = useUI((s) => s.sidebarCollapsed);
   const projectCount = useStore((s) => s.doc.projects.length);
 
-  const [dragKey, setDragKey] = useState<NavView | null>(null);
-  const [overKey, setOverKey] = useState<NavView | null>(null);
-  // See the business list: drag only proceeds when started from the grip handle.
-  const armed = useRef(false);
+  // Pointer-based reorder. The grip gives the rendered (visible) keys in their new
+  // order; rebuild navOrder from them and re-append allBiz if it's currently hidden
+  // (keeps navOrder valid — all four keys present).
+  const reorder = useListReorder((ids) => {
+    const next = ids.filter((k) => k !== "home") as NavView[];
+    if (!next.includes("allBiz")) next.push("allBiz");
+    setNavOrder(next);
+  });
 
   // allBiz only exists with >1 business; keep it in the stored order regardless.
   // (navOrder never contains "home" — the type guard just narrows for VIEW_NAV.)
@@ -262,18 +231,6 @@ function ViewNav() {
 
   const activate = (key: VistaKey) => (key === "month" ? setMonth(monthIndex) : goTo(key));
 
-  const drop = (target: NavView) => {
-    if (dragKey && dragKey !== target) {
-      const order = [...navOrder];
-      order.splice(order.indexOf(dragKey), 1);
-      order.splice(order.indexOf(target), 0, dragKey);
-      setNavOrder(order);
-    }
-    setDragKey(null);
-    setOverKey(null);
-    armed.current = false;
-  };
-
   return (
     <nav className={styles.list}>
       {visible.map((key) => {
@@ -282,50 +239,24 @@ function ViewNav() {
           <button
             key={key}
             type="button"
-            draggable={!collapsed}
+            data-reorder-id={key}
             className={cn(
               styles.navItem,
               nav === key && styles.navActive,
-              dragKey === key && styles.navDragging,
-              overKey === key && dragKey && dragKey !== key && styles.navDragOver,
+              reorder.dragId === key && styles.navDragging,
+              reorder.overId === key && styles.navDragOver,
             )}
             onClick={() => activate(key)}
             title={collapsed ? t(labelKey) : undefined}
-            onDragStart={(e) => {
-              if (!armed.current) {
-                e.preventDefault();
-                return;
-              }
-              setDragKey(key);
-              e.dataTransfer.effectAllowed = "move";
-            }}
-            onDragOver={(e) => {
-              if (dragKey) {
-                e.preventDefault();
-                setOverKey(key);
-              }
-            }}
-            onDragEnd={() => {
-              setDragKey(null);
-              setOverKey(null);
-              armed.current = false;
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              drop(key);
-            }}
           >
             {!collapsed && (
               <span
                 className={styles.grip}
-                aria-hidden
                 title={t("shell.reorderView")}
-                onMouseDown={() => {
-                  armed.current = true;
-                }}
+                onPointerDown={(e) => reorder.start(e, key)}
                 onClick={(e) => e.stopPropagation()}
               >
-                <GripVertical size={14} />
+                <GripVertical size={14} aria-hidden />
               </span>
             )}
             {icon}

@@ -130,9 +130,9 @@ export function makeIncomeTable(layout?: Partial<WidgetLayout>): Table {
     kind: "income",
     columns: cols,
     rows,
-    // Narrow + tall: 2 slim columns, room to show ~9 of the 28 day rows (wide
-    // enough that the "Ingresos diarios" title + accounting pill aren't clipped).
-    layout: withLayout({ w: 400, h: 560, ...layout }),
+    // Narrow: 2 slim columns. 28 day rows can't all fit, so it stays scrollable —
+    // sized to show ~7 rows (wide enough that the title + accounting pill aren't clipped).
+    layout: withLayout({ w: 400, h: 500, ...layout }),
   };
 }
 
@@ -149,8 +149,9 @@ export function makeExpenseTable(layout?: Partial<WidgetLayout>): Table {
     kind: "expense",
     columns: cols,
     rows,
-    // Wider: 3 columns, gives Descripción room to breathe.
-    layout: withLayout({ w: 520, h: 420, ...layout }),
+    // Wider: 3 columns, gives Descripción room. Height fits the 4 seeded rows +
+    // total + footer with no excess / no scroll.
+    layout: withLayout({ w: 520, h: 392, ...layout }),
   };
 }
 
@@ -169,9 +170,10 @@ export function makeLedgerTable(layout?: Partial<WidgetLayout>): Table {
     columns: cols,
     rows,
     initialBalance: 0,
-    // Widest + tall: 4 columns so "Importe del gasto" isn't clipped, plus the
-    // saldo-inicial field and the SALDO FINAL footer.
-    layout: withLayout({ w: 620, h: 500, ...layout }),
+    // Widest: 4 columns (wide enough that "Importe del gasto" + the columns don't
+    // side-scroll). Height fits the saldo row + 3 rows + the SALDO FINAL footer with
+    // no empty gap.
+    layout: withLayout({ w: 640, h: 400, ...layout }),
   };
 }
 
@@ -184,7 +186,8 @@ export function makeBlankTable(layout?: Partial<WidgetLayout>): Table {
     kind: "none",
     columns: cols,
     rows,
-    layout: withLayout(layout),
+    // Medium: fits the 3 seeded rows + total + footer with no excess.
+    layout: withLayout({ w: 400, h: 340, ...layout }),
   };
 }
 
@@ -278,8 +281,8 @@ export function newTemplateProject(name = "Negocio sin nombre"): Project {
     }
     m.tables = placed;
   };
-  // Seed only the current month by default; others start empty.
-  seed(project.months[new Date().getMonth()]);
+  // Seed January by default (the natural start of the year); other months start empty.
+  seed(project.months[0]);
   return project;
 }
 

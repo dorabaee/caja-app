@@ -87,9 +87,10 @@ function readMonthIndex(): number {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(MONTH_KEY) : null;
     const n = raw == null ? NaN : Number(raw);
-    return Number.isInteger(n) && n >= 0 && n <= 11 ? n : new Date().getMonth();
+    // Default to January (0) on a fresh install; a saved value (resume) wins.
+    return Number.isInteger(n) && n >= 0 && n <= 11 ? n : 0;
   } catch {
-    return new Date().getMonth();
+    return 0;
   }
 }
 function writeMonthIndex(i: number): void {

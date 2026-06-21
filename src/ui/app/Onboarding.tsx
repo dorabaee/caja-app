@@ -15,8 +15,9 @@ export function Onboarding() {
   const submit = () => {
     createProject(name.trim() || t("shell.defaultBusinessName"), choice === "template" ? "income" : "empty");
     // Land the brand-new business on its board (not the Home launcher) so the
-    // first-run guided tour can spotlight the KPI hero + Add-table controls.
-    setMonth(new Date().getMonth());
+    // first-run guided tour can spotlight the KPI hero + Add-table controls. Open on
+    // January — the start of the year and where the template seeds its tables.
+    setMonth(0);
   };
 
   return (
