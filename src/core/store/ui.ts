@@ -10,7 +10,8 @@ export type ModalKind =
   | "addTable"
   | "backup"
   | "categories"
-  | "recurring";
+  | "recurring"
+  | "copyMonth";
 export type ViewMode = "canvas" | "list";
 /** Top-level screen in the main area (driven by the sidebar + month strip).
  *  "home" is the businesses launcher — reached via the pinned "Inicio" row, not a
@@ -150,7 +151,7 @@ export interface UIState {
   setSidebarCollapsed(collapsed: boolean): void;
   setNavOrder(order: NavView[]): void;
   toggleKpiExclusion(tableId: string): void;
-  copyTableToClipboard(table: Table): void;
+  copyTableToClipboard(table: Table | null): void;
   startSendValue(value: string, sourceKey: string): void;
   cancelSendValue(): void;
   editProject(projectId: string | null): void;

@@ -79,6 +79,16 @@
   margin: 0 var(--space-1);
 }
 
+/* clipboard lit (a table is copied, ready to paste) */
+.clipActive {
+  color: var(--accent-strong);
+  background: var(--accent-weak);
+}
+.clipActive:hover {
+  color: var(--accent-strong);
+  background: var(--accent-weak);
+}
+
 .segmented {
   display: flex;
   align-items: center;

@@ -9,13 +9,15 @@ import {
   List,
   ZoomIn,
   ZoomOut,
-  Wand2,
+  Clipboard,
+  ClipboardPaste,
+  FileStack,
+  CalendarPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
-import { Button, IconButton } from "@ui/common";
+import { Button, IconButton, Menu, MenuItem, MenuLabel } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
-import { autoArrange } from "@ui/util/autoArrange";
 import { AddTableMenu } from "./AddTableMenu";
 import { ExportMenu } from "./ExportMenu";
 import { QuickAddBar } from "./QuickAddBar";
@@ -45,27 +47,21 @@ export function TopBar() {
   const redo = useStore((s) => s.redo);
   const canUndo = useStore((s) => s.past.length > 0);
   const canRedo = useStore((s) => s.future.length > 0);
-
-  const reacomodar = () => {
-    const st = useStore.getState();
-    const project =
-      st.doc.projects.find((p) => p.id === st.doc.currentProjectId) ?? st.doc.projects[0];
-    const month = project?.months[monthIndex];
-    if (!month) return;
-    const maxWidth = Math.max(960, window.innerWidth - 248 - 48);
-    const placed = autoArrange(
-      month.tables.map((t) => ({ id: t.id, layout: t.layout })),
-      maxWidth,
-    );
-    for (const t of month.tables) {
-      const p = placed[t.id];
-      if (p) st.setWidgetLayout(monthIndex, t.id, p);
-    }
-  };
+  const pasteTable = useStore((s) => s.pasteTable);
+  const clipboardTable = useUI((s) => s.clipboardTable);
+  const openModal = useUI((s) => s.openModal);
 
   const onAddChart = () => {
     // New charts start blank; the user links any/multiple tables (#9).
     select(addChart(monthIndex));
+  };
+
+  // Paste the copied table into this month, then clear the clipboard (the icon turns off).
+  const pasteClip = (withData: boolean) => {
+    if (!clipboardTable) return;
+    select(pasteTable(monthIndex, clipboardTable, withData));
+    useUI.getState().copyTableToClipboard(null);
+    useUI.getState().toast(t("shell.tablePasted"), "success");
   };
 
   const showCanvasTools = isMonth && view === "canvas";
@@ -124,12 +120,37 @@ export function TopBar() {
             {t("shell.chart")}
           </Button>
 
-          {showCanvasTools && (
-            <>
-              <span className={styles.divider} aria-hidden />
-              <IconButton label={t("shell.rearrangeTables")} icon={<Wand2 />} onClick={reacomodar} />
-            </>
+          <span className={styles.divider} aria-hidden />
+
+          {/* Clipboard: lit when a table is copied; click to paste here (then it clears). */}
+          {clipboardTable ? (
+            <Menu
+              align="end"
+              trigger={
+                <IconButton
+                  label={t("shell.clipboardPaste", { title: clipboardTable.title })}
+                  icon={<Clipboard />}
+                  className={styles.clipActive}
+                />
+              }
+            >
+              <MenuLabel>{t("shell.clipboardHas", { title: clipboardTable.title })}</MenuLabel>
+              <MenuItem icon={<ClipboardPaste />} onClick={() => pasteClip(true)}>
+                {t("shell.pasteWithData", { title: clipboardTable.title })}
+              </MenuItem>
+              <MenuItem icon={<FileStack />} onClick={() => pasteClip(false)}>
+                {t("shell.pasteStructure", { title: clipboardTable.title })}
+              </MenuItem>
+            </Menu>
+          ) : (
+            <IconButton label={t("shell.clipboardEmpty")} icon={<Clipboard />} disabled />
           )}
+
+          <IconButton
+            label={t("shell.copyMonth")}
+            icon={<CalendarPlus />}
+            onClick={() => openModal("copyMonth")}
+          />
 
           <span className={styles.divider} aria-hidden />
 

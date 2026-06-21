@@ -17,6 +17,7 @@ export function AddTableMenu({ trigger }: { trigger: ReactElement }) {
   const paste = (withData: boolean) => {
     if (!clipboardTable) return;
     select(pasteTable(monthIndex, clipboardTable, withData));
+    useUI.getState().copyTableToClipboard(null); // single-use: clear after pasting
     useUI.getState().toast(t("shell.tablePasted"), "success");
   };
 

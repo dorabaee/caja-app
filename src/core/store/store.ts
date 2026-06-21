@@ -12,6 +12,7 @@ import {
   type WidgetLayout,
 } from "../model/types";
 import {
+  cloneMonth,
   cloneTable,
   id,
   makeChart,
@@ -69,6 +70,8 @@ export interface StoreState {
   duplicateTable(monthIndex: number, tableId: string): string;
   /** Paste a (copied) table into a month, with or without its data; returns the new id. */
   pasteTable(dstMonthIndex: number, table: Table, withData: boolean): string;
+  /** Replace each target month with a clone of the source month (layout, or layout + data). */
+  copyMonthInto(sourceMonthIndex: number, targetMonthIndices: number[], withData: boolean): void;
   setTableTitle(monthIndex: number, tableId: string, title: string): void;
   setTableKind(monthIndex: number, tableId: string, kind: TableKind): void;
   setTableInitialBalance(monthIndex: number, tableId: string, value: number): void;
@@ -278,6 +281,17 @@ export const useStore = create<StoreState>()((set, get) => {
       });
       return newId;
     },
+
+    copyMonthInto: (sourceMonthIndex, targetMonthIndices, withData) =>
+      commit((d) => {
+        const p = currentProject(d);
+        const src = p?.months[sourceMonthIndex];
+        if (!p || !src) return;
+        for (const ti of targetMonthIndices) {
+          if (ti === sourceMonthIndex || ti < 0 || ti > 11) continue;
+          p.months[ti] = cloneMonth(src, withData); // fresh ids per target; replaces content
+        }
+      }),
 
     setTableTitle: (monthIndex, tableId, title) =>
       commit((d) => {

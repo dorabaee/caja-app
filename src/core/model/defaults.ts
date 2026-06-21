@@ -222,6 +222,59 @@ export function cloneTable(src: Table, opts?: { withData?: boolean; titleSuffix?
   return clone;
 }
 
+/**
+ * Deep-clone a whole month (tables + charts) with fresh ids, remapping each chart's
+ * links (linkedTableIds + x / value column ids) onto the cloned tables. With
+ * `withData: false` the structure is kept but cells/notes/links are emptied and a
+ * ledger's starting balance reset — "layout only". Used by copyMonthInto.
+ */
+export function cloneMonth(src: Month, withData: boolean): Month {
+  const colMap = new Map<string, string>();
+  const tableMap = new Map<string, string>();
+  const remap = (rec?: Record<string, string>): Record<string, string> => {
+    const out: Record<string, string> = {};
+    if (rec)
+      for (const [k, v] of Object.entries(rec)) {
+        const nk = colMap.get(k);
+        if (nk) out[nk] = v;
+      }
+    return out;
+  };
+  const tables: Table[] = src.tables.map((tbl) => {
+    const columns = tbl.columns.map((c) => {
+      const nid = id();
+      colMap.set(c.id, nid);
+      return { ...c, id: nid };
+    });
+    const newId = id();
+    tableMap.set(tbl.id, newId);
+    return {
+      ...tbl,
+      id: newId,
+      columns,
+      rows: tbl.rows.map((r) => ({
+        id: id(),
+        cells: withData ? remap(r.cells) : {},
+        notes: withData ? remap(r.notes) : {},
+        links: withData ? remap(r.links) : {},
+      })),
+      initialBalance: !withData && tbl.kind === "ledger" ? 0 : tbl.initialBalance,
+      layout: { ...tbl.layout },
+    };
+  });
+  const charts: Chart[] = src.charts.map((ch) => ({
+    ...ch,
+    id: id(),
+    linkedTableIds: ch.linkedTableIds
+      .map((tid) => tableMap.get(tid))
+      .filter((x): x is string => !!x),
+    xColumnId: ch.xColumnId ? (colMap.get(ch.xColumnId) ?? null) : ch.xColumnId,
+    valueColumnId: ch.valueColumnId ? (colMap.get(ch.valueColumnId) ?? null) : ch.valueColumnId,
+    layout: { ...ch.layout },
+  }));
+  return { tables, charts };
+}
+
 export type TemplateKey = "income" | "expense" | "ledger" | "blank";
 
 export function makeTableFromTemplate(template: TemplateKey, layout?: Partial<WidgetLayout>): Table {

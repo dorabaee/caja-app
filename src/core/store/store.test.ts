@@ -100,6 +100,34 @@ describe("setProjectOrder", () => {
   });
 });
 
+describe("copyMonthInto", () => {
+  beforeEach(() => {
+    const { doc } = seedDoc(); // month 0 has table "t1" with one row of data
+    useStore.getState().load(doc);
+  });
+
+  it("replaces target months with a layout-only clone (no data) and leaves the source intact", () => {
+    useStore.getState().copyMonthInto(0, [1, 2], false);
+    const months = useStore.getState().doc.projects[0].months;
+    expect(months[1].tables).toHaveLength(1);
+    expect(months[2].tables).toHaveLength(1);
+    // fresh ids, emptied data
+    expect(months[1].tables[0].id).not.toBe("t1");
+    expect(months[1].tables[0].rows[0].cells).toEqual({});
+    // source untouched (still has its value)
+    const src = months[0].tables[0];
+    expect(src.rows[0].cells[src.columns[1].id]).toBe("100");
+  });
+
+  it("copies data when withData is true and skips the source index", () => {
+    useStore.getState().copyMonthInto(0, [0, 3], true);
+    const months = useStore.getState().doc.projects[0].months;
+    expect(months[0].tables[0].id).toBe("t1"); // source index skipped
+    const dst = months[3].tables[0];
+    expect(dst.rows[0].cells[dst.columns[1].id]).toBe("100");
+  });
+});
+
 describe("addTable placement", () => {
   beforeEach(() => {
     const { doc } = seedDoc();

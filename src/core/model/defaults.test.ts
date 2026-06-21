@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   INCOME_TABLE_DAYS,
+  cloneMonth,
   cloneTable,
   makeBlankTable,
+  makeChart,
   makeColumn,
   makeExpenseTable,
   makeIncomeTable,
@@ -99,6 +101,34 @@ describe("nextWidgetSlot", () => {
     expect(slot).toEqual({ x: 24, y: 608 });
     expect(overlaps({ ...slot, w: 620, h: 500 }, income.layout)).toBe(false);
     expect(overlaps({ ...slot, w: 620, h: 500 }, expense.layout)).toBe(false);
+  });
+});
+
+describe("cloneMonth", () => {
+  it("clones tables + charts with fresh ids and remaps chart links onto the clones", () => {
+    const table = makeIncomeTable();
+    table.id = "t1";
+    const chart = makeChart(["t1"], "bar");
+    chart.xColumnId = table.columns[0].id;
+    chart.valueColumnId = table.columns[1].id;
+
+    const clone = cloneMonth({ tables: [table], charts: [chart] }, true);
+    const ct = clone.tables[0];
+    expect(ct.id).not.toBe("t1");
+    expect(ct.columns.map((c) => c.id)).not.toEqual(table.columns.map((c) => c.id));
+    expect(clone.charts[0].id).not.toBe(chart.id);
+    expect(clone.charts[0].linkedTableIds).toEqual([ct.id]);
+    expect(clone.charts[0].xColumnId).toBe(ct.columns[0].id);
+    expect(clone.charts[0].valueColumnId).toBe(ct.columns[1].id);
+  });
+
+  it("layout-only (withData:false) keeps the structure but empties cell data", () => {
+    const table = makeExpenseTable();
+    const moneyCol = table.columns.find((c) => c.type === "money")!;
+    table.rows[0].cells[moneyCol.id] = "100";
+    const clone = cloneMonth({ tables: [table], charts: [] }, false);
+    expect(clone.tables[0].rows).toHaveLength(table.rows.length);
+    expect(clone.tables[0].rows[0].cells).toEqual({});
   });
 });
 
