@@ -397,15 +397,6 @@
   opacity: 1;
 }
 
-/* #14 category tag — a .cellBtn in the category column's own cell. A set tag stays
-   visible and accent-coloured so a tagged row reads at a glance. */
-.tagBtnSet,
-.row:hover .tagBtnSet {
-  opacity: 1;
-  color: var(--accent-strong);
-  background: var(--accent-weak);
-}
-
 .tagPop {
   z-index: var(--z-overlay);
   background: var(--surface);
@@ -1132,29 +1123,4 @@
   height: 100%;
   padding: 0 var(--space-3);
   min-width: 0;
-}
-/* A description cell's category chip: always visible once the row is tagged, sitting
-   between the text and the note/tag action row. Its own right padding reserves the
-   action row's width so hovering (which only fades those icons in) never shifts it. */
-.descChip {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 45%;
-  flex: 0 1 auto;
-  padding-right: 44px;
-  box-sizing: content-box;
-}
-.descChipBtn {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-.descChipBtn .catChip {
-  max-width: 100%;
 }

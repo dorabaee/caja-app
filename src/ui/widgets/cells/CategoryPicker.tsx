@@ -41,12 +41,19 @@ export function CategoryPicker({
 
   const sections = useMemo(() => {
     const other: CategoryGroup = preferredGroup === "fiscal" ? "noFiscal" : "fiscal";
-    const pick = (g: CategoryGroup) => categories.filter((c) => c.group === g);
+    // The selected category is pinned to the top of its section; every other category
+    // keeps its original relative order below it.
+    const pick = (g: CategoryGroup | null) => {
+      const items = categories.filter((c) => (g === null ? !c.group : c.group === g));
+      const idx = value ? items.findIndex((c) => c.name === value) : -1;
+      if (idx <= 0) return items;
+      return [items[idx], ...items.slice(0, idx), ...items.slice(idx + 1)];
+    };
     return [
       { group: preferredGroup, label: t(`widgets.group_${preferredGroup}`), items: pick(preferredGroup) },
       { group: other, label: t(`widgets.group_${other}`), items: pick(other) },
       // Categories carried over from before the grouped model keep working, unlabelled.
-      { group: null, label: t("widgets.groupOther"), items: categories.filter((c) => !c.group) },
+      { group: null, label: t("widgets.groupOther"), items: pick(null) },
     ].filter((s) => s.items.length > 0);
   }, [categories, preferredGroup, t]);
 

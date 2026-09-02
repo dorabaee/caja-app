@@ -5,9 +5,9 @@ import { CategoryPicker, type CategoryPickerProps } from "./CategoryPicker";
 import styles from "../widget.module.css";
 
 /**
- * The small tag icon that sits in a cell's action row — the compact way to set the row's
- * category without giving the category a column of its own. Same picker as the dedicated
- * category cell; only the trigger is smaller.
+ * The small tag icon that sits in a cell's action row — the only indicator of the row's
+ * category, styled and behaved exactly like the note icon: hidden until row hover when
+ * unset, permanently visible and accented once a category is set.
  */
 export function CategoryTag(props: Omit<CategoryPickerProps, "trigger">) {
   const { t } = useTranslation();
@@ -18,7 +18,7 @@ export function CategoryTag(props: Omit<CategoryPickerProps, "trigger">) {
       trigger={
         <button
           type="button"
-          className={cn(styles.cellBtn, value && styles.tagBtnSet)}
+          className={cn(styles.cellBtn, value && styles.noteOn)}
           title={value || t("widgets.tagAdd")}
           aria-label={value ? t("widgets.tagEdit", { name: value }) : t("widgets.tagAdd")}
         >

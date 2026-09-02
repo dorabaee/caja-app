@@ -29,7 +29,7 @@ import { useListReorder } from "@ui/hooks/useListReorder";
 import type { WidgetMode } from "@ui/hooks/useTableMode";
 import { Cell } from "./cells/Cell";
 import { CategoryTag } from "./cells/CategoryTag";
-import { CategoryCell, CategoryChip, CategoryChipButton } from "./cells/CategoryCell";
+import { CategoryCell, CategoryChip } from "./cells/CategoryCell";
 import styles from "./widget.module.css";
 
 const TYPE_KEY: Record<ColumnType, string> = {
@@ -284,9 +284,10 @@ export function WidgetGrid({
                 );
               }
 
-              // A merged (`withCategory`) column shows the description text with the
-              // category chip beside it once set; the tag icon only appears (on hover)
-              // while it's unset — same slot the note icon occupies.
+              // A merged (`withCategory`) column shows the description text at full
+              // width; the tag icon sits in the action row exactly like the note icon —
+              // hidden until row hover when unset, permanently visible and accented once
+              // a category is set.
               return (
                 <Cell
                   key={col.id}
@@ -296,9 +297,8 @@ export function WidgetGrid({
                   r={ri}
                   c={ci}
                   disabled={editing}
-                  tag={picker && !row.category ? <CategoryTag {...picker} /> : undefined}
-                  tagCount={picker && !row.category ? 1 : 0}
-                  chip={picker && row.category ? <CategoryChipButton {...picker} /> : undefined}
+                  tag={picker ? <CategoryTag {...picker} /> : undefined}
+                  tagCount={picker ? 1 : 0}
                   danger={mode === "columns" && dangerIndex === ci && !staged}
                   staged={mode === "columns" && staged}
                   onCommit={(v) => s().setCell(monthIndex, table.id, row.id, col.id, v)}
