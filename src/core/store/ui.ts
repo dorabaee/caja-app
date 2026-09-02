@@ -105,6 +105,27 @@ function writeMonthIndex(i: number): void {
   }
 }
 
+// Canvas zoom is a "resume where I left off" preference too — persisted the same way as
+// monthIndex, and (unlike monthIndex/sidebarCollapsed/navOrder) also carried in a backup
+// file's `prefs` block, since it's otherwise invisible outside this browser.
+const ZOOM_KEY = "caja:zoom";
+function readZoom(): number {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(ZOOM_KEY) : null;
+    const n = raw == null ? NaN : Number(raw);
+    return Number.isFinite(n) && n >= ZOOM_MIN && n <= ZOOM_MAX ? n : 1;
+  } catch {
+    return 1;
+  }
+}
+function writeZoom(z: number): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(ZOOM_KEY, String(z));
+  } catch {
+    /* ignore */
+  }
+}
+
 const NAV_KEY = "caja:nav";
 const NAV_VALUES: NavView[] = ["home", "month", "panel", "resumen", "allBiz"];
 function readNav(): NavView {
@@ -196,7 +217,7 @@ export const useUI = create<UIState>((set, get) => ({
   sendValue: null,
   selectedIds: new Set<string>(),
   selectedWidgetId: null,
-  zoom: 1,
+  zoom: readZoom(),
   view: "canvas",
   modal: "none",
   editProjectId: null,
@@ -259,10 +280,25 @@ export const useUI = create<UIState>((set, get) => ({
       return { selectedIds: next, selectedWidgetId: next.size === 1 ? [...next][0] : null };
     }),
   clearSelection: () => set({ selectedIds: new Set<string>(), selectedWidgetId: null }),
-  setZoom: (z) => set({ zoom: clampZoom(z) }),
-  zoomIn: () => set({ zoom: clampZoom(get().zoom + 0.1) }),
-  zoomOut: () => set({ zoom: clampZoom(get().zoom - 0.1) }),
-  resetZoom: () => set({ zoom: 1 }),
+  setZoom: (z) => {
+    const zoom = clampZoom(z);
+    writeZoom(zoom);
+    set({ zoom });
+  },
+  zoomIn: () => {
+    const zoom = clampZoom(get().zoom + 0.1);
+    writeZoom(zoom);
+    set({ zoom });
+  },
+  zoomOut: () => {
+    const zoom = clampZoom(get().zoom - 0.1);
+    writeZoom(zoom);
+    set({ zoom });
+  },
+  resetZoom: () => {
+    writeZoom(1);
+    set({ zoom: 1 });
+  },
   setView: (view) => set({ view }),
   openModal: (modal, tableId = null) => set({ modal, modalTableId: tableId }),
   closeModal: () => set({ modal: "none", modalTableId: null }),
@@ -275,3 +311,39 @@ export const useUI = create<UIState>((set, get) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
+
+/** The view preferences a backup file carries alongside the document: everything above
+ *  that lives only in this browser's localStorage, not in the doc JSON. */
+export interface ViewPrefs {
+  monthIndex: number;
+  zoom: number;
+  navOrder: NavView[];
+  sidebarCollapsed: boolean;
+}
+
+/** Snapshot of the current view preferences, for `createBackup()`. */
+export function getViewPrefs(): ViewPrefs {
+  const s = useUI.getState();
+  return {
+    monthIndex: s.monthIndex,
+    zoom: s.zoom,
+    navOrder: s.navOrder,
+    sidebarCollapsed: s.sidebarCollapsed,
+  };
+}
+
+/** Apply a backup's `prefs` block: persists to localStorage and updates the live store,
+ *  so a restore takes effect immediately rather than only on the next reload. */
+export function applyViewPrefs(prefs: ViewPrefs): void {
+  const s = useUI.getState();
+  if (Number.isInteger(prefs.monthIndex)) s.setMonth(prefs.monthIndex);
+  if (Number.isFinite(prefs.zoom)) s.setZoom(prefs.zoom);
+  if (
+    Array.isArray(prefs.navOrder) &&
+    prefs.navOrder.length === DEFAULT_NAV_ORDER.length &&
+    DEFAULT_NAV_ORDER.every((k) => prefs.navOrder.includes(k))
+  ) {
+    s.setNavOrder(prefs.navOrder);
+  }
+  if (typeof prefs.sidebarCollapsed === "boolean") s.setSidebarCollapsed(prefs.sidebarCollapsed);
+}

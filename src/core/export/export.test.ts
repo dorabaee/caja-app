@@ -1,14 +1,45 @@
 import { describe, expect, it } from "vitest";
 import { makeColumn, makeRow, newAppDoc, twelveMonths } from "@core/model/defaults";
-import type { Project, Table, WidgetLayout } from "@core/model/types";
+import type { Chart, Project, Table, WidgetLayout } from "@core/model/types";
 import {
   allBusinessesToCsv,
+  applyBackup,
   buildStatement,
+  createBackup,
   parseBackup,
   resumenToCsv,
   serializeBackup,
   statementYear,
+  type ViewPrefs,
 } from "@core/export";
+import { useStore } from "@core/store/store";
+import { useUI } from "@core/store/ui";
+import { setPlatform } from "@core/platform";
+
+setPlatform({
+  name: "web",
+  storage: {
+    async readDoc() {
+      return null;
+    },
+    async writeDoc() {
+      /* no-op in-memory stub */
+    },
+  },
+  dialog: {
+    async saveFile() {
+      return false;
+    },
+    async openFile() {
+      return null;
+    },
+  },
+  share: {
+    async openExternal() {
+      /* no-op */
+    },
+  },
+});
 
 const L: WidgetLayout = { x: 0, y: 0, w: 1, h: 1 };
 
@@ -115,5 +146,66 @@ describe("backup", () => {
     const parsed = parseBackup(JSON.stringify(legacy));
     expect(parsed.doc.projects).toHaveLength(1); // doc restores intact
     expect(parsed.blobs).toHaveLength(1); // tolerated, but applyBackup ignores them
+    expect(parsed.prefs).toBeUndefined(); // no prefs block written -> none restored
+  });
+
+  it("carries every widget's layout and every column's width through a full round-trip", () => {
+    const doc = newAppDoc();
+    const project = donaRosa();
+    const table = project.months[5].tables[0];
+    // Pin a distinctive layout and widths so a lossy round-trip is caught, not assumed away.
+    table.layout = { x: 12, y: 34, w: 5, h: 7, z: 3 };
+    table.columns[0].width = 88;
+    table.columns[1].width = 240;
+    const chart: Chart = {
+      id: "c1",
+      type: "bar",
+      title: "Ventas",
+      linkedTableIds: [table.id],
+      layout: { x: 1, y: 2, w: 3, h: 4, z: 1 },
+    };
+    project.months[5].charts = [chart];
+    doc.projects.push(project);
+    doc.currentProjectId = "p";
+
+    const prefs: ViewPrefs = { monthIndex: 5, zoom: 1.3, navOrder: ["panel", "month", "resumen", "allBiz"], sidebarCollapsed: true };
+    const text = serializeBackup(doc, [], "2026-06-17T00:00:00.000Z", prefs);
+    const parsed = parseBackup(text);
+
+    expect(parsed.doc).toEqual(doc);
+    const restoredTable = parsed.doc.projects[0].months[5].tables[0];
+    expect(restoredTable.layout).toEqual({ x: 12, y: 34, w: 5, h: 7, z: 3 });
+    expect(restoredTable.columns[0].width).toBe(88);
+    expect(restoredTable.columns[1].width).toBe(240);
+    expect(parsed.prefs).toEqual(prefs);
+  });
+
+  it("createBackup serializes the live store, not the last-persisted document", async () => {
+    const doc = newAppDoc();
+    const project = donaRosa();
+    doc.projects.push(project);
+    doc.currentProjectId = "p";
+    useStore.getState().load(doc);
+    useUI.getState().setZoom(1.5);
+
+    const text = await createBackup();
+    const parsed = parseBackup(text);
+    expect(parsed.doc.projects[0].name).toBe("Tienda de Doña Rosa");
+    expect(parsed.prefs?.zoom).toBe(1.5);
+  });
+
+  it("applyBackup restores the document and, when present, the view prefs", async () => {
+    const doc = newAppDoc();
+    doc.projects.push(donaRosa());
+    doc.currentProjectId = "p";
+    const prefs: ViewPrefs = { monthIndex: 3, zoom: 0.8, navOrder: ["resumen", "month", "panel", "allBiz"], sidebarCollapsed: true };
+    const parsed = parseBackup(serializeBackup(doc, [], "2026-06-17T00:00:00.000Z", prefs));
+
+    await applyBackup(parsed);
+
+    expect(useUI.getState().monthIndex).toBe(3);
+    expect(useUI.getState().zoom).toBe(0.8);
+    expect(useUI.getState().sidebarCollapsed).toBe(true);
+    expect(useUI.getState().navOrder).toEqual(prefs.navOrder);
   });
 });

@@ -1,6 +1,9 @@
 import { DOC_KEY, getStorage } from "../platform";
 import type { AppDoc } from "../model/types";
 import { CURRENT_SCHEMA_VERSION } from "../model/types";
+import { applyViewPrefs, getViewPrefs, type ViewPrefs } from "../store/ui";
+export type { ViewPrefs };
+import { useStore } from "../store/store";
 
 /**
  * Backup / restore — a single self-contained `.caja.json` file holding the whole
@@ -29,19 +32,28 @@ export interface BackupFile {
   doc: AppDoc;
   /** Legacy attachment payload — always [] in new backups, ignored on restore. */
   blobs: BackupBlob[];
+  /** View preferences (last month, zoom, sidebar order/collapsed) — optional so an
+   *  older backup file, which never wrote this, still restores exactly as it did before. */
+  prefs?: ViewPrefs;
 }
 
 export interface ParsedBackup {
   doc: AppDoc;
   blobs: BackupBlob[];
   exportedAt: string;
+  prefs?: ViewPrefs;
 }
 
 const INVALID = "El archivo no es un respaldo válido de Caja.";
 
 // ---- pure (testable) --------------------------------------------------------
 
-export function serializeBackup(doc: AppDoc, blobs: BackupBlob[], exportedAt: string): string {
+export function serializeBackup(
+  doc: AppDoc,
+  blobs: BackupBlob[],
+  exportedAt: string,
+  prefs?: ViewPrefs,
+): string {
   const file: BackupFile = {
     app: "caja",
     kind: "backup",
@@ -50,6 +62,7 @@ export function serializeBackup(doc: AppDoc, blobs: BackupBlob[], exportedAt: st
     exportedAt,
     doc,
     blobs,
+    ...(prefs ? { prefs } : {}),
   };
   return JSON.stringify(file, null, 2);
 }
@@ -80,27 +93,35 @@ export function parseBackup(text: string): ParsedBackup {
   const blobs = Array.isArray((raw as BackupFile).blobs) ? (raw as BackupFile).blobs : [];
   const exportedAt =
     typeof (raw as BackupFile).exportedAt === "string" ? (raw as BackupFile).exportedAt : "";
-  return { doc, blobs, exportedAt };
+  const prefsRaw = (raw as BackupFile).prefs;
+  const prefs =
+    prefsRaw && typeof prefsRaw === "object" ? (prefsRaw as ViewPrefs) : undefined;
+  return { doc, blobs, exportedAt, ...(prefs ? { prefs } : {}) };
 }
 
 // ---- IO (uses the active StorageAdapter) ------------------------------------
 
-/** Gather the current doc into a portable backup string. */
+/**
+ * Gather the current doc into a portable backup string. Serializes from the LIVE store
+ * rather than the last value written to storage: persistence is debounced (500ms), so a
+ * backup taken right after an edit would otherwise miss it.
+ */
 export async function createBackup(): Promise<string> {
-  const storage = getStorage();
-  const docText = await storage.readDoc(DOC_KEY);
-  if (!docText) throw new Error("Todavía no hay datos para respaldar.");
-  const doc = JSON.parse(docText) as AppDoc;
-  return serializeBackup(doc, [], new Date().toISOString());
+  const doc = useStore.getState().doc;
+  if (!doc.projects.length) throw new Error("Todavía no hay datos para respaldar.");
+  return serializeBackup(doc, [], new Date().toISOString(), getViewPrefs());
 }
 
 /**
- * Restore a parsed backup into storage; returns the doc so the caller can reload.
- * A legacy backup's `blobs` are ignored (the attachment feature was removed) — this
- * is the compatibility guard that lets old `.caja.json` files restore without error.
+ * Restore a parsed backup into storage and the live store; returns the doc so the caller
+ * can reload. A legacy backup's `blobs` are ignored (the attachment feature was removed)
+ * — this is the compatibility guard that lets old `.caja.json` files restore without
+ * error. A backup with no `prefs` block (any backup made before this field existed)
+ * leaves view preferences untouched, so it restores exactly as it did before.
  */
 export async function applyBackup(parsed: ParsedBackup): Promise<AppDoc> {
   const storage = getStorage();
   await storage.writeDoc(DOC_KEY, JSON.stringify(parsed.doc));
+  if (parsed.prefs) applyViewPrefs(parsed.prefs);
   return parsed.doc;
 }
