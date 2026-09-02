@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { Share2, Search, ArrowDown, ArrowUp, Check, X } from "lucide-react";
+import { Share2, Search, ArrowDown, ArrowUp, Check, X, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UNCATEGORIZED, monthlyExpenseCategories, yearlyResumen } from "@core/compute";
 import type { CategoryGroup } from "@core/model/types";
@@ -63,6 +63,18 @@ export function ResumenView() {
     [project, mode, group],
   );
 
+  // The two empty-state questions ("is there anything to show at all?" / "is it this
+  // half specifically?") need to see past the current tab/mode selection, so they're
+  // computed independently of `catRows` rather than inferred from it being empty.
+  const anyExpenseRows = useMemo(
+    () => (project ? monthlyExpenseCategories(project) : []),
+    [project],
+  );
+  const anyTaggedRows = useMemo(
+    () => (project ? monthlyExpenseCategories(project, { byCategory: true }) : []),
+    [project],
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const dir = descending ? 1 : -1;
@@ -75,6 +87,17 @@ export function ResumenView() {
 
   if (!project) return null;
   const { months, totals } = yearlyResumen(project);
+
+  // Fiscal/No fiscal tabs own the grouping (they force byCategory), so the sort
+  // control has to read as "Categoría" while one of them is active — it can't keep
+  // showing "Nombre" highlighted while the list is actually grouped by category. The
+  // two controls speak with one voice: picking Cantidad/Nombre snaps the tab back to
+  // Todos, and the tab, while active, is what the segmented control shows as selected.
+  const effectiveMode: CatMode = group !== "all" ? "category" : mode;
+  const setModeAndGroup = (m: CatMode) => {
+    setMode(m);
+    if (m !== "category") setGroup("all");
+  };
 
   const toggle = (label: string) =>
     setSelected((prev) => {
@@ -171,9 +194,9 @@ export function ResumenView() {
                 <button
                   key={m}
                   type="button"
-                  className={cn(styles.segBtn, mode === m && styles.segOn)}
-                  aria-pressed={mode === m}
-                  onClick={() => setMode(m)}
+                  className={cn(styles.segBtn, effectiveMode === m && styles.segOn)}
+                  aria-pressed={effectiveMode === m}
+                  onClick={() => setModeAndGroup(m)}
                 >
                   {t(MODE_KEY[m])}
                 </button>
@@ -201,7 +224,22 @@ export function ResumenView() {
         </div>
 
         {catRows.length === 0 ? (
-          <p className={styles.catEmpty}>{t("dash.noExpenseCategories")}</p>
+          <p className={styles.catEmpty}>
+            {anyExpenseRows.length === 0 ? (
+              t("dash.noExpensesAtAll")
+            ) : anyTaggedRows.length === 0 ? (
+              <>
+                {t("dash.noExpensesTaggedBefore")} <Tag size={13} aria-hidden /> {t("dash.noExpensesTaggedAfter")}
+              </>
+            ) : group !== "all" ? (
+              <>
+                {t(group === "fiscal" ? "dash.noHalfExpensesFiscalBefore" : "dash.noHalfExpensesNoFiscalBefore")}{" "}
+                <strong>{t("dash.groupAll")}</strong> {t("dash.noHalfExpensesAfter")}
+              </>
+            ) : (
+              t("dash.noExpenseCategories")
+            )}
+          </p>
         ) : filtered.length === 0 ? (
           <p className={styles.catEmpty}>{t("dash.noCategoryMatch")}</p>
         ) : (
