@@ -5,7 +5,7 @@ import type { Project, Table } from "@core/model/types";
 
 /** An expense table whose description column doubles as the category column. */
 function expenseTable(rows: [string, string][]): Table {
-  const desc = makeColumn("Descripción", "text", { category: true });
+  const desc = makeColumn("Descripción", "text", { withCategory: true });
   const monto = makeColumn("Monto", "money");
   const cols = [desc, monto];
   return {
@@ -45,6 +45,40 @@ describe("categoryBreakdownForTable", () => {
   it("ignores rows with no amount", () => {
     const slices = categoryBreakdownForTable(expenseTable([["Gasolina", "0"]]), ["Gasolina"]);
     expect(slices).toEqual([]);
+  });
+});
+
+describe("categoryBreakdownForTable — description and category are separate fields", () => {
+  /** Two different descriptions, one shared category — the case a category column exists for. */
+  function twoGasRows(): Table {
+    const table = expenseTable([
+      ["Gasolina de la camioneta", "600"],
+      ["Gasolina personal", "400"],
+      ["Cubeta y Trapeador", "870"],
+    ]);
+    table.rows[0].category = "Gasolina";
+    table.rows[1].category = "Gasolina";
+    return table;
+  }
+
+  it("files both descriptions under the one category they share", () => {
+    const slices = categoryBreakdownForTable(twoGasRows(), ["Gasolina"]);
+    const byLabel = Object.fromEntries(slices.map((s) => [s.label, s.value]));
+    expect(byLabel.Gasolina).toBe(1000);
+    expect(byLabel[UNCATEGORIZED]).toBe(870);
+  });
+
+  it("still lists the descriptions separately when grouping by description", () => {
+    const slices = categoryBreakdownForTable(twoGasRows());
+    expect(slices.map((s) => s.label).sort()).toEqual(
+      ["Cubeta y Trapeador", "Gasolina de la camioneta", "Gasolina personal"].sort(),
+    );
+  });
+
+  it("falls back to the cell text for a row that has no category of its own", () => {
+    // A doc that predates the split (or a hand-edited import) groups as it always did.
+    const slices = categoryBreakdownForTable(expenseTable([["Gasolina", "100"]]), ["Gasolina"]);
+    expect(slices).toEqual([{ label: "Gasolina", value: 100 }]);
   });
 });
 

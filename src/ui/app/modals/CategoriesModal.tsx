@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X, Plus } from "lucide-react";
 import type { CategoryGroup } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
-import { categoryBreakdownForTable } from "@core/compute";
+import { categoryBreakdownForTable, categoryColumnOf } from "@core/compute";
 import { Button, ConfirmPopover, Modal, TextInput } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
@@ -43,7 +43,7 @@ export function CategoriesModal() {
 
   const categories = project.categories ?? [];
   const textColumns = table.columns.filter((c) => c.type === "text");
-  const categoryColumn = table.columns.find((c) => c.category) ?? null;
+  const categoryColumn = categoryColumnOf(table);
   const breakdown = categoryBreakdownForTable(table);
 
   const addCategory = () => {

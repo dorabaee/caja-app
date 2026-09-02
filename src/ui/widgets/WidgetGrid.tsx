@@ -18,9 +18,10 @@ import {
   Maximize2,
   GripVertical,
   GripHorizontal,
+  ArrowLeftRight,
 } from "lucide-react";
-import type { Column, ColumnType, Row, Table } from "@core/model/types";
-import { recurringDefIdFromRowId } from "@core/compute";
+import type { CategoryGroup, Column, ColumnType, Row, Table } from "@core/model/types";
+import { categoryColumnOf, recurringDefIdFromRowId } from "@core/compute";
 import { MIN_COLUMN_WIDTH } from "@core/model/defaults";
 import { useStore, useUI } from "@core/store";
 import { ConfirmPopover, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, cn } from "@ui/common";
@@ -29,9 +30,15 @@ import { useListReorder } from "@ui/hooks/useListReorder";
 import type { WidgetMode } from "@ui/hooks/useTableMode";
 import { Cell } from "./cells/Cell";
 import { CategoryTag } from "./cells/CategoryTag";
+import { CategoryCell, CategoryChip } from "./cells/CategoryCell";
 import styles from "./widget.module.css";
 
-const TYPE_KEY = { text: "widgets.typeText", money: "widgets.typeMoney", date: "widgets.typeDate" } as const;
+const TYPE_KEY: Record<ColumnType, string> = {
+  text: "widgets.typeText",
+  money: "widgets.typeMoney",
+  date: "widgets.typeDate",
+  category: "widgets.typeCategory",
+};
 
 /** Columns carry their own reorder attribute: `querySelectorAll` walks descendants, so a
  *  row drag scanning the grid would otherwise sweep up the header cells too. */
@@ -48,7 +55,9 @@ export function gridTemplate(columns: Column[], widths?: Record<string, number>)
       ? "minmax(84px, 1fr)"
       : c.type === "date"
         ? "minmax(116px, 150px)"
-        : "minmax(96px, 1.6fr)";
+        : c.type === "category"
+          ? "minmax(120px, 0.9fr)"
+          : "minmax(96px, 1.6fr)";
   });
   parts.push("64px"); // row-actions column (tag + row menu)
   return parts.join(" ");
@@ -106,7 +115,12 @@ export function WidgetGrid({
   const send = useUI((u) => u.sendValue); // #7 send-a-value flow (highlights destinations)
   const project = useCurrentProject();
   const categories = project?.categories ?? [];
-  const categoryColumn = table.columns.find((c) => c.category) ?? null; // #14 row tag target
+  const categoryColumn = categoryColumnOf(table); // #14 row tag target
+  // A merged column shows one face at a time. The face is read-state, not document
+  // state: flipping it shows the category you picked instead of the description you
+  // typed, and never rewrites either one.
+  const showCategoryFace = useUI((u) => u.categoryFaces.has(table.id));
+  const toggleFace = useUI((u) => u.toggleCategoryFace);
   const gridRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<{ r: number; c: number } | null>(null);
   // Column the pointer is over in "columns" mode — tints the whole column, which CSS
@@ -217,6 +231,8 @@ export function WidgetGrid({
               canStage={canStageMore}
               onStage={() => onStageDelete?.(col.id)}
               onUnstage={() => onUnstageDelete?.(col.id)}
+              onToggleFace={col.withCategory ? () => toggleFace(table.id) : undefined}
+              showingCategory={showCategoryFace}
               onHover={(over) =>
                 setDangerIndex((prev) => (over ? ci : prev === ci ? null : prev))
               }
@@ -243,6 +259,46 @@ export function WidgetGrid({
               const receiving =
                 !editing && !!send && col.type === "money" && send.sourceKey !== sendKey;
               const staged = !!pendingDeletes?.has(col.id);
+              const isCategoryCol = categoryColumn?.id === col.id;
+              const picker = isCategoryCol
+                ? {
+                    value: row.category ?? "",
+                    categories,
+                    preferredGroup: (table.fiscal ? "fiscal" : "noFiscal") as CategoryGroup,
+                    onSelect: (name: string) =>
+                      s().setRowCategory(monthIndex, table.id, row.id, name),
+                    onCreate: (name: string, group: CategoryGroup) => {
+                      const pid = s().doc.currentProjectId;
+                      if (pid)
+                        s().updateProject(pid, { categories: [...categories, { name, group }] });
+                      s().setRowCategory(monthIndex, table.id, row.id, name);
+                    },
+                    onClear: () => s().setRowCategory(monthIndex, table.id, row.id, ""),
+                  }
+                : null;
+
+              // A column that is only the category, and a merged column turned to its
+              // category face, are the same cell: a chip you click, nothing to type.
+              if (picker && (col.type === "category" || (col.withCategory && showCategoryFace))) {
+                return (
+                  <CategoryCell
+                    key={col.id}
+                    {...picker}
+                    disabled={editing}
+                    danger={mode === "columns" && dangerIndex === ci && !staged}
+                    staged={mode === "columns" && staged}
+                    actions={
+                      col.withCategory && !editing ? (
+                        <FaceSwitch
+                          showingCategory
+                          onClick={() => toggleFace(table.id)}
+                        />
+                      ) : undefined
+                    }
+                  />
+                );
+              }
+
               return (
                 <Cell
                   key={col.id}
@@ -253,24 +309,14 @@ export function WidgetGrid({
                   c={ci}
                   disabled={editing}
                   tag={
-                    categoryColumn?.id === col.id ? (
-                      <CategoryTag
-                        value={cellVal}
-                        categories={categories}
-                        preferredGroup={table.fiscal ? "fiscal" : "noFiscal"}
-                        onSelect={(name) =>
-                          s().setCell(monthIndex, table.id, row.id, col.id, name)
-                        }
-                        onCreate={(name, group) => {
-                          const pid = s().doc.currentProjectId;
-                          if (pid)
-                            s().updateProject(pid, { categories: [...categories, { name, group }] });
-                          s().setCell(monthIndex, table.id, row.id, col.id, name);
-                        }}
-                        onClear={() => s().setCell(monthIndex, table.id, row.id, col.id, "")}
-                      />
+                    picker ? (
+                      <>
+                        <CategoryTag {...picker} />
+                        <FaceSwitch onClick={() => toggleFace(table.id)} />
+                      </>
                     ) : undefined
                   }
+                  tagCount={picker ? 2 : 0}
                   danger={mode === "columns" && dangerIndex === ci && !staged}
                   staged={mode === "columns" && staged}
                   onCommit={(v) => s().setCell(monthIndex, table.id, row.id, col.id, v)}
@@ -350,6 +396,31 @@ export function WidgetGrid({
   );
 }
 
+/**
+ * Flips a merged column between the description you type and the category you pick.
+ * Sits right beside the category tag, so both faces of the column are one click apart
+ * without the table growing a second column.
+ */
+function FaceSwitch({ showingCategory, onClick }: { showingCategory?: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
+  const label = showingCategory ? t("widgets.showDescription") : t("widgets.showCategory");
+  return (
+    <button
+      type="button"
+      className={cn(styles.cellBtn, styles.faceSwitch)}
+      title={label}
+      aria-label={label}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      <ArrowLeftRight size={12} aria-hidden />
+    </button>
+  );
+}
+
 /** A read-time recurring occurrence: muted cells; edits write a per-month override. */
 function RecurringRow({
   monthIndex,
@@ -382,21 +453,31 @@ function RecurringRow({
 
   return (
     <div className={cn(styles.row, styles.recurringRow)} title={t("widgets.recurringRow")}>
-      {columns.map((col, ci) => (
-        <Cell
-          key={col.id}
-          type={col.type}
-          value={row.cells[col.id] ?? ""}
-          note=""
-          r={r}
-          c={ci}
-          recurring
-          disabled={disabled}
-          onCommit={(v) => override(col, v)}
-          onNote={() => {}}
-          onEnter={() => {}}
-        />
-      ))}
+      {columns.map((col, ci) =>
+        col.type === "category" ? (
+          // A recurring occurrence has no row of its own to categorise — it shows the
+          // series' category, read-only, and the series is edited from its own modal.
+          <div key={col.id} className={cn(styles.cell, styles.catCell)}>
+            <span className={styles.catCellStatic}>
+              <CategoryChip name={row.category ?? ""} muted />
+            </span>
+          </div>
+        ) : (
+          <Cell
+            key={col.id}
+            type={col.type}
+            value={row.cells[col.id] ?? ""}
+            note=""
+            r={r}
+            c={ci}
+            recurring
+            disabled={disabled}
+            onCommit={(v) => override(col, v)}
+            onNote={() => {}}
+            onEnter={() => {}}
+          />
+        ),
+      )}
       <div className={styles.actionsCell}>
         {!disabled && (
           <Menu
@@ -440,6 +521,8 @@ function ColumnHeader({
   onGrip,
   dragging,
   dropTarget,
+  onToggleFace,
+  showingCategory,
 }: {
   monthIndex: number;
   tableId: string;
@@ -456,6 +539,9 @@ function ColumnHeader({
   onGrip: (e: ReactPointerEvent<HTMLElement>) => void;
   dragging: boolean;
   dropTarget: boolean;
+  /** Merged column only: flips the whole column between its two faces. */
+  onToggleFace?: () => void;
+  showingCategory?: boolean;
 }) {
   const { t } = useTranslation();
   const s = useStore.getState;
@@ -539,6 +625,18 @@ function ColumnHeader({
 
   return (
     <div className={styles.headCell}>
+      {column.withCategory && onToggleFace && (
+        <button
+          type="button"
+          className={cn(styles.cellBtn, styles.headFaceSwitch)}
+          title={t("widgets.categoryFace")}
+          aria-label={showingCategory ? t("widgets.showDescription") : t("widgets.showCategory")}
+          aria-pressed={showingCategory}
+          onClick={onToggleFace}
+        >
+          <ArrowLeftRight size={12} aria-hidden />
+        </button>
+      )}
       <input
         className={cn(styles.colInput, column.type === "money" && styles.colInputRight, roleClass)}
         value={name}
@@ -564,7 +662,7 @@ function ColumnHeader({
           }
         >
           <MenuLabel>{t("widgets.columnType")}</MenuLabel>
-          {(["text", "money", "date"] as ColumnType[]).map((ct) => (
+          {(["text", "money", "date", "category"] as ColumnType[]).map((ct) => (
             <MenuItem
               key={ct}
               checked={column.type === ct}

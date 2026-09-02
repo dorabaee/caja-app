@@ -49,6 +49,9 @@ export interface CellProps {
   staged?: boolean;
   /** Category picker for the table's category column — sits beside this cell's note. */
   tag?: ReactNode;
+  /** How many buttons `tag` renders (it may be a fragment), so the input reserves the
+   *  right amount of room. Defaults to 1 when a tag is present. */
+  tagCount?: number;
   /** #7: this money cell has a value that can be "sent" to another cell. */
   sendable?: boolean;
   onSend?: () => void;
@@ -71,6 +74,7 @@ export function Cell({
   danger,
   staged,
   tag,
+  tagCount,
   sendable,
   onSend,
   receiving,
@@ -138,7 +142,8 @@ export function Cell({
   const showActions = !recurring && !disabled;
   // How many buttons the row of actions holds — the input reserves room for exactly that
   // many, so text never runs underneath them.
-  const actionCount = showActions ? 1 + (tag ? 1 : 0) + (isDate ? 1 : 0) + (sendIcon ? 1 : 0) : 0;
+  const tagButtons = tag ? (tagCount ?? 1) : 0;
+  const actionCount = showActions ? 1 + tagButtons + (isDate ? 1 : 0) + (sendIcon ? 1 : 0) : 0;
   const actions = showActions && (
     <span className={cn(styles.cellActions, isMoney && styles.cellActionsLeft)}>
       {tag}

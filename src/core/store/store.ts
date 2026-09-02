@@ -101,6 +101,8 @@ export interface StoreState {
   removeColumns(monthIndex: number, tableId: string, columnIds: string[]): void;
   renameColumn(monthIndex: number, tableId: string, columnId: string, name: string): void;
   setColumnType(monthIndex: number, tableId: string, columnId: string, type: ColumnType): void;
+  /** Set (or clear, with "") the row's own category — never touches its cells. */
+  setRowCategory(monthIndex: number, tableId: string, rowId: string, category: string): void;
   /** Mark a column as the table's category column (clears the flag from others). */
   setColumnCategory(monthIndex: number, tableId: string, columnId: string | null): void;
   /** Reorder a table's columns to match the given id order (reorder mode's ✓). */
@@ -450,7 +452,15 @@ export const useStore = create<StoreState>()((set, get) => {
       commit((d) => {
         const t = findTable(d, monthIndex, tableId);
         if (!t) return;
-        const labels: Record<ColumnType, string> = { money: "Monto", text: "Texto", date: "Fecha" };
+        const labels: Record<ColumnType, string> = {
+          money: "Monto",
+          text: "Texto",
+          date: "Fecha",
+          category: "Categoría",
+        };
+        // Only one column can be the category picker; adding a dedicated one takes the
+        // job away from whichever column held it, so a row never has two pickers.
+        if (type === "category") for (const c of t.columns) delete c.withCategory;
         const col = makeColumn(labels[type], type);
         t.columns.push(col);
         for (const r of t.rows) r.cells[col.id] = "";
@@ -484,8 +494,22 @@ export const useStore = create<StoreState>()((set, get) => {
 
     setColumnType: (monthIndex, tableId, columnId, type) =>
       commit((d) => {
-        const c = findTable(d, monthIndex, tableId)?.columns.find((x) => x.id === columnId);
-        if (c) c.type = type;
+        const t = findTable(d, monthIndex, tableId);
+        const c = t?.columns.find((x) => x.id === columnId);
+        if (!t || !c) return;
+        c.type = type;
+        // Only one column picks categories: becoming the dedicated one takes the job
+        // from any merged column, and leaving "text" gives up the merged face.
+        if (type === "category") for (const other of t.columns) delete other.withCategory;
+        else if (type !== "text") delete c.withCategory;
+      }),
+
+    setRowCategory: (monthIndex, tableId, rowId, category) =>
+      commit((d) => {
+        const r = findTable(d, monthIndex, tableId)?.rows.find((x) => x.id === rowId);
+        if (!r) return;
+        if (category) r.category = category;
+        else delete r.category;
       }),
 
     setColumnCategory: (monthIndex, tableId, columnId) =>
@@ -493,8 +517,9 @@ export const useStore = create<StoreState>()((set, get) => {
         const t = findTable(d, monthIndex, tableId);
         if (!t) return;
         for (const c of t.columns) {
-          if (columnId && c.id === columnId) c.category = true;
-          else delete c.category;
+          delete c.category; // the pre-v3 flag never comes back
+          if (columnId && c.id === columnId && c.type === "text") c.withCategory = true;
+          else delete c.withCategory;
         }
       }),
 
@@ -554,6 +579,7 @@ export const useStore = create<StoreState>()((set, get) => {
         t.rows.splice(idx + 1, 0, {
           id: id(),
           cells: { ...src.cells },
+          ...(src.category ? { category: src.category } : {}),
           notes: { ...(src.notes ?? {}) },
           links: { ...(src.links ?? {}) },
         });

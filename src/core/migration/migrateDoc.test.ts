@@ -88,6 +88,65 @@ describe("migrateDoc — v1 → v2 (fiscal tables + grouped categories)", () => 
   it("backfills a category column on ledgers so row tags can render", () => {
     const doc = migrateDoc(legacyDoc());
     const ledger = doc.projects[0].months[0].tables[0];
-    expect(ledger.columns.find((c) => c.category)?.name).toBe("Descripción");
+    expect(ledger.columns.find((c) => c.withCategory)?.name).toBe("Descripción");
+  });
+});
+
+describe("migrateDoc — v2 → v3 (the category moves off the description cell)", () => {
+  function v2Doc(): AppDoc {
+    const project = newProject("P");
+    project.categories = [
+      { name: "Gasolina", group: "fiscal" },
+      { name: "Servicios", group: "fiscal" },
+    ];
+    project.months[0].tables = [
+      {
+        id: "t1",
+        title: "Salida de Dinero",
+        kind: "expense",
+        columns: [
+          { id: "c1", name: "Descripción", type: "text", category: true },
+          { id: "c2", name: "Monto", type: "money" },
+        ],
+        rows: [
+          { id: "r1", cells: { c1: "gasolina", c2: "100" } },
+          { id: "r2", cells: { c1: "Cubeta y Trapeador", c2: "870" } },
+        ],
+        layout: { x: 0, y: 0, w: 400, h: 300 },
+      },
+    ];
+    return { ...newAppDoc(), schemaVersion: 2, projects: [project] };
+  }
+
+  it("gives a row the category its text named, keeping the text itself", () => {
+    const table = migrateDoc(v2Doc()).projects[0].months[0].tables[0];
+    const [gas, cubeta] = table.rows;
+    // Canonicalised to the project's spelling, and the description survives verbatim.
+    expect(gas.category).toBe("Gasolina");
+    expect(gas.cells.c1).toBe("gasolina");
+    // A free-typed description names no category, so the row simply has none yet.
+    expect(cubeta.category).toBeUndefined();
+    expect(cubeta.cells.c1).toBe("Cubeta y Trapeador");
+  });
+
+  it("re-flags the column as carrying both faces and drops the old marker", () => {
+    const col = migrateDoc(v2Doc()).projects[0].months[0].tables[0].columns[0];
+    expect(col.withCategory).toBe(true);
+    expect("category" in col).toBe(false);
+  });
+
+  it("leaves an already-migrated doc alone on the next boot", () => {
+    const once = migrateDoc(v2Doc());
+    once.projects[0].months[0].tables[0].rows[0].category = "Servicios"; // user re-files it
+    const twice = migrateDoc(once);
+    expect(twice.projects[0].months[0].tables[0].rows[0].category).toBe("Servicios");
+    expect(twice.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+  });
+
+  it("does not invent a category for a cleared row", () => {
+    const once = migrateDoc(v2Doc());
+    delete once.projects[0].months[0].tables[0].rows[0].category; // user cleared the tag
+    const twice = migrateDoc(once);
+    expect(twice.projects[0].months[0].tables[0].rows[0].category).toBeUndefined();
   });
 });

@@ -47,9 +47,11 @@ function mapKind(kind: unknown, title: string): TableKind {
 }
 
 function mapColumn(c: any, kind: TableKind): Column {
-  const type: ColumnType = ["text", "money", "date"].includes(c?.type) ? c.type : "text";
+  const type: ColumnType = ["text", "money", "date", "category"].includes(c?.type) ? c.type : "text";
   const col: Column = { id: String(c?.id ?? id()), name: String(c?.name ?? ""), type };
-  if (c?.category) col.category = true;
+  // The legacy app's category column carried the description too — that's exactly the
+  // `withCategory` shape, so it imports straight into it.
+  if (c?.category && type === "text") col.withCategory = true;
   if (kind === "ledger" && type === "money") {
     const n = col.name.toLowerCase();
     if (n.includes("dep")) col.role = "deposit";

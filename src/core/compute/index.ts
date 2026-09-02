@@ -1,3 +1,4 @@
+export * from "./categoryColumn";
 export * from "./tables";
 export * from "./rows";
 export * from "./monthly";

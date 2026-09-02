@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   GripVertical,
@@ -12,6 +12,7 @@ import {
   ClipboardCopy,
   Trash2,
   Tags,
+  Tag,
   Repeat,
 } from "lucide-react";
 import type { ColumnType, Table, TableKind } from "@core/model/types";
@@ -37,8 +38,18 @@ const KIND_DOT: Record<Exclude<TableKind, "ledger">, string> = {
   expense: styles.dotExpense,
   none: styles.dotNone,
 };
-const TYPE_ICON = { text: <Type />, money: <DollarSign />, date: <Calendar /> } as const;
-const TYPE_KEY = { text: "widgets.typeText", money: "widgets.typeMoney", date: "widgets.typeDate" } as const;
+const TYPE_ICON: Record<ColumnType, ReactNode> = {
+  text: <Type />,
+  money: <DollarSign />,
+  date: <Calendar />,
+  category: <Tag />,
+};
+const TYPE_KEY: Record<ColumnType, string> = {
+  text: "widgets.typeText",
+  money: "widgets.typeMoney",
+  date: "widgets.typeDate",
+  category: "widgets.typeCategory",
+};
 
 export const TableWidget = memo(function TableWidget({
   monthIndex,
@@ -150,6 +161,9 @@ export const TableWidget = memo(function TableWidget({
           <MenuItem icon={<Calendar />} onClick={() => s().addColumn(monthIndex, table.id, "date")}>
             {t("widgets.typeDate")}
           </MenuItem>
+          <MenuItem icon={<Tag />} onClick={() => s().addColumn(monthIndex, table.id, "category")}>
+            {t("widgets.typeCategory")}
+          </MenuItem>
           <MenuSeparator />
           <MenuItem icon={<Tags />} onClick={() => openModal("categories", table.id)}>
             {t("widgets.categories")}
@@ -226,7 +240,7 @@ export const TableWidget = memo(function TableWidget({
             </Button>
           }
         >
-          {(["text", "money", "date"] as ColumnType[]).map((ct) => (
+          {(["text", "money", "date", "category"] as ColumnType[]).map((ct) => (
             <MenuItem key={ct} icon={TYPE_ICON[ct]} onClick={() => s().addColumn(monthIndex, table.id, ct)}>
               {t(TYPE_KEY[ct])}
             </MenuItem>

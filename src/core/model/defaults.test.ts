@@ -59,7 +59,7 @@ describe("makeIncomeTable", () => {
 describe("makeExpenseTable", () => {
   it("marks one category column", () => {
     const t = makeExpenseTable();
-    expect(t.columns.filter((c) => c.category).length).toBe(1);
+    expect(t.columns.filter((c) => c.withCategory).length).toBe(1);
   });
 });
 

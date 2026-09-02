@@ -13,7 +13,7 @@ import {
 const L: WidgetLayout = { x: 0, y: 0, w: 1, h: 1 };
 
 function expenseTable(values: number[]): Table {
-  const desc = makeColumn("Descripción", "text", { category: true });
+  const desc = makeColumn("Descripción", "text", { withCategory: true });
   const monto = makeColumn("Monto", "money");
   const rows = values.map((v) => makeRow([desc, monto], { [monto.id]: String(v) }));
   return { id: "exp", title: "Gastos", kind: "expense", columns: [desc, monto], rows, layout: L };

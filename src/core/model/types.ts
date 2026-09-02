@@ -1,6 +1,11 @@
 // Caja domain model — portable, framework-agnostic.
 
-export type ColumnType = "text" | "money" | "date";
+/**
+ * "category" is a column with no typed value of its own: its cell is the category chip
+ * and nothing else, reading the row's own `category` field. Every other type stores a
+ * string in `row.cells`.
+ */
+export type ColumnType = "text" | "money" | "date" | "category";
 
 /** How a table participates in the monthly Entró / Salió / Te queda totals. */
 export type TableKind = "income" | "expense" | "none" | "ledger";
@@ -35,8 +40,12 @@ export interface Column {
   id: string;
   name: string;
   type: ColumnType;
-  /** Marks the column whose value is used to group rows into categories. */
+  /** Legacy: the column whose *text* was the category. Kept so pre-v3 docs still read;
+   *  migration turns it into `withCategory` and moves the value onto the row. */
   category?: boolean;
+  /** Text column that also carries the row's category, behind a switch in its header:
+   *  one column, two faces (the description you type, and the category you pick). */
+  withCategory?: boolean;
   /** Only meaningful for ledger tables. */
   role?: LedgerRole;
   /** User-set fixed width in px (drag the header edge). Unset = flex to fit (#2). */
@@ -46,6 +55,9 @@ export interface Column {
 export interface Row {
   id: string;
   cells: Record<string, string>; // columnId -> raw string value
+  /** The row's category, stored apart from any cell so a free-typed description
+   *  ("Gasolina de la camioneta") and its category ("Gasolina") can differ. */
+  category?: string;
   notes?: Record<string, string>; // columnId -> note text
   links?: Record<string, string>; // columnId -> url
 }
@@ -155,5 +167,5 @@ export interface AppDoc {
   migratedFromLegacy?: boolean;
 }
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 export const MONTHS_PER_YEAR = 12;

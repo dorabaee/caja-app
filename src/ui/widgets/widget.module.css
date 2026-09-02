@@ -1056,3 +1056,100 @@
 .calToday:hover {
   background: var(--accent-weak);
 }
+
+/* ---------- category chip + category-only cell ---------- */
+/* One token, drawn the same in a table cell and in the Resumen's summary, so a category
+   is recognisable wherever it turns up. `--cat-color` is set per chip by the caller. */
+.catChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  height: 24px;
+  padding: 0 var(--space-2) 0 var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--border-strong)) 40%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--cat-color, var(--surface-2)) 12%, var(--surface));
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+.catChipDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--cat-color, var(--text-subtle));
+}
+.catChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catChipEmpty {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-subtle);
+}
+.catChipEmpty svg {
+  flex: none;
+}
+.catChipMuted {
+  opacity: 0.6;
+}
+
+/* A cell with nothing to type: the chip fills it and the whole thing is the trigger. */
+.catCell {
+  padding: 0;
+}
+.catCellBtn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--space-3);
+  border-radius: 0;
+  text-align: left;
+  min-width: 0;
+}
+.catCellBtn:hover {
+  background: var(--surface-hover);
+}
+.catCellBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.catCellStatic {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--space-3);
+  min-width: 0;
+}
+/* The switch rides in the cell's corner, over the chip rather than beside it, so the
+   merged column costs no extra width. */
+.catCell .faceSwitch {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  transform: translateY(-50%);
+}
+.faceSwitch {
+  color: var(--text-subtle);
+}
+.faceSwitch:hover {
+  color: var(--accent-strong);
+}
+
+/* The header's own copy of the switch, so a column can be flipped without hunting for a
+   cell — sits before the name, where the column's identity is read. */
+.headFaceSwitch {
+  flex: none;
+  margin-left: var(--space-1);
+  color: var(--text-subtle);
+}
+.headFaceSwitch[aria-pressed="true"] {
+  color: var(--accent-strong);
+  background: var(--accent-weak);
+}

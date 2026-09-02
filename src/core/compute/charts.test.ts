@@ -7,7 +7,7 @@ const L: WidgetLayout = { x: 0, y: 0, w: 1, h: 1 };
 
 function expenseTable(rows: { fecha?: string; desc?: string; monto: number | "" }[]): Table {
   const fecha = makeColumn("Fecha", "date");
-  const desc = makeColumn("Descripción", "text", { category: true });
+  const desc = makeColumn("Descripción", "text", { withCategory: true });
   const monto = makeColumn("Monto", "money");
   return {
     id: "exp",

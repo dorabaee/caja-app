@@ -45,7 +45,7 @@ export function id(): string {
 export function makeColumn(
   name: string,
   type: ColumnType,
-  extra?: { category?: boolean; role?: LedgerRole },
+  extra?: { withCategory?: boolean; role?: LedgerRole },
 ): Column {
   return { id: id(), name, type, ...extra };
 }
@@ -140,7 +140,7 @@ export function makeIncomeTable(layout?: Partial<WidgetLayout>): Table {
 export function makeExpenseTable(layout?: Partial<WidgetLayout>): Table {
   const cols = [
     makeColumn("Fecha", "date"),
-    makeColumn("Descripción", "text", { category: true }),
+    makeColumn("Descripción", "text", { withCategory: true }),
     makeColumn("Monto", "money"),
   ];
   const rows = Array.from({ length: 4 }, () => makeRow(cols));
@@ -161,7 +161,7 @@ export function makeLedgerTable(layout?: Partial<WidgetLayout>): Table {
     makeColumn("Fecha", "date"),
     makeColumn("Depósito", "money", { role: "deposit" }),
     makeColumn("Importe del gasto", "money", { role: "withdrawal" }),
-    makeColumn("Descripción", "text", { category: true }),
+    makeColumn("Descripción", "text", { withCategory: true }),
   ];
   const rows = Array.from({ length: 3 }, () => makeRow(cols));
   return {
@@ -217,6 +217,7 @@ export function cloneTable(src: Table, opts?: { withData?: boolean; titleSuffix?
   };
   clone.rows = clone.rows.map((r) => ({
     id: id(),
+    ...(withData && r.category ? { category: r.category } : {}),
     cells: withData ? remap(r.cells) : {},
     notes: withData ? remap(r.notes) : {},
     links: withData ? remap(r.links) : {},
@@ -256,6 +257,7 @@ export function cloneMonth(src: Month, withData: boolean): Month {
       columns,
       rows: tbl.rows.map((r) => ({
         id: id(),
+        ...(withData && r.category ? { category: r.category } : {}),
         cells: withData ? remap(r.cells) : {},
         notes: withData ? remap(r.notes) : {},
         links: withData ? remap(r.links) : {},

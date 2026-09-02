@@ -99,6 +99,12 @@
     "today": "Hoy",
     "datePlaceholder": "dd/mm/aaaa",
     "bankChoose": "Cuenta bancaria…",
-    "bankNamed": "Cuenta: {{name}}"
+    "bankNamed": "Cuenta: {{name}}",
+    "typeCategory": "Categoría",
+    "showDescription": "Ver descripción",
+    "showCategory": "Ver categoría",
+    "categoryFace": "Descripción / Categoría",
+    "categoryEmpty": "Sin categoría",
+    "categoryCellHint": "Elegir categoría"
   }
 }

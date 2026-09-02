@@ -12,6 +12,7 @@ import {
   ClipboardCopy,
   Trash2,
   Tags,
+  Tag,
   Repeat,
 } from "lucide-react";
 import type { Table } from "@core/model/types";
@@ -111,6 +112,9 @@ export const LedgerWidget = memo(function LedgerWidget({
           </MenuItem>
           <MenuItem icon={<Calendar />} onClick={() => s().addColumn(monthIndex, table.id, "date")}>
             {t("widgets.typeDate")}
+          </MenuItem>
+          <MenuItem icon={<Tag />} onClick={() => s().addColumn(monthIndex, table.id, "category")}>
+            {t("widgets.typeCategory")}
           </MenuItem>
           <MenuSeparator />
           <MenuItem icon={<Tags />} onClick={() => openModal("categories", table.id)}>

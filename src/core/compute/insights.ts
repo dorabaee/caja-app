@@ -1,4 +1,5 @@
 import { parseMoney } from "../format/money";
+import { categoryColumnOf, rowCategory } from "./categoryColumn";
 import type { Month, Project, Table } from "../model/types";
 import { tableTotal } from "./tables";
 import { materializeMonth, materializedMonths, monthlyTotals, yearlyResumen } from "./monthly";
@@ -66,7 +67,8 @@ export const UNCATEGORIZED = "Sin categoría";
  * "Sin categoría"; omit it to group by the raw text, description and all.
  */
 export function categoryBreakdownForTable(table: Table, known?: string[]): CategorySlice[] {
-  const catCol = table.columns.find((c) => c.category) ?? table.columns.find((c) => c.type === "text");
+  const catCol =
+    categoryColumnOf(table) ?? table.columns.find((c) => c.type === "text") ?? null;
   const moneyCol = table.columns.find((c) => c.type === "money");
   if (!catCol || !moneyCol) return [];
   const canon = known && new Map(known.map((n) => [n.trim().toLowerCase(), n]));
@@ -74,7 +76,12 @@ export function categoryBreakdownForTable(table: Table, known?: string[]): Categ
   for (const row of table.rows) {
     const amount = parseMoney(row.cells[moneyCol.id]);
     if (amount === 0) continue;
-    const raw = (row.cells[catCol.id] || "").trim();
+    // Grouping by category reads the row's own category; grouping by description reads
+    // the text. They are two different fields now, so "Gasolina de la camioneta" and
+    // "Gasolina personal" can be separate descriptions under one category.
+    const raw = known
+      ? (row.category ?? rowCategory(table, row)).trim()
+      : (row.cells[catCol.id] || "").trim();
     const label = canon ? (canon.get(raw.toLowerCase()) ?? UNCATEGORIZED) : raw || UNCATEGORIZED;
     map.set(label, (map.get(label) ?? 0) + amount);
   }
