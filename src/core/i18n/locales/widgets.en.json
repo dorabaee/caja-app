@@ -101,9 +101,6 @@
     "bankChoose": "Bank account…",
     "bankNamed": "Account: {{name}}",
     "typeCategory": "Category",
-    "showDescription": "Show description",
-    "showCategory": "Show category",
-    "categoryFace": "Description / Category",
     "categoryEmpty": "Uncategorized",
     "categoryCellHint": "Choose category"
   }

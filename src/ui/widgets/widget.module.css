@@ -1127,29 +1127,28 @@
   padding: 0 var(--space-3);
   min-width: 0;
 }
-/* The switch rides in the cell's corner, over the chip rather than beside it, so the
-   merged column costs no extra width. */
-.catCell .faceSwitch {
-  position: absolute;
-  top: 50%;
-  right: var(--space-1);
-  transform: translateY(-50%);
+/* A description cell's category chip: always visible once the row is tagged, sitting
+   between the text and the note/tag action row. Its own right padding reserves the
+   action row's width so hovering (which only fades those icons in) never shifts it. */
+.descChip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 45%;
+  flex: 0 1 auto;
+  padding-right: 44px;
+  box-sizing: content-box;
 }
-.faceSwitch {
-  color: var(--text-subtle);
+.descChipBtn {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
-.faceSwitch:hover {
-  color: var(--accent-strong);
-}
-
-/* The header's own copy of the switch, so a column can be flipped without hunting for a
-   cell — sits before the name, where the column's identity is read. */
-.headFaceSwitch {
-  flex: none;
-  margin-left: var(--space-1);
-  color: var(--text-subtle);
-}
-.headFaceSwitch[aria-pressed="true"] {
-  color: var(--accent-strong);
-  background: var(--accent-weak);
+.descChipBtn .catChip {
+  max-width: 100%;
 }

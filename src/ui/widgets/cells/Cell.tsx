@@ -52,6 +52,10 @@ export interface CellProps {
   /** How many buttons `tag` renders (it may be a fragment), so the input reserves the
    *  right amount of room. Defaults to 1 when a tag is present. */
   tagCount?: number;
+  /** The row's category chip, once set — always visible (not a hover reveal), sits
+   *  between the text and the note/tag icons. Its own right padding reserves room for
+   *  those icons so nothing shifts on hover. */
+  chip?: ReactNode;
   /** #7: this money cell has a value that can be "sent" to another cell. */
   sendable?: boolean;
   onSend?: () => void;
@@ -75,6 +79,7 @@ export function Cell({
   staged,
   tag,
   tagCount,
+  chip,
   sendable,
   onSend,
   receiving,
@@ -185,6 +190,7 @@ export function Cell({
         }}
         onKeyDown={onKeyDown}
       />
+      {chip && <span className={styles.descChip}>{chip}</span>}
       {actions}
       {receiveOverlay}
     </div>

@@ -18,7 +18,6 @@ import {
   Maximize2,
   GripVertical,
   GripHorizontal,
-  ArrowLeftRight,
 } from "lucide-react";
 import type { CategoryGroup, Column, ColumnType, Row, Table } from "@core/model/types";
 import { categoryColumnOf, recurringDefIdFromRowId } from "@core/compute";
@@ -30,7 +29,7 @@ import { useListReorder } from "@ui/hooks/useListReorder";
 import type { WidgetMode } from "@ui/hooks/useTableMode";
 import { Cell } from "./cells/Cell";
 import { CategoryTag } from "./cells/CategoryTag";
-import { CategoryCell, CategoryChip } from "./cells/CategoryCell";
+import { CategoryCell, CategoryChip, CategoryChipButton } from "./cells/CategoryCell";
 import styles from "./widget.module.css";
 
 const TYPE_KEY: Record<ColumnType, string> = {
@@ -57,7 +56,9 @@ export function gridTemplate(columns: Column[], widths?: Record<string, number>)
         ? "minmax(116px, 150px)"
         : c.type === "category"
           ? "minmax(120px, 0.9fr)"
-          : "minmax(96px, 1.6fr)";
+          : c.withCategory
+            ? "minmax(220px, 2.4fr)"
+            : "minmax(96px, 1.6fr)";
   });
   parts.push("64px"); // row-actions column (tag + row menu)
   return parts.join(" ");
@@ -116,11 +117,6 @@ export function WidgetGrid({
   const project = useCurrentProject();
   const categories = project?.categories ?? [];
   const categoryColumn = categoryColumnOf(table); // #14 row tag target
-  // A merged column shows one face at a time. The face is read-state, not document
-  // state: flipping it shows the category you picked instead of the description you
-  // typed, and never rewrites either one.
-  const showCategoryFace = useUI((u) => u.categoryFaces.has(table.id));
-  const toggleFace = useUI((u) => u.toggleCategoryFace);
   const gridRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<{ r: number; c: number } | null>(null);
   // Column the pointer is over in "columns" mode — tints the whole column, which CSS
@@ -231,8 +227,6 @@ export function WidgetGrid({
               canStage={canStageMore}
               onStage={() => onStageDelete?.(col.id)}
               onUnstage={() => onUnstageDelete?.(col.id)}
-              onToggleFace={col.withCategory ? () => toggleFace(table.id) : undefined}
-              showingCategory={showCategoryFace}
               onHover={(over) =>
                 setDangerIndex((prev) => (over ? ci : prev === ci ? null : prev))
               }
@@ -277,9 +271,8 @@ export function WidgetGrid({
                   }
                 : null;
 
-              // A column that is only the category, and a merged column turned to its
-              // category face, are the same cell: a chip you click, nothing to type.
-              if (picker && (col.type === "category" || (col.withCategory && showCategoryFace))) {
+              // A column that is only the category is a chip you click, nothing to type.
+              if (picker && col.type === "category") {
                 return (
                   <CategoryCell
                     key={col.id}
@@ -287,18 +280,13 @@ export function WidgetGrid({
                     disabled={editing}
                     danger={mode === "columns" && dangerIndex === ci && !staged}
                     staged={mode === "columns" && staged}
-                    actions={
-                      col.withCategory && !editing ? (
-                        <FaceSwitch
-                          showingCategory
-                          onClick={() => toggleFace(table.id)}
-                        />
-                      ) : undefined
-                    }
                   />
                 );
               }
 
+              // A merged (`withCategory`) column shows the description text with the
+              // category chip beside it once set; the tag icon only appears (on hover)
+              // while it's unset — same slot the note icon occupies.
               return (
                 <Cell
                   key={col.id}
@@ -308,15 +296,9 @@ export function WidgetGrid({
                   r={ri}
                   c={ci}
                   disabled={editing}
-                  tag={
-                    picker ? (
-                      <>
-                        <CategoryTag {...picker} />
-                        <FaceSwitch onClick={() => toggleFace(table.id)} />
-                      </>
-                    ) : undefined
-                  }
-                  tagCount={picker ? 2 : 0}
+                  tag={picker && !row.category ? <CategoryTag {...picker} /> : undefined}
+                  tagCount={picker && !row.category ? 1 : 0}
+                  chip={picker && row.category ? <CategoryChipButton {...picker} /> : undefined}
                   danger={mode === "columns" && dangerIndex === ci && !staged}
                   staged={mode === "columns" && staged}
                   onCommit={(v) => s().setCell(monthIndex, table.id, row.id, col.id, v)}
@@ -393,31 +375,6 @@ export function WidgetGrid({
         {footer}
       </div>
     </div>
-  );
-}
-
-/**
- * Flips a merged column between the description you type and the category you pick.
- * Sits right beside the category tag, so both faces of the column are one click apart
- * without the table growing a second column.
- */
-function FaceSwitch({ showingCategory, onClick }: { showingCategory?: boolean; onClick: () => void }) {
-  const { t } = useTranslation();
-  const label = showingCategory ? t("widgets.showDescription") : t("widgets.showCategory");
-  return (
-    <button
-      type="button"
-      className={cn(styles.cellBtn, styles.faceSwitch)}
-      title={label}
-      aria-label={label}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-    >
-      <ArrowLeftRight size={12} aria-hidden />
-    </button>
   );
 }
 
@@ -521,8 +478,6 @@ function ColumnHeader({
   onGrip,
   dragging,
   dropTarget,
-  onToggleFace,
-  showingCategory,
 }: {
   monthIndex: number;
   tableId: string;
@@ -539,9 +494,6 @@ function ColumnHeader({
   onGrip: (e: ReactPointerEvent<HTMLElement>) => void;
   dragging: boolean;
   dropTarget: boolean;
-  /** Merged column only: flips the whole column between its two faces. */
-  onToggleFace?: () => void;
-  showingCategory?: boolean;
 }) {
   const { t } = useTranslation();
   const s = useStore.getState;
@@ -625,18 +577,6 @@ function ColumnHeader({
 
   return (
     <div className={styles.headCell}>
-      {column.withCategory && onToggleFace && (
-        <button
-          type="button"
-          className={cn(styles.cellBtn, styles.headFaceSwitch)}
-          title={t("widgets.categoryFace")}
-          aria-label={showingCategory ? t("widgets.showDescription") : t("widgets.showCategory")}
-          aria-pressed={showingCategory}
-          onClick={onToggleFace}
-        >
-          <ArrowLeftRight size={12} aria-hidden />
-        </button>
-      )}
       <input
         className={cn(styles.colInput, column.type === "money" && styles.colInputRight, roleClass)}
         value={name}

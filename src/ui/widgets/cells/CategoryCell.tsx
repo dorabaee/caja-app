@@ -30,6 +30,30 @@ export function CategoryChip({ name, muted }: { name: string; muted?: boolean })
 }
 
 /**
+ * The chip as a clickable trigger — used inline in a description cell, beside the notes
+ * icon, instead of the cell switching to a category-only face.
+ */
+export function CategoryChipButton(props: Omit<CategoryPickerProps, "trigger">) {
+  const { t } = useTranslation();
+  const { value } = props;
+  return (
+    <CategoryPicker
+      {...props}
+      trigger={
+        <button
+          type="button"
+          className={styles.descChipBtn}
+          title={value || t("widgets.tagAdd")}
+          aria-label={value ? t("widgets.tagEdit", { name: value }) : t("widgets.tagAdd")}
+        >
+          <CategoryChip name={value} />
+        </button>
+      }
+    />
+  );
+}
+
+/**
  * A whole cell that is nothing but the category. There is no text to type and no amount
  * to enter — clicking anywhere in it opens the picker. Used by a dedicated
  * `type: "category"` column, and by a `withCategory` column while it shows its category

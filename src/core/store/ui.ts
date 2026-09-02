@@ -135,9 +135,6 @@ export interface UIState {
   balanceMode: BalanceMode;
   /** Table ids opted out of their KPI total — an ephemeral "what-if" for the month view. */
   kpiExclusions: ReadonlySet<string>;
-  /** Tables whose merged description/category column is showing its category face.
-   *  Purely how the column is being read right now — it never edits the document. */
-  categoryFaces: ReadonlySet<string>;
   /** A copied table held in a session clipboard (never persisted to the doc) for paste-into-month. */
   clipboardTable: Table | null;
   /** Active "send a value" flow (#7): the value picked up + the source cell key to exclude. */
@@ -162,8 +159,6 @@ export interface UIState {
   setSidebarCollapsed(collapsed: boolean): void;
   setNavOrder(order: NavView[]): void;
   toggleKpiExclusion(tableId: string): void;
-  /** Flip a merged column between the description you type and the category you pick. */
-  toggleCategoryFace(tableId: string): void;
   /** Flip the third KPI card between "Te queda" and "Saldo final". */
   toggleBalanceMode(): void;
   copyTableToClipboard(table: Table | null): void;
@@ -197,7 +192,6 @@ export const useUI = create<UIState>((set, get) => ({
   navOrder: readNavOrder(),
   balanceMode: "teQueda",
   kpiExclusions: new Set<string>(),
-  categoryFaces: new Set<string>(),
   clipboardTable: null,
   sendValue: null,
   selectedIds: new Set<string>(),
@@ -242,13 +236,6 @@ export const useUI = create<UIState>((set, get) => ({
       if (next.has(tableId)) next.delete(tableId);
       else next.add(tableId);
       return { kpiExclusions: next };
-    }),
-  toggleCategoryFace: (tableId) =>
-    set((s) => {
-      const next = new Set(s.categoryFaces);
-      if (next.has(tableId)) next.delete(tableId);
-      else next.add(tableId);
-      return { categoryFaces: next };
     }),
   copyTableToClipboard: (clipboardTable) => set({ clipboardTable }),
   startSendValue: (value, sourceKey) => set({ sendValue: { value, sourceKey } }),
