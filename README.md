@@ -57,8 +57,11 @@ one already filled in:
 
 ```bash
 npm run dev:demo     # same as npm run dev, plus a month of example data
-                     # (or open http://localhost:1420/?demo=1)
 ```
+
+It runs on Windows PowerShell, cmd and any POSIX shell alike: the flag lives in
+`.env.demo`, which Vite loads for that mode, rather than in a shell variable. With a
+plain `npm run dev`, `http://localhost:1420/?demo=1` does the same thing.
 
 The demo writes to its own storage key, so it can never overwrite your real document,
 and it is dev-only — a production build does not contain it.
