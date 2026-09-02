@@ -20,8 +20,6 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
-# ...except the demo flag, which carries no secrets and must ship for `npm run dev:demo`
-!.env.demo
 
 # Local-only AI / build context (never publish)
 CLAUDE.md
@@ -31,9 +29,6 @@ REDESIGN_PLAN.md
 .specstory/
 .uiaudit/
 __verify/
-
-# Local example data for `npm run dev:demo` — real books never get committed
-src/dev/seed.local.ts
 
 # Editor
 .vscode/*

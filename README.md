@@ -52,23 +52,9 @@ npm run tauri dev    # the desktop app (first run compiles Rust)
 
 ## Testing with example data
 
-An empty table hides the bugs that only appear on a full month, so the app can boot with
-one already filled in:
-
-```bash
-npm run dev:demo     # same as npm run dev, plus a month of example data
-```
-
-It runs on Windows PowerShell, cmd and any POSIX shell alike: the flag lives in
-`.env.demo`, which Vite loads for that mode, rather than in a shell variable. With a
-plain `npm run dev`, `http://localhost:1420/?demo=1` does the same thing.
-
-The demo writes to its own storage key, so it can never overwrite your real document,
-and it is dev-only — a production build does not contain it.
-
-The committed dataset is fictional. To test against your own books instead, copy
-`src/dev/seed.local.example.ts` to `src/dev/seed.local.ts` and put your figures there:
-that file is gitignored, so real amounts and vendor names never reach the repository.
+An empty table hides the bugs that only appear on a full month, so testing starts from a
+restored backup rather than a blank document: open **Backup** in the app and restore a
+`.json` export (yours, or a teammate's) to get a full month of real data to work against.
 
 ## Build & test
 
