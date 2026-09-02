@@ -62,7 +62,7 @@ export const DEMO_SEED: Seed = {
             { date: "2026-06-08", amounts: [16900, 0, 0], description: "Pedido mayoreo" },
             { date: "2026-06-12", amounts: [24700, 5800, 370], description: "Venta de mostrador" },
           ],
-          layout: { w: 620, h: 420 },
+          layout: { w: 760, h: 420 },
         },
         {
           title: "Salida de Dinero",
@@ -90,7 +90,7 @@ export const DEMO_SEED: Seed = {
             { date: "2026-06-08", amounts: [13595, 400, 10055, null, null] },
             { date: "2026-06-12", amounts: [7070, 250, 12370, null, null] },
           ],
-          layout: { w: 900, h: 420 },
+          layout: { w: 1120, h: 420 },
         },
         {
           title: "Banco Fiscal",
@@ -118,7 +118,7 @@ export const DEMO_SEED: Seed = {
               category: "Servicios",
             },
           ],
-          layout: { w: 700, h: 400 },
+          layout: { w: 820, h: 400 },
         },
       ],
     },

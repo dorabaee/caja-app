@@ -72,11 +72,11 @@ export const TableWidget = memo(function TableWidget({
   const totals = columnTotals(
     recurringRows.length ? { ...table, rows: [...table.rows, ...recurringRows] } : table,
   );
-  // The "Total" word rides on the first column that has no figure of its own. When every
-  // column is money (delete "Fecha" and BANCOS becomes column 0), no cell can spare the
-  // room, so the label drops out of the grid and only the footer carries it — a total is
-  // never overwritten by its own label.
-  const labelIndex = table.columns.findIndex((c) => c.type !== "money");
+  // The "Total" word stays where it reads — at the head of the row — and only when that
+  // first column has no figure to lose. Delete "Fecha" and BANCOS becomes column 0: the
+  // label steps out of the grid rather than overwrite a total or drift to the far right,
+  // and the footer carries it instead.
+  const showRowLabel = table.columns[0]?.type !== "money";
   const grandTotal = table.columns.reduce(
     (sum, c) => (c.type === "money" ? sum + (totals[c.id] ?? 0) : sum),
     0,
@@ -218,7 +218,7 @@ export const TableWidget = memo(function TableWidget({
               <div key={col.id} className={cn(styles.totalCell, col.type === "money" && styles.totalMoney)}>
                 {col.type === "money" ? (
                   fmt.moneyPlain(totals[col.id] ?? 0)
-                ) : i === labelIndex ? (
+                ) : i === 0 && showRowLabel ? (
                   <span className={styles.totalLabel}>{t("widgets.total")}</span>
                 ) : null}
               </div>
