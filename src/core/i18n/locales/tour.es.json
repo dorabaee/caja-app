@@ -18,6 +18,12 @@
     "monthsTitle": "Mes con mes",
     "monthsBody": "Toca un mes para ver o capturar su información.",
     "settingsTitle": "A tu manera",
-    "settingsBody": "Cambia el tema, el color, el idioma y la moneda desde Ajustes."
+    "settingsBody": "Cambia el tema, el color, el idioma y la moneda desde Ajustes.",
+    "moveTitle": "Acomoda tu tablero",
+    "moveBody": "Arrastra las tablas donde quieras. Se alinean solas con las de al lado; mantén Alt si prefieres que no.",
+    "multiTitle": "Varias a la vez",
+    "multiBody": "Ctrl + arrastrar dibuja un recuadro para elegir varias tablas y moverlas juntas.",
+    "shortcutsTitle": "Todo lo demás",
+    "shortcutsBody": "Aquí encuentras el recorrido y la lista completa de atajos y gestos cuando la necesites."
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus } from "lucide-react";
+import type { CategoryGroup } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
 import { categoryBreakdownForTable } from "@core/compute";
 import { Button, Modal, TextInput } from "@ui/common";
@@ -17,6 +18,7 @@ export function CategoriesModal() {
   const project = useCurrentProject();
   const fmt = useFormat();
   const [draft, setDraft] = useState("");
+  const [draftGroup, setDraftGroup] = useState<CategoryGroup>("fiscal");
 
   if (modal !== "categories") return null;
 
@@ -47,19 +49,28 @@ export function CategoriesModal() {
   const addCategory = () => {
     const name = draft.trim();
     if (!name) return;
-    if (categories.some((c) => c.toLowerCase() === name.toLowerCase())) {
+    if (categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
       setDraft("");
       return;
     }
-    useStore.getState().updateProject(project.id, { categories: [...categories, name] });
+    useStore
+      .getState()
+      .updateProject(project.id, { categories: [...categories, { name, group: draftGroup }] });
     setDraft("");
   };
 
   const removeCategory = (name: string) => {
     useStore
       .getState()
-      .updateProject(project.id, { categories: categories.filter((c) => c !== name) });
+      .updateProject(project.id, { categories: categories.filter((c) => c.name !== name) });
   };
+
+  // Grouped Fiscal / No Fiscal, with anything ungrouped (pre-v2 categories) last.
+  const groups: { key: string; label: string; items: typeof categories }[] = [
+    { key: "fiscal", label: t("widgets.group_fiscal"), items: categories.filter((c) => c.group === "fiscal") },
+    { key: "noFiscal", label: t("widgets.group_noFiscal"), items: categories.filter((c) => c.group === "noFiscal") },
+    { key: "other", label: t("widgets.groupOther"), items: categories.filter((c) => !c.group) },
+  ].filter((g) => g.items.length > 0);
 
   const onColumnChange = (value: string) => {
     useStore.getState().setColumnCategory(monthIndex, table.id, value || null);
@@ -79,22 +90,27 @@ export function CategoriesModal() {
     >
       <section className={styles.section}>
         <h3 className={styles.heading}>{t("modals.categories")}</h3>
-        {categories.length > 0 ? (
-          <div className={styles.chips}>
-            {categories.map((name) => (
-              <span key={name} className={styles.chip}>
-                {name}
-                <button
-                  type="button"
-                  className={styles.chipRemove}
-                  aria-label={t("modals.removeCategory", { name })}
-                  onClick={() => removeCategory(name)}
-                >
-                  <X size={13} strokeWidth={2.5} aria-hidden />
-                </button>
-              </span>
-            ))}
-          </div>
+        {groups.length > 0 ? (
+          groups.map((group) => (
+            <div key={group.key} className={styles.group}>
+              <p className={styles.groupLabel}>{group.label}</p>
+              <div className={styles.chips}>
+                {group.items.map((cat) => (
+                  <span key={cat.name} className={styles.chip}>
+                    {cat.name}
+                    <button
+                      type="button"
+                      className={styles.chipRemove}
+                      aria-label={t("modals.removeCategory", { name: cat.name })}
+                      onClick={() => removeCategory(cat.name)}
+                    >
+                      <X size={13} strokeWidth={2.5} aria-hidden />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))
         ) : (
           <p className={styles.muted}>{t("modals.noCategoriesYet")}</p>
         )}
@@ -111,6 +127,15 @@ export function CategoriesModal() {
             aria-label={t("modals.newCategory")}
             onChange={(e) => setDraft(e.target.value)}
           />
+          <select
+            className={styles.select}
+            value={draftGroup}
+            aria-label={t("modals.categoryGroup")}
+            onChange={(e) => setDraftGroup(e.target.value as CategoryGroup)}
+          >
+            <option value="fiscal">{t("widgets.group_fiscal")}</option>
+            <option value="noFiscal">{t("widgets.group_noFiscal")}</option>
+          </select>
           <Button type="submit" variant="secondary" icon={<Plus />}>
             {t("common.add")}
           </Button>

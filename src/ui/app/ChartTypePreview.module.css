@@ -1,0 +1,109 @@
+.wrap {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.svg {
+  width: 72px;
+  height: 44px;
+}
+
+.axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+/* Bars rise from the baseline, hold, then reset for the next pass. */
+.grow {
+  transform-origin: center bottom;
+  animation: grow 3.2s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+}
+@keyframes grow {
+  0% {
+    transform: scaleY(0);
+  }
+  22%,
+  78% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+/* The line draws itself left to right. */
+.draw {
+  stroke-dasharray: 90;
+  animation: draw 3.2s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+}
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 90;
+  }
+  30%,
+  78% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 90;
+  }
+}
+
+/* The area's fill sweeps up once the line is most of the way across. */
+.fill {
+  transform-origin: center bottom;
+  animation: fillUp 3.2s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+}
+@keyframes fillUp {
+  0%,
+  18% {
+    transform: scaleY(0);
+  }
+  46%,
+  78% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+/* Pie slices sweep round; --dash is the slice length, --offset where it starts. */
+.sweep {
+  stroke-dasharray: 0 var(--gap);
+  stroke-dashoffset: var(--offset);
+  animation: sweep 3.2s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+}
+@keyframes sweep {
+  0% {
+    stroke-dasharray: 0 var(--gap);
+  }
+  28%,
+  78% {
+    stroke-dasharray: var(--dash) var(--gap);
+  }
+  100% {
+    stroke-dasharray: 0 var(--gap);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grow,
+  .draw,
+  .fill,
+  .sweep {
+    animation: none;
+  }
+  .draw {
+    stroke-dashoffset: 0;
+  }
+  .sweep {
+    stroke-dasharray: var(--dash) var(--gap);
+  }
+}

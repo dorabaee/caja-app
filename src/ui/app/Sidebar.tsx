@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Wallet,
   Plus,
@@ -16,6 +16,8 @@ import {
   Trash2,
   Building2,
   GripVertical,
+  Keyboard,
+  Compass,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
@@ -23,15 +25,16 @@ import type { NavView } from "@core/store/ui";
 import { IconButton, Menu, MenuItem, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useListReorder } from "@ui/hooks/useListReorder";
+import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import styles from "./Sidebar.module.css";
 
 /** Vista tabs exclude "home" (that's the pinned launcher, reached separately). */
 type VistaKey = Exclude<NavView, "home">;
-const VIEW_NAV: Record<VistaKey, { icon: ReactNode; labelKey: string }> = {
-  month: { icon: <LayoutDashboard size={16} aria-hidden />, labelKey: "shell.board" },
-  panel: { icon: <PieChart size={16} aria-hidden />, labelKey: "shell.panel" },
-  resumen: { icon: <CalendarRange size={16} aria-hidden />, labelKey: "shell.yearSummary" },
-  allBiz: { icon: <Layers size={16} aria-hidden />, labelKey: "shell.allBusinesses" },
+const VIEW_NAV: Record<VistaKey, { icon: ReactNode; labelKey: string; motion: string }> = {
+  month: { icon: <LayoutDashboard size={16} aria-hidden />, labelKey: "shell.board", motion: "pop" },
+  panel: { icon: <PieChart size={16} aria-hidden />, labelKey: "shell.panel", motion: "spin" },
+  resumen: { icon: <CalendarRange size={16} aria-hidden />, labelKey: "shell.yearSummary", motion: "nudge" },
+  allBiz: { icon: <Layers size={16} aria-hidden />, labelKey: "shell.allBusinesses", motion: "fan" },
 };
 
 export function Sidebar() {
@@ -48,6 +51,7 @@ export function Sidebar() {
   const toggleSidebar = useUI((s) => s.toggleSidebar);
   const nav = useUI((s) => s.nav);
   const goTo = useUI((s) => s.goTo);
+  const [shortcuts, setShortcuts] = useState(false);
 
   // Drag-reorder the business list (pointer-based; see useListReorder).
   const biz = useListReorder(setProjectOrder);
@@ -83,7 +87,7 @@ export function Sidebar() {
       <nav className={styles.list}>
         <button
           type="button"
-          className={cn(styles.navItem, nav === "home" && styles.navActive)}
+          className={cn(styles.navItem, styles.hop, nav === "home" && styles.navActive)}
           onClick={() => goTo("home")}
           title={collapsed ? t("shell.home") : undefined}
         >
@@ -95,7 +99,13 @@ export function Sidebar() {
       <div className={styles.section} data-tour="businesses">
         <div className={styles.sectionHead}>
           <span className={styles.sectionTitle}>{t("shell.businesses")}</span>
-          <IconButton label={t("shell.newBusiness")} icon={<Plus />} size="sm" onClick={newProject} />
+          <IconButton
+            label={t("shell.newBusiness")}
+            icon={<Plus />}
+            size="sm"
+            className={styles.turn}
+            onClick={newProject}
+          />
         </div>
         <nav className={styles.list}>
           {projects.map((p) => {
@@ -122,7 +132,7 @@ export function Sidebar() {
                 )}
                 <button
                   type="button"
-                  className={styles.bizButton}
+                  className={cn(styles.bizButton, styles.lift)}
                   onClick={() => selectProject(p.id)}
                   aria-current={active ? "true" : undefined}
                   title={collapsed ? p.name : undefined}
@@ -175,7 +185,7 @@ export function Sidebar() {
       <div className={styles.footer}>
         <button
           type="button"
-          className={styles.navItem}
+          className={cn(styles.navItem, styles.gear)}
           data-tour="settings"
           onClick={() => openModal("settings")}
           title={collapsed ? t("shell.settings") : undefined}
@@ -188,16 +198,32 @@ export function Sidebar() {
             label={theme === "dark" ? t("shell.lightMode") : t("shell.darkMode")}
             icon={theme === "dark" ? <Sun /> : <Moon />}
             size="sm"
+            className={styles.celestial}
             onClick={toggleTheme}
           />
-          <IconButton
-            label={t("shell.replayTour")}
-            icon={<HelpCircle />}
-            size="sm"
-            onClick={() => updateSettings({ runTour: true })}
-          />
+          <Menu
+            align="end"
+            trigger={
+              <IconButton
+                label={t("shell.help")}
+                icon={<HelpCircle />}
+                size="sm"
+                tone="info"
+                data-tour="help"
+              />
+            }
+          >
+            <MenuItem icon={<Compass />} onClick={() => updateSettings({ runTour: true })}>
+              {t("shell.replayTour")}
+            </MenuItem>
+            <MenuItem icon={<Keyboard />} onClick={() => setShortcuts(true)}>
+              {t("shortcuts.title")}
+            </MenuItem>
+          </Menu>
         </div>
       </div>
+
+      <ShortcutsOverlay open={shortcuts} onClose={() => setShortcuts(false)} />
     </aside>
   );
 }
@@ -234,7 +260,7 @@ function ViewNav() {
   return (
     <nav className={styles.list}>
       {visible.map((key) => {
-        const { icon, labelKey } = VIEW_NAV[key];
+        const { icon, labelKey, motion } = VIEW_NAV[key];
         return (
           <button
             key={key}
@@ -242,6 +268,7 @@ function ViewNav() {
             data-reorder-id={key}
             className={cn(
               styles.navItem,
+              styles[motion],
               nav === key && styles.navActive,
               reorder.dragId === key && styles.navDragging,
               reorder.overId === key && styles.navDragOver,

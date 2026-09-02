@@ -1,0 +1,32 @@
+{
+  "shortcuts": {
+    "title": "Shortcuts and gestures",
+    "intro": "Everything you can do on the board with the mouse and keyboard.",
+    "selecting": "Selecting",
+    "moving": "Moving",
+    "canvas": "Canvas",
+    "editing": "Editing",
+    "drag": "drag",
+    "click": "click",
+    "wheel": "wheel",
+    "doubleClick": "Double-click",
+    "rightClick": "Right-click",
+    "marquee": "Draw a box to pick several tables.",
+    "addRemove": "Add or remove one table from the selection.",
+    "selectAll": "Select everything in the month.",
+    "clear": "Clear the selection.",
+    "groupDrag": "Drag one and every selected table follows.",
+    "snap": "They line up with neighbouring tables on their own.",
+    "noSnap": "Hold to move without snapping.",
+    "nudge": "Nudge the selection step by step.",
+    "nudgeFine": "With Shift, one pixel at a time.",
+    "pan": "Move the canvas without the scrollbars.",
+    "zoom": "Zoom in or out around the cursor.",
+    "addHere": "Add a table right where you double-clicked.",
+    "contextMenu": "Open the table's or selection's menu.",
+    "duplicate": "Duplicate what's selected.",
+    "delete": "Delete what's selected.",
+    "undo": "Undo the last change.",
+    "redo": "Redo what you undid."
+  }
+}

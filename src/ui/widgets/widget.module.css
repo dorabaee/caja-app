@@ -262,12 +262,18 @@
 .input::placeholder {
   color: var(--text-subtle);
 }
+/* Text and date cells keep their buttons on the right; reserve exactly their width. */
+.input:not(.inputMoney) {
+  padding-right: calc(var(--space-2) + var(--cell-actions, 0) * 22px);
+}
 .input:focus {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--accent);
   border-radius: var(--radius-xs);
 }
 .inputMoney {
+  /* Room for the action buttons, which sit on the left in money cells. */
+  padding-left: calc(var(--space-2) + var(--cell-actions, 0) * 22px);
   text-align: right;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
@@ -280,32 +286,47 @@
   color: var(--text-muted);
 }
 
-/* per-cell note */
-.note {
+/* Per-cell buttons (note, category tag, calendar) share one row so they can never sit on
+   top of each other — the calendar used to land under the note button (#4). */
+.cellActions {
   position: absolute;
-  top: 3px;
-  width: 17px;
-  height: 17px;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+/* money cells put them on the left: the figure is right-aligned. */
+.cellActionsLeft {
+  right: auto;
+  left: 4px;
+}
+.cellBtn {
   display: grid;
   place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
   border-radius: var(--radius-xs);
   color: var(--text-subtle);
   background: var(--surface);
   opacity: 0;
-  transition: opacity 100ms ease;
+  cursor: pointer;
+  transition:
+    opacity 100ms ease,
+    color 100ms ease,
+    background-color 100ms ease;
 }
-.noteRight {
-  right: 3px;
+.row:hover .cellBtn {
+  opacity: 0.7;
 }
-.noteLeft {
-  left: 3px;
-}
-.note:hover {
+.cellBtn:hover,
+.cellBtn[aria-expanded="true"] {
+  opacity: 1;
   color: var(--text);
   background: var(--surface-2);
-}
-.row:hover .note {
-  opacity: 0.7;
 }
 .noteOn {
   opacity: 1;
@@ -315,31 +336,9 @@
   opacity: 1;
 }
 
-/* #7 send-a-value: per-cell send button (money cells with a value) */
-.sendBtn {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 18px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-xs);
-  color: var(--text-subtle);
-  background: var(--surface);
-  opacity: 0;
-  transition:
-    opacity 100ms ease,
-    color 100ms ease,
-    background-color 100ms ease;
-}
-.cell:hover .sendBtn {
-  opacity: 0.7;
-}
+/* #7 send-a-value: a .cellBtn in the cell's action row, so it can't sit on the figure */
 .sendBtn:hover {
-  opacity: 1;
   color: var(--accent-strong);
-  background: var(--surface-2);
 }
 /* destination cells "light up" while a send flow is active */
 .cellReceiving {
@@ -369,30 +368,8 @@
   opacity: 1;
 }
 
-/* #14 per-row category tag */
-.tagBtn {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  flex: none;
-  border-radius: var(--radius-xs);
-  color: var(--text-subtle);
-  opacity: 0;
-  transition:
-    opacity 100ms ease,
-    color 100ms ease,
-    background-color 100ms ease;
-}
-.row:hover .tagBtn {
-  opacity: 0.7;
-}
-.tagBtn:hover {
-  opacity: 1;
-  color: var(--text);
-  background: var(--surface-2);
-}
-/* a set tag stays visible and accent-colored */
+/* #14 category tag — a .cellBtn in the category column's own cell. A set tag stays
+   visible and accent-coloured so a tagged row reads at a glance. */
 .tagBtnSet,
 .row:hover .tagBtnSet {
   opacity: 1;
@@ -407,7 +384,7 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-pop);
   padding: var(--space-2);
-  width: 220px;
+  width: 240px;
 }
 .tagPanel {
   display: flex;
@@ -418,8 +395,26 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 200px;
+  max-height: 260px;
   overflow: auto;
+}
+.tagGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tagGroup + .tagGroup {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.tagGroupLabel {
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
 }
 .tagOption {
   display: flex;
@@ -713,4 +708,362 @@
   font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+/* ---------- fiscal tables: bank tag + saldo final card (#1) ---------- */
+.bankTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  height: 24px;
+  padding: 0 var(--space-2) 0 3px;
+  border-radius: 999px;
+  background: var(--bank-tint);
+  color: var(--bank-color);
+  border: 1px solid color-mix(in srgb, var(--bank-color) 28%, transparent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* The bank's own logo: a small rounded rectangle, letterboxed on a light plate so marks
+   with transparent or white backgrounds read in both themes. */
+.bankLogo {
+  width: 26px;
+  height: 20px;
+  flex: none;
+  object-fit: contain;
+  padding: 2px;
+  border-radius: 5px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bank-color) 22%, transparent);
+}
+.bankMark {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--bank-color);
+  color: #fff;
+  font-family: var(--font-num);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+.balanceCard {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+/* ---------- table-wide modes: row reorder (#2) + column edit (#5) ---------- */
+.cardEditing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-md);
+}
+.modeBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+.modeLabel {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.modeCancel:hover {
+  color: var(--expense);
+}
+.modeConfirm {
+  color: var(--income);
+}
+
+/* row reorder */
+.rowReorder .input {
+  cursor: default;
+}
+.rowGrip {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  color: var(--text-subtle);
+  cursor: grab;
+  touch-action: none;
+}
+.rowGrip:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.rowDragging {
+  opacity: 0.5;
+}
+.rowDropTarget {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* reorder: the header is a grip you drag sideways to move the whole column */
+.headCellReorder {
+  padding: 0;
+  background: var(--surface-2);
+}
+.colGrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--space-2);
+  color: var(--text-subtle);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.colGrip:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.colGripName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.headCellDragging {
+  opacity: 0.5;
+}
+.headCellDropTarget {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+
+/* column edit: the header is the delete target, the column tints on hover */
+.headCellEditing {
+  padding: 0;
+}
+.colDangerBtn {
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.colDangerBtn:hover:not(:disabled) {
+  background: var(--expense-weak);
+  color: var(--expense);
+}
+.colDangerBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.headCellStaged {
+  background: var(--expense-weak);
+}
+.colStagedBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--space-2);
+  color: var(--expense);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.colStagedName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: line-through;
+}
+.colUndo {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+.cellDanger {
+  background: var(--expense-weak);
+}
+.cellStaged {
+  background: var(--expense-weak);
+  opacity: 0.65;
+}
+.cellStaged .input {
+  text-decoration: line-through;
+}
+
+/* delete-column confirmation */
+.confirmPop {
+  z-index: var(--z-overlay);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
+}
+.confirmPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.confirmText {
+  font-size: var(--text-sm);
+  color: var(--text);
+  line-height: 1.4;
+}
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.confirmNo,
+.confirmYes {
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.confirmNo {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.confirmNo:hover {
+  background: var(--surface-hover);
+}
+.confirmYes {
+  background: var(--expense);
+  color: #fff;
+}
+.confirmYes:hover {
+  filter: brightness(0.94);
+}
+
+/* ---------- date picker (#2) ---------- */
+.calPop {
+  z-index: var(--z-overlay);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
+  width: 268px;
+}
+.calPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.calHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.calMonth {
+  flex: 1;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.calNav {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.calNav:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+.calWeekdays,
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.calWeekday {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+}
+.calDay {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+.calDay:hover {
+  background: var(--surface-hover);
+}
+.calDayOutside {
+  color: var(--text-subtle);
+}
+.calDayToday {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.calDaySelected,
+.calDaySelected:hover {
+  background: var(--accent-strong);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  box-shadow: none;
+}
+.calFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+.calClear,
+.calToday {
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.calClear:hover {
+  color: var(--expense);
+  background: var(--expense-weak);
+}
+.calToday {
+  color: var(--accent-strong);
+}
+.calToday:hover {
+  background: var(--accent-weak);
 }

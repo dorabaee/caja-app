@@ -1,0 +1,32 @@
+{
+  "preview": {
+    "explain": "¿Cómo funciona {{name}}?",
+    "use": "Usar esta tabla",
+    "previous": "Plantilla anterior",
+    "next": "Plantilla siguiente",
+    "income": {
+      "purpose": "Para anotar el dinero que entra cada día. Ideal para ventas de mostrador: una fila por día del mes.",
+      "step1": "Escribe en cada día lo que recibiste.",
+      "step2": "El Total se suma solo, sin fórmulas.",
+      "step3": "Ese total alimenta el «Entró» del mes."
+    },
+    "expense": {
+      "purpose": "Para tus gastos del día a día. Cada fila lleva fecha, una descripción con categoría, y el monto.",
+      "step1": "Elige la fecha con el calendario.",
+      "step2": "Toca la etiqueta y elige la categoría.",
+      "step3": "Anota el monto: se resta en «Salió»."
+    },
+    "ledger": {
+      "purpose": "Tu cuenta de banco, movimiento por movimiento. Empieza con el saldo del mes y lleva depósitos y gastos por separado.",
+      "step1": "Captura el saldo inicial del mes.",
+      "step2": "Anota cada depósito y cada gasto.",
+      "step3": "El saldo final se recalcula solo."
+    },
+    "blank": {
+      "purpose": "Una tabla vacía para lo que tú necesites: columnas de texto, dinero o fecha, las que quieras.",
+      "step1": "Ponle nombre a la tabla y a sus columnas.",
+      "step2": "Agrega las columnas que te hagan falta.",
+      "step3": "Llena las filas; el total se calcula solo."
+    }
+  }
+}

@@ -11,6 +11,8 @@ import {
   Copy,
   ClipboardCopy,
   Trash2,
+  Tags,
+  Repeat,
 } from "lucide-react";
 import type { Table } from "@core/model/types";
 import { ledgerBalance } from "@core/compute";
@@ -18,7 +20,10 @@ import { parseMoney } from "@core/format/money";
 import { useStore, useUI } from "@core/store";
 import { Button, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, cn } from "@ui/common";
 import { useFormat } from "@ui/hooks/useFormat";
+import { useTableMode } from "@ui/hooks/useTableMode";
 import { WidgetGrid } from "./WidgetGrid";
+import { BankTag } from "./cells/BankTag";
+import { ModeActions, TableModeMenuItems } from "./TableFiscal";
 import { DRAG_HANDLE } from "./dragHandle";
 import styles from "./widget.module.css";
 
@@ -35,8 +40,10 @@ export const LedgerWidget = memo(function LedgerWidget({
   const s = useStore.getState;
   const fmt = useFormat();
   const select = useUI((u) => u.select);
-  const selected = useUI((u) => u.selectedWidgetId === table.id);
+  const openModal = useUI((u) => u.openModal);
+  const selected = useUI((u) => u.selectedIds.has(table.id));
 
+  const mode = useTableMode(monthIndex, table);
   const balance = ledgerBalance(table);
 
   const [title, setTitle] = useState(table.title);
@@ -56,8 +63,18 @@ export const LedgerWidget = memo(function LedgerWidget({
 
   return (
     <div
-      className={cn(styles.card, fill && styles.cardFill, selected && styles.selected)}
-      onMouseDown={() => select(table.id)}
+      className={cn(
+        styles.card,
+        fill && styles.cardFill,
+        selected && styles.selected,
+        mode.mode !== "idle" && styles.cardEditing,
+      )}
+      onPointerDownCapture={(e) => {
+        // Modifier clicks and clicks inside an existing multi-selection belong to the
+        // canvas (toggle / group drag); a plain click on an unselected widget selects it.
+        if (e.ctrlKey || e.metaKey || e.shiftKey || selected) return;
+        select(table.id);
+      }}
     >
       <div className={styles.whead}>
         <span className={cn(styles.handle, DRAG_HANDLE)} title={t("widgets.move")} aria-hidden>
@@ -74,10 +91,16 @@ export const LedgerWidget = memo(function LedgerWidget({
             if (e.key === "Escape") setTitle(table.title);
           }}
         />
-        <span className={styles.pill}>
-          <Landmark size={13} aria-hidden />
-          {t("widgets.ledgerPill")}
-        </span>
+        {table.bank ? (
+          <BankTag bank={table.bank} />
+        ) : (
+          <span className={styles.pill}>
+            <Landmark size={13} aria-hidden />
+            {t("widgets.ledgerPill")}
+          </span>
+        )}
+        <ModeActions mode={mode} />
+        {mode.mode === "idle" && (
         <Menu align="end" trigger={<IconButton label={t("widgets.ledgerOptions")} icon={<MoreHorizontal />} size="sm" />}>
           <MenuLabel>{t("widgets.addColumn")}</MenuLabel>
           <MenuItem icon={<Type />} onClick={() => s().addColumn(monthIndex, table.id, "text")}>
@@ -88,6 +111,13 @@ export const LedgerWidget = memo(function LedgerWidget({
           </MenuItem>
           <MenuItem icon={<Calendar />} onClick={() => s().addColumn(monthIndex, table.id, "date")}>
             {t("widgets.typeDate")}
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem icon={<Tags />} onClick={() => openModal("categories", table.id)}>
+            {t("widgets.categories")}
+          </MenuItem>
+          <MenuItem icon={<Repeat />} onClick={() => openModal("recurring", table.id)}>
+            {t("widgets.recurringEntries")}
           </MenuItem>
           <MenuSeparator />
           <MenuItem
@@ -112,9 +142,12 @@ export const LedgerWidget = memo(function LedgerWidget({
           <MenuItem icon={<Trash2 />} danger onClick={() => s().removeTable(monthIndex, table.id)}>
             {t("widgets.deleteLedger")}
           </MenuItem>
+          <TableModeMenuItems monthIndex={monthIndex} table={table} mode={mode} />
         </Menu>
+        )}
       </div>
 
+      {mode.mode === "idle" && (
       <div className={styles.ledgerInitial}>
         <label className={styles.ledgerInitialLabel} htmlFor={`saldo-${table.id}`}>
           {t("widgets.monthInitialBalance")}
@@ -137,9 +170,24 @@ export const LedgerWidget = memo(function LedgerWidget({
           />
         </span>
       </div>
+      )}
 
-      <WidgetGrid monthIndex={monthIndex} table={table} roleColors />
+      <WidgetGrid
+        monthIndex={monthIndex}
+        table={table}
+        roleColors
+        mode={mode.mode}
+        rowOrder={mode.rowOrder}
+        onRowOrderChange={mode.setRowOrder}
+        columnOrder={mode.columnOrder}
+        onColumnOrderChange={mode.setColumnOrder}
+        pendingDeletes={mode.pendingDeletes}
+        canStageMore={mode.canStageMore}
+        onStageDelete={mode.stageDelete}
+        onUnstageDelete={mode.unstageDelete}
+      />
 
+      {mode.mode === "idle" && (
       <div className={styles.ledgerFoot}>
         <Button variant="ghost" size="sm" icon={<Plus />} onClick={() => s().addRow(monthIndex, table.id)}>
           {t("widgets.addTransaction")}
@@ -157,6 +205,7 @@ export const LedgerWidget = memo(function LedgerWidget({
           <span className={styles.ledgerFinalValue}>{fmt.money(balance.finalBalance)}</span>
         </div>
       </div>
+      )}
     </div>
   );
 });

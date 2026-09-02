@@ -104,6 +104,7 @@
     "toastBackupSaved": "Backup saved.",
     "toastBackupError": "Couldn't create the backup.",
     "toastBackupRestored": "Backup restored.",
-    "toastRestoreError": "Couldn't restore the backup."
+    "toastRestoreError": "Couldn't restore the backup.",
+    "categoryGroup": "Category group"
   }
 }

@@ -12,6 +12,9 @@
     "create": "Create",
     "restore": "Restore…",
     "optional": "Optional",
-    "help": "Help"
+    "help": "Help",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back"
   }
 }

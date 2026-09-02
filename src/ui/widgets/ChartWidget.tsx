@@ -84,7 +84,7 @@ export const ChartWidget = memo(function ChartWidget({
   const fmt = useFormat();
   const colors = useChartColors();
   const select = useUI((u) => u.select);
-  const selected = useUI((u) => u.selectedWidgetId === chart.id);
+  const selected = useUI((u) => u.selectedIds.has(chart.id));
 
   // Linked tables, in the chart's stored order (skip any that were deleted).
   const linkedTables = chart.linkedTableIds
@@ -356,7 +356,12 @@ export const ChartWidget = memo(function ChartWidget({
   return (
     <div
       className={cn(wstyles.card, fill && wstyles.cardFill, selected && wstyles.selected)}
-      onMouseDown={() => select(chart.id)}
+      onPointerDownCapture={(e) => {
+        // Modifier clicks and clicks inside an existing multi-selection belong to the
+        // canvas (toggle / group drag); a plain click on an unselected widget selects it.
+        if (e.ctrlKey || e.metaKey || e.shiftKey || selected) return;
+        select(chart.id);
+      }}
     >
       <div className={wstyles.whead}>
         <span className={cn(wstyles.handle, DRAG_HANDLE)} title={t("widgets.move")} aria-hidden>

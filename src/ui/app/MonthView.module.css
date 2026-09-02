@@ -124,3 +124,22 @@
   line-height: 1.5;
   margin-bottom: var(--space-2);
 }
+
+/* #1 — flips the third KPI card between "Te queda" and the fiscal saldo final. */
+.balanceToggle {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
+}
+.balanceToggle:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.16);
+}

@@ -49,6 +49,10 @@
     "seriesProfit": "Profit",
     "seriesBalance": "Balance",
     "seriesAmount": "Amount",
-    "goalShort": "Goal {{value}}"
+    "goalShort": "Goal {{value}}",
+    "groupBy": "Group by",
+    "groupCategory": "Category",
+    "sortDesc": "Highest to lowest",
+    "sortAsc": "Lowest to highest"
   }
 }

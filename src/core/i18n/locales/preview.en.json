@@ -1,0 +1,32 @@
+{
+  "preview": {
+    "explain": "How does {{name}} work?",
+    "use": "Use this table",
+    "previous": "Previous template",
+    "next": "Next template",
+    "income": {
+      "purpose": "For the money coming in each day. Made for counter sales: one row per day of the month.",
+      "step1": "Type what you took in on each day.",
+      "step2": "The Total adds itself up, no formulas.",
+      "step3": "That total feeds the month's “In”."
+    },
+    "expense": {
+      "purpose": "For your day-to-day spending. Each row carries a date, a description with a category, and the amount.",
+      "step1": "Pick the date from the calendar.",
+      "step2": "Tap the tag and choose a category.",
+      "step3": "Enter the amount: it counts against “Out”."
+    },
+    "ledger": {
+      "purpose": "Your bank account, movement by movement. Starts from the month's balance and keeps deposits and expenses apart.",
+      "step1": "Enter the month's opening balance.",
+      "step2": "Record each deposit and each expense.",
+      "step3": "The final balance recalculates itself."
+    },
+    "blank": {
+      "purpose": "An empty table for whatever you need: text, money or date columns, as many as you like.",
+      "step1": "Name the table and its columns.",
+      "step2": "Add whatever extra columns you need.",
+      "step3": "Fill the rows; the total works itself out."
+    }
+  }
+}

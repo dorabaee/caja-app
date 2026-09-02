@@ -49,6 +49,10 @@
     "seriesProfit": "Ganancia",
     "seriesBalance": "Saldo",
     "seriesAmount": "Monto",
-    "goalShort": "Meta {{value}}"
+    "goalShort": "Meta {{value}}",
+    "groupBy": "Agrupar",
+    "groupCategory": "Categoría",
+    "sortDesc": "De mayor a menor",
+    "sortAsc": "De menor a mayor"
   }
 }

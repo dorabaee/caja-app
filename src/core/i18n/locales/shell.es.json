@@ -47,8 +47,8 @@
     "createBusiness": "Crear negocio",
     "templates": "Plantillas",
     "tplIncome": "Ingresos diarios",
-    "tplExpense": "Gastos",
-    "tplLedger": "Libro de cuenta bancaria",
+    "tplExpense": "Contabilidad Personal",
+    "tplLedger": "Banco Fiscal",
     "tplBlank": "Tabla en blanco",
     "clipboard": "Portapapeles",
     "pasteWithData": "Pegar \"{{title}}\" con datos",
@@ -64,6 +64,9 @@
     "exportStatementPdf": "Estado de resultados (PDF)",
     "exportResumenCsv": "Resumen en CSV",
     "exportResumenExcel": "Resumen en Excel",
-    "shareEllipsis": "Compartir…"
+    "shareEllipsis": "Compartir…",
+    "moreTools": "Más herramientas",
+    "quickAdd": "Agregar rápido",
+    "help": "Ayuda"
   }
 }

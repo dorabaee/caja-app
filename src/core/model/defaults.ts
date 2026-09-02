@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import {
   type AppDoc,
+  type Category,
   type Chart,
   type ChartType,
   type Column,
@@ -145,7 +146,7 @@ export function makeExpenseTable(layout?: Partial<WidgetLayout>): Table {
   const rows = Array.from({ length: 4 }, () => makeRow(cols));
   return {
     id: id(),
-    title: "Gastos",
+    title: "Contabilidad Personal",
     kind: "expense",
     columns: cols,
     rows,
@@ -160,16 +161,17 @@ export function makeLedgerTable(layout?: Partial<WidgetLayout>): Table {
     makeColumn("Fecha", "date"),
     makeColumn("Depósito", "money", { role: "deposit" }),
     makeColumn("Importe del gasto", "money", { role: "withdrawal" }),
-    makeColumn("Descripción", "text"),
+    makeColumn("Descripción", "text", { category: true }),
   ];
   const rows = Array.from({ length: 3 }, () => makeRow(cols));
   return {
     id: id(),
-    title: "Libro de cuenta bancaria",
+    title: "Banco Fiscal",
     kind: "ledger",
     columns: cols,
     rows,
     initialBalance: 0,
+    fiscal: true,
     // Widest: 4 columns (wide enough that "Importe del gasto" + the columns don't
     // side-scroll). Height fits the saldo row + 3 rows + the SALDO FINAL footer with
     // no empty gap.
@@ -306,6 +308,30 @@ export function makeChart(
   };
 }
 
+/**
+ * Categories every new project starts with, split into the two halves of the chart of
+ * accounts. Users add their own on top (and may delete these); the split only drives how
+ * the picker groups them — a cell still stores the plain category name.
+ */
+export const DEFAULT_CATEGORIES: readonly Category[] = [
+  { name: "Gasolina", group: "fiscal" },
+  { name: "Papelería y equipo de oficina", group: "fiscal" },
+  { name: "Material e insumos", group: "fiscal" },
+  { name: "Servicios", group: "fiscal" },
+  { name: "Mantenimiento", group: "fiscal" },
+  { name: "Gastos de oficina", group: "fiscal" },
+  { name: "Cuotas", group: "fiscal" },
+  { name: "Seguros", group: "fiscal" },
+  { name: "Nóminas", group: "noFiscal" },
+  { name: "Mano de obra", group: "noFiscal" },
+  { name: "Gastos no facturados", group: "noFiscal" },
+  { name: "Extras", group: "noFiscal" },
+] as const;
+
+export function defaultCategories(): Category[] {
+  return DEFAULT_CATEGORIES.map((c) => ({ ...c }));
+}
+
 export function newProject(name = "Negocio sin nombre"): Project {
   return {
     id: id(),
@@ -315,7 +341,7 @@ export function newProject(name = "Negocio sin nombre"): Project {
     carryOver: false,
     goal: {},
     recurring: [],
-    categories: [],
+    categories: defaultCategories(),
     months: twelveMonths(),
   };
 }

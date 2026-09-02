@@ -1,0 +1,32 @@
+{
+  "shortcuts": {
+    "title": "Atajos y gestos",
+    "intro": "Todo lo que puedes hacer en el tablero con el ratón y el teclado.",
+    "selecting": "Seleccionar",
+    "moving": "Mover",
+    "canvas": "Lienzo",
+    "editing": "Editar",
+    "drag": "arrastrar",
+    "click": "clic",
+    "wheel": "rueda",
+    "doubleClick": "Doble clic",
+    "rightClick": "Clic derecho",
+    "marquee": "Dibuja un recuadro para elegir varias tablas.",
+    "addRemove": "Agrega o quita una tabla de la selección.",
+    "selectAll": "Selecciona todo lo del mes.",
+    "clear": "Quita la selección.",
+    "groupDrag": "Arrastra una y se mueven todas las seleccionadas.",
+    "snap": "Se alinean solas con las tablas vecinas.",
+    "noSnap": "Mantenlo para mover sin que se alineen.",
+    "nudge": "Mueve la selección poco a poco.",
+    "nudgeFine": "Con Shift, píxel a píxel.",
+    "pan": "Mueve el lienzo sin usar las barras.",
+    "zoom": "Acerca o aleja donde está el cursor.",
+    "addHere": "Agrega una tabla justo donde hiciste doble clic.",
+    "contextMenu": "Abre el menú de la tabla o de la selección.",
+    "duplicate": "Duplica lo seleccionado.",
+    "delete": "Elimina lo seleccionado.",
+    "undo": "Deshace el último cambio.",
+    "redo": "Rehace lo deshecho."
+  }
+}

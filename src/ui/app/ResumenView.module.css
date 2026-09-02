@@ -101,6 +101,19 @@
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+@container (max-width: 900px) {
+  .catHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .catControls {
+    width: 100%;
+  }
+  .searchBox {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+}
 .catTitle {
   font-size: var(--text-md);
   font-weight: 600;
@@ -162,6 +175,22 @@
   color: var(--text);
   box-shadow: var(--shadow-sm);
 }
+/* direction flip for whichever ordering the mode buttons chose */
+.sortDir {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.sortDir:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
 .colorToggle {
   display: inline-flex;
   align-items: center;

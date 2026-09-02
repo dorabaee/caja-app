@@ -78,8 +78,9 @@ export function KpiHero({
   /** Optional monthly profit target — renders progress under the "Te queda" card. */
   goal?: number;
   labels?: { entro: string; salio: string; teQueda: string };
-  /** Optional per-card controls (the #12 breakdown menus on Entró / Salió). */
-  menus?: { entro?: ReactNode; salio?: ReactNode };
+  /** Optional per-card controls (the #12 breakdown menus on Entró / Salió, and the
+   *  "Te queda" ↔ "Saldo final" toggle on the third card). */
+  menus?: { entro?: ReactNode; salio?: ReactNode; teQueda?: ReactNode };
 }) {
   const fmt = useFormat();
   const { t } = useTranslation();
@@ -109,6 +110,7 @@ export function KpiHero({
         tone="accent"
         icon={<Scale size={16} />}
         value={fmt.money(totals.teQueda)}
+        menu={menus?.teQueda}
         footer={goal != null && goal > 0 ? <GoalProgress value={totals.teQueda} target={goal} /> : undefined}
       />
     </div>

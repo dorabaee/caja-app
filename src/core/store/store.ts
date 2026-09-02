@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { type Draft, produce } from "immer";
 import {
   type AppDoc,
+  type BankKey,
   type ChartType,
   type ColumnType,
   type Project,
@@ -75,15 +76,31 @@ export interface StoreState {
   setTableTitle(monthIndex: number, tableId: string, title: string): void;
   setTableKind(monthIndex: number, tableId: string, kind: TableKind): void;
   setTableInitialBalance(monthIndex: number, tableId: string, value: number): void;
+  /** Mark a table as fiscal (counts toward the month's Saldo final; shows a bank tag). */
+  setTableFiscal(monthIndex: number, tableId: string, fiscal: boolean): void;
+  /** Tag a fiscal table with the bank account it tracks, or null to clear it. */
+  setTableBank(monthIndex: number, tableId: string, bank: BankKey | null): void;
   setWidgetLayout(monthIndex: number, widgetId: string, layout: Partial<WidgetLayout>): void;
+  /** Shift several widgets by the same delta — one undo step for the whole group. */
+  moveWidgets(monthIndex: number, widgetIds: string[], dx: number, dy: number): void;
+  /** Delete several widgets (tables and/or charts) in one undoable step. */
+  removeWidgets(monthIndex: number, widgetIds: string[]): void;
+  /** Clone several widgets, offset slightly; returns the new ids. */
+  duplicateWidgets(monthIndex: number, widgetIds: string[]): string[];
+  /** Raise widgets above every other widget in the month (bring to front). */
+  raiseWidgets(monthIndex: number, widgetIds: string[]): void;
 
   // columns
   addColumn(monthIndex: number, tableId: string, type: ColumnType): void;
   removeColumn(monthIndex: number, tableId: string, columnId: string): void;
+  /** Delete several columns in one undoable step (the table edit mode's ✓). */
+  removeColumns(monthIndex: number, tableId: string, columnIds: string[]): void;
   renameColumn(monthIndex: number, tableId: string, columnId: string, name: string): void;
   setColumnType(monthIndex: number, tableId: string, columnId: string, type: ColumnType): void;
   /** Mark a column as the table's category column (clears the flag from others). */
   setColumnCategory(monthIndex: number, tableId: string, columnId: string | null): void;
+  /** Reorder a table's columns to match the given id order (reorder mode's ✓). */
+  setColumnOrder(monthIndex: number, tableId: string, orderedIds: string[]): void;
   /** Set a fixed px width for a column (drag-resize), or null to revert to flex. */
   setColumnWidth(monthIndex: number, tableId: string, columnId: string, width: number | null): void;
 
@@ -92,6 +109,8 @@ export interface StoreState {
   addRowWithValues(monthIndex: number, tableId: string, values: Record<string, string>): string;
   removeRow(monthIndex: number, tableId: string, rowId: string): void;
   duplicateRow(monthIndex: number, tableId: string, rowId: string): void;
+  /** Reorder a table's rows to match the given id order (row-reorder mode's ✓). */
+  setRowOrder(monthIndex: number, tableId: string, orderedIds: string[]): void;
   setCell(monthIndex: number, tableId: string, rowId: string, columnId: string, value: string): void;
   setNote(monthIndex: number, tableId: string, rowId: string, columnId: string, note: string): void;
 
@@ -311,6 +330,27 @@ export const useStore = create<StoreState>()((set, get) => {
         if (t) t.initialBalance = value;
       }),
 
+    setTableFiscal: (monthIndex, tableId, fiscal) =>
+      commit((d) => {
+        const t = findTable(d, monthIndex, tableId);
+        if (!t) return;
+        if (fiscal) t.fiscal = true;
+        else {
+          // Leaving fiscal drops what only a fiscal table can carry, so re-marking it
+          // later starts clean rather than resurrecting a stale bank tag.
+          delete t.fiscal;
+          delete t.bank;
+        }
+      }),
+
+    setTableBank: (monthIndex, tableId, bank) =>
+      commit((d) => {
+        const t = findTable(d, monthIndex, tableId);
+        if (!t) return;
+        if (bank) t.bank = bank;
+        else delete t.bank;
+      }),
+
     setWidgetLayout: (monthIndex, widgetId, layout) =>
       commit((d) => {
         const month = currentProject(d)?.months[monthIndex];
@@ -324,6 +364,62 @@ export const useStore = create<StoreState>()((set, get) => {
         if (c) Object.assign(c.layout, layout);
       }),
 
+    moveWidgets: (monthIndex, widgetIds, dx, dy) =>
+      commit((d) => {
+        const month = currentProject(d)?.months[monthIndex];
+        if (!month || !widgetIds.length) return;
+        const ids = new Set(widgetIds);
+        for (const w of [...month.tables, ...month.charts]) {
+          if (!ids.has(w.id)) continue;
+          w.layout.x = Math.max(0, Math.round(w.layout.x + dx));
+          w.layout.y = Math.max(0, Math.round(w.layout.y + dy));
+        }
+      }),
+
+    removeWidgets: (monthIndex, widgetIds) =>
+      commit((d) => {
+        const month = currentProject(d)?.months[monthIndex];
+        if (!month || !widgetIds.length) return;
+        const ids = new Set(widgetIds);
+        month.tables = month.tables.filter((t) => !ids.has(t.id));
+        month.charts = month.charts.filter((c) => !ids.has(c.id));
+        // A chart pointing at a table that just went away would render empty forever.
+        for (const c of month.charts) c.linkedTableIds = c.linkedTableIds.filter((id) => !ids.has(id));
+      }),
+
+    duplicateWidgets: (monthIndex, widgetIds) => {
+      const newIds: string[] = [];
+      commit((d) => {
+        const month = currentProject(d)?.months[monthIndex];
+        if (!month || !widgetIds.length) return;
+        const ids = new Set(widgetIds);
+        const OFFSET = 24;
+        for (const t of month.tables.filter((t) => ids.has(t.id))) {
+          const clone = cloneTable(t);
+          clone.layout = { ...t.layout, x: t.layout.x + OFFSET, y: t.layout.y + OFFSET };
+          month.tables.push(clone);
+          newIds.push(clone.id);
+        }
+        for (const c of month.charts.filter((c) => ids.has(c.id))) {
+          const clone = { ...c, id: id(), layout: { ...c.layout, x: c.layout.x + OFFSET, y: c.layout.y + OFFSET } };
+          month.charts.push(clone);
+          newIds.push(clone.id);
+        }
+      });
+      return newIds;
+    },
+
+    raiseWidgets: (monthIndex, widgetIds) =>
+      commit((d) => {
+        const month = currentProject(d)?.months[monthIndex];
+        if (!month || !widgetIds.length) return;
+        const all = [...month.tables, ...month.charts];
+        const top = all.reduce((m, w) => Math.max(m, w.layout.z ?? 0), 0);
+        const ids = new Set(widgetIds);
+        let n = top;
+        for (const w of all) if (ids.has(w.id)) w.layout.z = ++n;
+      }),
+
     addColumn: (monthIndex, tableId, type) =>
       commit((d) => {
         const t = findTable(d, monthIndex, tableId);
@@ -334,12 +430,24 @@ export const useStore = create<StoreState>()((set, get) => {
         for (const r of t.rows) r.cells[col.id] = "";
       }),
 
-    removeColumn: (monthIndex, tableId, columnId) =>
+    removeColumn: (monthIndex, tableId, columnId) => get().removeColumns(monthIndex, tableId, [columnId]),
+
+    removeColumns: (monthIndex, tableId, columnIds) =>
       commit((d) => {
         const t = findTable(d, monthIndex, tableId);
-        if (!t) return;
-        t.columns = t.columns.filter((c) => c.id !== columnId);
-        for (const r of t.rows) delete r.cells[columnId];
+        if (!t || !columnIds.length) return;
+        const drop = new Set(columnIds);
+        const kept = t.columns.filter((c) => !drop.has(c.id));
+        // A table without columns has no cells to edit and no way back — always keep one.
+        if (!kept.length) return;
+        t.columns = kept;
+        for (const r of t.rows) {
+          for (const cid of drop) {
+            delete r.cells[cid];
+            if (r.notes) delete r.notes[cid];
+            if (r.links) delete r.links[cid];
+          }
+        }
       }),
 
     renameColumn: (monthIndex, tableId, columnId, name) =>
@@ -362,6 +470,20 @@ export const useStore = create<StoreState>()((set, get) => {
           if (columnId && c.id === columnId) c.category = true;
           else delete c.category;
         }
+      }),
+
+    setColumnOrder: (monthIndex, tableId, orderedIds) =>
+      commit((d) => {
+        const t = findTable(d, monthIndex, tableId);
+        if (!t) return;
+        const byId = new Map(t.columns.map((c) => [c.id, c]));
+        const next = orderedIds
+          .map((cid) => byId.get(cid))
+          .filter((c): c is (typeof t.columns)[number] => !!c);
+        // Cells are keyed by column id, so only the display order moves here — anything
+        // the caller didn't mention keeps its place at the end rather than vanishing.
+        for (const c of t.columns) if (!orderedIds.includes(c.id)) next.push(c);
+        if (next.length === t.columns.length) t.columns = next;
       }),
 
     setColumnWidth: (monthIndex, tableId, columnId, width) =>
@@ -409,6 +531,18 @@ export const useStore = create<StoreState>()((set, get) => {
           notes: { ...(src.notes ?? {}) },
           links: { ...(src.links ?? {}) },
         });
+      }),
+
+    setRowOrder: (monthIndex, tableId, orderedIds) =>
+      commit((d) => {
+        const t = findTable(d, monthIndex, tableId);
+        if (!t) return;
+        const byId = new Map(t.rows.map((r) => [r.id, r]));
+        const next = orderedIds.map((rid) => byId.get(rid)).filter((r): r is (typeof t.rows)[number] => !!r);
+        // Anything the caller didn't mention (stale id, concurrent add) keeps its place
+        // at the end rather than vanishing.
+        for (const r of t.rows) if (!orderedIds.includes(r.id)) next.push(r);
+        if (next.length === t.rows.length) t.rows = next;
       }),
 
     setCell: (monthIndex, tableId, rowId, columnId, value) =>

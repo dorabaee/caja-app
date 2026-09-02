@@ -7,6 +7,15 @@
   padding: 0 var(--space-6);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  /* Last line of defence: below the narrowest tier the bar clips rather than letting
+     its children pile on top of each other. */
+  overflow: hidden;
+}
+@container main (max-width: 1120px) {
+  .bar {
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+  }
 }
 
 .crumb {
@@ -68,7 +77,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex: none;
+  /* Shrinkable, so a tight bar squeezes the tools instead of overflowing the header. */
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
 }
 
@@ -117,4 +128,14 @@
 .zoomLabel:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
+
+/* the quick-add, folded into a popover once the bar is too tight to host it inline */
+.quickAddPop {
+  z-index: var(--z-overlay);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
 }

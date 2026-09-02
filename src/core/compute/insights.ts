@@ -54,16 +54,28 @@ export interface CategorySlice {
   value: number;
 }
 
-/** Group a single table's money total by its category column value. */
-export function categoryBreakdownForTable(table: Table): CategorySlice[] {
+/** What an un-categorised row is filed under when grouping by real categories. */
+export const UNCATEGORIZED = "Sin categoría";
+
+/**
+ * Group a single table's money total by its category column value.
+ *
+ * Picking a category writes its name into that column, so the column holds a mix of
+ * real category names and free-typed descriptions. Pass `known` (the project's
+ * categories) to keep only the former as their own group and fold everything else into
+ * "Sin categoría"; omit it to group by the raw text, description and all.
+ */
+export function categoryBreakdownForTable(table: Table, known?: string[]): CategorySlice[] {
   const catCol = table.columns.find((c) => c.category) ?? table.columns.find((c) => c.type === "text");
   const moneyCol = table.columns.find((c) => c.type === "money");
   if (!catCol || !moneyCol) return [];
+  const canon = known && new Map(known.map((n) => [n.trim().toLowerCase(), n]));
   const map = new Map<string, number>();
   for (const row of table.rows) {
     const amount = parseMoney(row.cells[moneyCol.id]);
     if (amount === 0) continue;
-    const label = (row.cells[catCol.id] || "").trim() || "Sin categoría";
+    const raw = (row.cells[catCol.id] || "").trim();
+    const label = canon ? (canon.get(raw.toLowerCase()) ?? UNCATEGORIZED) : raw || UNCATEGORIZED;
     map.set(label, (map.get(label) ?? 0) + amount);
   }
   return [...map.entries()]
@@ -83,13 +95,20 @@ export interface CategoryYearRow {
  * Expense categories across the year with a per-month breakdown (#16) — for the
  * Resumen's search / sort / highlight. Aggregates every expense table's category
  * breakdown by category name into a 12-month vector. Sorted by year total desc.
+ *
+ * With `byCategory`, rows are grouped by the project's real categories (anything else
+ * folded into "Sin categoría"); without it, by the raw description text.
  */
-export function monthlyExpenseCategories(project: Project): CategoryYearRow[] {
+export function monthlyExpenseCategories(
+  project: Project,
+  opts?: { byCategory?: boolean },
+): CategoryYearRow[] {
+  const known = opts?.byCategory ? (project.categories ?? []).map((c) => c.name) : undefined;
   const map = new Map<string, number[]>();
   materializedMonths(project).forEach((m, i) => {
     for (const t of m.tables) {
       if (t.kind !== "expense") continue;
-      for (const slice of categoryBreakdownForTable(t)) {
+      for (const slice of categoryBreakdownForTable(t, known)) {
         let arr = map.get(slice.label);
         if (!arr) {
           arr = new Array(12).fill(0);

@@ -3,6 +3,14 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
 }
+@container main (max-width: 1000px) {
+  .hero {
+    gap: var(--space-3);
+  }
+  .card {
+    padding: var(--space-4);
+  }
+}
 
 .card {
   display: flex;
@@ -27,6 +35,10 @@
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .menu {
   margin-left: auto;
@@ -35,10 +47,15 @@
 
 .value {
   font-family: var(--font-num);
-  font-size: var(--text-3xl);
+  /* Scales with the card so a long figure ($50,676.00) can't spill past its edge. */
+  font-size: clamp(1.5rem, 3.2cqi, var(--text-3xl));
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* tones — accent on text/icon; the "te queda" card is the one filled surface */

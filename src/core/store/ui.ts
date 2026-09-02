@@ -13,6 +13,8 @@ export type ModalKind =
   | "recurring"
   | "copyMonth";
 export type ViewMode = "canvas" | "list";
+/** Which figure the third KPI card shows: the month's net, or the fiscal saldo final. */
+export type BalanceMode = "teQueda" | "saldoFinal";
 /** Top-level screen in the main area (driven by the sidebar + month strip).
  *  "home" is the businesses launcher — reached via the pinned "Inicio" row, not a
  *  Vista tab, so it stays out of `navOrder` (and its persistence/validation). */
@@ -128,12 +130,17 @@ export interface UIState {
   sidebarCollapsed: boolean;
   /** Order of the "Vista" nav tabs — drag-reorderable, persisted preference. */
   navOrder: NavView[];
+  /** Third KPI card: the month's net ("Te queda") or the fiscal tables' saldo final. */
+  balanceMode: BalanceMode;
   /** Table ids opted out of their KPI total — an ephemeral "what-if" for the month view. */
   kpiExclusions: ReadonlySet<string>;
   /** A copied table held in a session clipboard (never persisted to the doc) for paste-into-month. */
   clipboardTable: Table | null;
   /** Active "send a value" flow (#7): the value picked up + the source cell key to exclude. */
   sendValue: { value: string; sourceKey: string } | null;
+  /** Every selected widget. One-widget selection is just a set of size 1. */
+  selectedIds: ReadonlySet<string>;
+  /** The single selected widget, or null when zero or several are selected. */
   selectedWidgetId: string | null;
   zoom: number;
   view: ViewMode;
@@ -151,11 +158,18 @@ export interface UIState {
   setSidebarCollapsed(collapsed: boolean): void;
   setNavOrder(order: NavView[]): void;
   toggleKpiExclusion(tableId: string): void;
+  /** Flip the third KPI card between "Te queda" and "Saldo final". */
+  toggleBalanceMode(): void;
   copyTableToClipboard(table: Table | null): void;
   startSendValue(value: string, sourceKey: string): void;
   cancelSendValue(): void;
   editProject(projectId: string | null): void;
   select(widgetId: string | null): void;
+  /** Add/remove one widget from the selection (Ctrl/Shift+click). */
+  toggleSelect(widgetId: string): void;
+  /** Replace the selection wholesale (marquee, select-all). */
+  selectMany(widgetIds: Iterable<string>): void;
+  clearSelection(): void;
   setZoom(z: number): void;
   zoomIn(): void;
   zoomOut(): void;
@@ -175,9 +189,11 @@ export const useUI = create<UIState>((set, get) => ({
   nav: readNav(),
   sidebarCollapsed: readSidebarCollapsed(),
   navOrder: readNavOrder(),
+  balanceMode: "teQueda",
   kpiExclusions: new Set<string>(),
   clipboardTable: null,
   sendValue: null,
+  selectedIds: new Set<string>(),
   selectedWidgetId: null,
   zoom: 1,
   view: "canvas",
@@ -191,11 +207,11 @@ export const useUI = create<UIState>((set, get) => ({
     const monthIndex = Math.max(0, Math.min(11, i));
     writeMonthIndex(monthIndex);
     writeNav("month");
-    set({ monthIndex, nav: "month", selectedWidgetId: null });
+    set({ monthIndex, nav: "month", selectedIds: new Set<string>(), selectedWidgetId: null });
   },
   goTo: (nav) => {
     writeNav(nav);
-    set({ nav, selectedWidgetId: null });
+    set({ nav, selectedIds: new Set<string>(), selectedWidgetId: null });
   },
   toggleSidebar: () =>
     set((s) => {
@@ -211,6 +227,8 @@ export const useUI = create<UIState>((set, get) => ({
     writeNavOrder(navOrder);
     set({ navOrder });
   },
+  toggleBalanceMode: () =>
+    set((s) => ({ balanceMode: s.balanceMode === "teQueda" ? "saldoFinal" : "teQueda" })),
   toggleKpiExclusion: (tableId) =>
     set((s) => {
       const next = new Set(s.kpiExclusions);
@@ -222,7 +240,24 @@ export const useUI = create<UIState>((set, get) => ({
   startSendValue: (value, sourceKey) => set({ sendValue: { value, sourceKey } }),
   cancelSendValue: () => set({ sendValue: null }),
   editProject: (editProjectId) => set({ editProjectId }),
-  select: (widgetId) => set({ selectedWidgetId: widgetId }),
+  select: (widgetId) =>
+    set({
+      selectedIds: widgetId ? new Set([widgetId]) : new Set<string>(),
+      selectedWidgetId: widgetId,
+    }),
+  toggleSelect: (widgetId) =>
+    set((s) => {
+      const next = new Set(s.selectedIds);
+      if (next.has(widgetId)) next.delete(widgetId);
+      else next.add(widgetId);
+      return { selectedIds: next, selectedWidgetId: next.size === 1 ? [...next][0] : null };
+    }),
+  selectMany: (widgetIds) =>
+    set(() => {
+      const next = new Set(widgetIds);
+      return { selectedIds: next, selectedWidgetId: next.size === 1 ? [...next][0] : null };
+    }),
+  clearSelection: () => set({ selectedIds: new Set<string>(), selectedWidgetId: null }),
   setZoom: (z) => set({ zoom: clampZoom(z) }),
   zoomIn: () => set({ zoom: clampZoom(get().zoom + 0.1) }),
   zoomOut: () => set({ zoom: clampZoom(get().zoom - 0.1) }),

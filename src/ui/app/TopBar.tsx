@@ -1,5 +1,8 @@
+import { useRef } from "react";
 import {
   ArrowLeft,
+  MoreHorizontal,
+  Zap,
   ChevronRight,
   Plus,
   Undo2,
@@ -16,15 +19,30 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
-import { Button, IconButton, Menu, MenuItem, MenuLabel } from "@ui/common";
+import { Button, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, Popover } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
+import { useElementWidth } from "@ui/hooks/useElementWidth";
 import { AddTableMenu } from "./AddTableMenu";
+import { NewChartMenu } from "./NewChartMenu";
 import { ExportMenu } from "./ExportMenu";
 import { QuickAddBar } from "./QuickAddBar";
 import styles from "./TopBar.module.css";
 
+/**
+ * Widths (of the bar itself, so the sidebar's state counts) at which the toolbar sheds
+ * weight. Below the last tier the secondary tools live in an overflow menu — nothing is
+ * ever allowed to overlap, which is what used to happen once the bar ran out of room.
+ */
+const TIER_CHART_ICON = 1280;
+const TIER_QUICK_ADD = 1120;
+const TIER_OVERFLOW = 1000;
+
 export function TopBar() {
   const { t } = useTranslation();
+  const barRef = useRef<HTMLElement>(null);
+  const barWidth = useElementWidth(barRef);
+  // 0 = not measured yet; render roomy so the first paint isn't a collapsed flash.
+  const roomy = (min: number) => barWidth === 0 || barWidth >= min;
   const current = useCurrentProject();
   const nav = useUI((s) => s.nav);
   const goTo = useUI((s) => s.goTo);
@@ -38,7 +56,6 @@ export function TopBar() {
   const setView = useUI((s) => s.setView);
   const monthIndex = useUI((s) => s.monthIndex);
   const select = useUI((s) => s.select);
-  const addChart = useStore((s) => s.addChart);
   const zoom = useUI((s) => s.zoom);
   const zoomIn = useUI((s) => s.zoomIn);
   const zoomOut = useUI((s) => s.zoomOut);
@@ -51,11 +68,6 @@ export function TopBar() {
   const clipboardTable = useUI((s) => s.clipboardTable);
   const openModal = useUI((s) => s.openModal);
 
-  const onAddChart = () => {
-    // New charts start blank; the user links any/multiple tables (#9).
-    select(addChart(monthIndex));
-  };
-
   // Paste the copied table into this month, then clear the clipboard (the icon turns off).
   const pasteClip = (withData: boolean) => {
     if (!clipboardTable) return;
@@ -65,9 +77,35 @@ export function TopBar() {
   };
 
   const showCanvasTools = isMonth && view === "canvas";
+  const chartLabel = roomy(TIER_CHART_ICON);
+  const inlineQuickAdd = roomy(TIER_QUICK_ADD);
+  const inlineTools = roomy(TIER_OVERFLOW);
+
+  const clipboardMenu = clipboardTable ? (
+    <Menu
+      align="end"
+      trigger={
+        <IconButton
+          label={t("shell.clipboardPaste", { title: clipboardTable.title })}
+          icon={<Clipboard />}
+          className={styles.clipActive}
+        />
+      }
+    >
+      <MenuLabel>{t("shell.clipboardHas", { title: clipboardTable.title })}</MenuLabel>
+      <MenuItem icon={<ClipboardPaste />} onClick={() => pasteClip(true)}>
+        {t("shell.pasteWithData", { title: clipboardTable.title })}
+      </MenuItem>
+      <MenuItem icon={<FileStack />} onClick={() => pasteClip(false)}>
+        {t("shell.pasteStructure", { title: clipboardTable.title })}
+      </MenuItem>
+    </Menu>
+  ) : (
+    <IconButton label={t("shell.clipboardEmpty")} icon={<Clipboard />} disabled />
+  );
 
   return (
-    <header className={styles.bar}>
+    <header className={styles.bar} ref={barRef}>
       <div className={styles.crumb}>
         {isHome ? (
           <h1 className={styles.crumbCurrent}>{t("shell.home")}</h1>
@@ -94,11 +132,21 @@ export function TopBar() {
         )}
       </div>
 
-      {isMonth && (
-        <div className={styles.quickAddSlot}>
-          <QuickAddBar compact monthIndex={monthIndex} />
-        </div>
-      )}
+      {isMonth &&
+        (inlineQuickAdd ? (
+          <div className={styles.quickAddSlot}>
+            <QuickAddBar compact monthIndex={monthIndex} />
+          </div>
+        ) : (
+          <Popover
+            align="start"
+            minWidth={320}
+            className={styles.quickAddPop}
+            trigger={<IconButton label={t("shell.quickAdd")} icon={<Zap />} />}
+          >
+            <QuickAddBar monthIndex={monthIndex} />
+          </Popover>
+        ))}
 
       {!isMonth && !isHome && (
         <div className={styles.tools}>
@@ -116,58 +164,85 @@ export function TopBar() {
             }
           />
 
-          <Button variant="ghost" icon={<BarChart3 />} onClick={onAddChart}>
-            {t("shell.chart")}
-          </Button>
-
-          <span className={styles.divider} aria-hidden />
-
-          {/* Clipboard: lit when a table is copied; click to paste here (then it clears). */}
-          {clipboardTable ? (
-            <Menu
-              align="end"
-              trigger={
-                <IconButton
-                  label={t("shell.clipboardPaste", { title: clipboardTable.title })}
-                  icon={<Clipboard />}
-                  className={styles.clipActive}
-                />
-              }
-            >
-              <MenuLabel>{t("shell.clipboardHas", { title: clipboardTable.title })}</MenuLabel>
-              <MenuItem icon={<ClipboardPaste />} onClick={() => pasteClip(true)}>
-                {t("shell.pasteWithData", { title: clipboardTable.title })}
-              </MenuItem>
-              <MenuItem icon={<FileStack />} onClick={() => pasteClip(false)}>
-                {t("shell.pasteStructure", { title: clipboardTable.title })}
-              </MenuItem>
-            </Menu>
-          ) : (
-            <IconButton label={t("shell.clipboardEmpty")} icon={<Clipboard />} disabled />
-          )}
-
-          <IconButton
-            label={t("shell.copyMonth")}
-            icon={<CalendarPlus />}
-            onClick={() => openModal("copyMonth")}
+          <NewChartMenu
+            trigger={
+              chartLabel ? (
+                <Button variant="ghost" icon={<BarChart3 />}>
+                  {t("shell.chart")}
+                </Button>
+              ) : (
+                <IconButton label={t("shell.chart")} icon={<BarChart3 />} />
+              )
+            }
           />
 
           <span className={styles.divider} aria-hidden />
 
-          <IconButton label={t("shell.undo")} icon={<Undo2 />} onClick={undo} disabled={!canUndo} />
-          <IconButton label={t("shell.redo")} icon={<Redo2 />} onClick={redo} disabled={!canRedo} />
-
-          {showCanvasTools && (
+          {inlineTools ? (
             <>
+              {/* Clipboard: lit when a table is copied; click to paste here (then it clears). */}
+              {clipboardMenu}
+
+              <IconButton
+                label={t("shell.copyMonth")}
+                icon={<CalendarPlus />}
+                onClick={() => openModal("copyMonth")}
+              />
+
               <span className={styles.divider} aria-hidden />
-              <div className={styles.zoom}>
-                <IconButton label={t("shell.zoomOut")} icon={<ZoomOut />} size="sm" onClick={zoomOut} />
-                <button type="button" className={styles.zoomLabel} onClick={resetZoom} title={t("shell.resetZoom")}>
-                  {Math.round(zoom * 100)}%
-                </button>
-                <IconButton label={t("shell.zoomIn")} icon={<ZoomIn />} size="sm" onClick={zoomIn} />
-              </div>
+
+              <IconButton label={t("shell.undo")} icon={<Undo2 />} onClick={undo} disabled={!canUndo} />
+              <IconButton label={t("shell.redo")} icon={<Redo2 />} onClick={redo} disabled={!canRedo} />
+
+              {showCanvasTools && (
+                <>
+                  <span className={styles.divider} aria-hidden />
+                  <div className={styles.zoom}>
+                    <IconButton label={t("shell.zoomOut")} icon={<ZoomOut />} size="sm" onClick={zoomOut} />
+                    <button type="button" className={styles.zoomLabel} onClick={resetZoom} title={t("shell.resetZoom")}>
+                      {Math.round(zoom * 100)}%
+                    </button>
+                    <IconButton label={t("shell.zoomIn")} icon={<ZoomIn />} size="sm" onClick={zoomIn} />
+                  </div>
+                </>
+              )}
             </>
+          ) : (
+            <Menu align="end" trigger={<IconButton label={t("shell.moreTools")} icon={<MoreHorizontal />} />}>
+              <MenuItem icon={<Undo2 />} disabled={!canUndo} onClick={undo}>
+                {t("shell.undo")}
+              </MenuItem>
+              <MenuItem icon={<Redo2 />} disabled={!canRedo} onClick={redo}>
+                {t("shell.redo")}
+              </MenuItem>
+              <MenuSeparator />
+              {clipboardTable && (
+                <>
+                  <MenuItem icon={<ClipboardPaste />} onClick={() => pasteClip(true)}>
+                    {t("shell.pasteWithData", { title: clipboardTable.title })}
+                  </MenuItem>
+                  <MenuItem icon={<FileStack />} onClick={() => pasteClip(false)}>
+                    {t("shell.pasteStructure", { title: clipboardTable.title })}
+                  </MenuItem>
+                </>
+              )}
+              <MenuItem icon={<CalendarPlus />} onClick={() => openModal("copyMonth")}>
+                {t("shell.copyMonth")}
+              </MenuItem>
+              {showCanvasTools && (
+                <>
+                  <MenuSeparator />
+                  <MenuLabel>{Math.round(zoom * 100) + "%"}</MenuLabel>
+                  <MenuItem icon={<ZoomOut />} onClick={zoomOut}>
+                    {t("shell.zoomOut")}
+                  </MenuItem>
+                  <MenuItem icon={<ZoomIn />} onClick={zoomIn}>
+                    {t("shell.zoomIn")}
+                  </MenuItem>
+                  <MenuItem onClick={resetZoom}>{t("shell.resetZoom")}</MenuItem>
+                </>
+              )}
+            </Menu>
           )}
 
           <span className={styles.divider} aria-hidden />

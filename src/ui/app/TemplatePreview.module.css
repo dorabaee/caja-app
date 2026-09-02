@@ -1,0 +1,305 @@
+/* Same dimming treatment as the guided tour, so the two help surfaces feel like one. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(8, 10, 14, 0.6);
+  animation: overlayIn 160ms ease-out;
+}
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.card {
+  width: min(520px, 100%);
+  max-height: calc(100vh - var(--space-8));
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, var(--radius-md));
+  box-shadow: var(--shadow-lg);
+  animation: cardIn 220ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.close:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.purpose {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ---------- the looping mock ---------- */
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-image: radial-gradient(var(--canvas-dot) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  z-index: 1;
+}
+.arrow:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+.arrowLeft {
+  left: var(--space-2);
+}
+.arrowRight {
+  right: var(--space-2);
+}
+
+.mock {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  font-size: var(--text-xs);
+}
+.mockHead,
+.mockRow,
+.mockFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  min-height: 30px;
+  border-bottom: 1px solid var(--border);
+}
+.mockFoot {
+  border-bottom: none;
+  background: var(--surface-2);
+  font-weight: 600;
+  transition: background-color 220ms ease;
+}
+.mockFootActive {
+  background: var(--accent-weak);
+}
+.mockHead {
+  font-weight: 600;
+  color: var(--text-subtle);
+  background: var(--surface-2);
+}
+.mockRow {
+  transition: background-color 320ms ease;
+}
+.mockRowActive {
+  background: var(--accent-weak);
+}
+.mockCell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mockNum {
+  justify-content: flex-end;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.mockTotal {
+  color: var(--accent-strong);
+}
+
+/* A cell that hasn't been filled in yet reads as an empty field, not as missing. */
+.mockGhost {
+  width: 70%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  opacity: 0.7;
+}
+
+/* Keyed on its own text, so every value change remounts and animates in. */
+.mockValue {
+  animation: valueIn 260ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+@keyframes valueIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.mockTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-xs);
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+  font-weight: 600;
+  animation: tagIn 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tagIn {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* ---------- steps ---------- */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--text-muted);
+  transition:
+    color 240ms ease,
+    opacity 240ms ease;
+  opacity: 0.6;
+}
+.stepOn {
+  color: var(--text);
+  opacity: 1;
+}
+.stepNum {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition:
+    background-color 240ms ease,
+    color 240ms ease,
+    border-color 240ms ease;
+}
+.stepOn .stepNum {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+}
+
+/* ---------- footer ---------- */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+.dots {
+  display: flex;
+  gap: 5px;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition:
+    background-color 200ms ease,
+    width 200ms ease;
+}
+.dotOn {
+  width: 16px;
+  background: var(--accent);
+}
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .card,
+  .mockValue,
+  .mockTag {
+    animation: none;
+  }
+}

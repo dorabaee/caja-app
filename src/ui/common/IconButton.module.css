@@ -44,3 +44,18 @@
   background: var(--accent-weak);
   color: var(--accent-strong);
 }
+
+/* The classic information affordance: blue outline, light blue fill, blue glyph — so a
+   help control never reads as just another grey icon, whatever the project accent is. */
+.info {
+  color: var(--info);
+  background: var(--info-weak);
+  border: 1px solid var(--info);
+}
+.info:hover:not(:disabled) {
+  color: var(--info);
+  background: var(--info-hover);
+}
+.info:active:not(:disabled) {
+  transform: scale(0.94);
+}

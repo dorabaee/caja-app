@@ -1,5 +1,5 @@
-import type { Month, Project } from "../model/types";
-import { tableTotal } from "./tables";
+import type { Month, Project, Table } from "../model/types";
+import { columnTotals, ledgerBalance, tableTotal } from "./tables";
 import { recurringRowsFor } from "./recurring";
 
 export interface MonthlyTotals {
@@ -45,6 +45,32 @@ export function monthlyTotals(month: Month): MonthlyTotals {
     else if (t.kind === "expense") salio += tableTotal(t);
   }
   return { entro, salio, teQueda: entro - salio };
+}
+
+/**
+ * What one fiscal table has left. A ledger's saldo comes from its deposit/withdrawal
+ * roles; any other table has no such roles, so its saldo is the net of its money columns,
+ * signed the way the table counts toward the month (an expense table drains it).
+ */
+export function fiscalBalance(table: Table): number {
+  if (table.kind === "ledger") return ledgerBalance(table).finalBalance;
+  const totals = columnTotals(table);
+  const sum = table.columns
+    .filter((c) => c.type === "money")
+    .reduce((acc, c) => acc + (totals[c.id] ?? 0), 0);
+  return table.kind === "expense" ? -sum : sum;
+}
+
+/** Saldo final for the month: every table marked fiscal, added up (#1). */
+export function fiscalTotal(month: Month, excluded?: ReadonlySet<string>): number {
+  return month.tables
+    .filter((t) => t.fiscal && !excluded?.has(t.id))
+    .reduce((acc, t) => acc + fiscalBalance(t), 0);
+}
+
+/** Whether the month has anything to show a saldo final for. */
+export function hasFiscalTable(month: Month): boolean {
+  return month.tables.some((t) => t.fiscal);
 }
 
 export interface MonthSummary extends MonthlyTotals {

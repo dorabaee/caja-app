@@ -1,0 +1,32 @@
+/* Template row: label on the left, its "?" pinned right (revealed on hover/focus). */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+.help {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 999px;
+  color: var(--info);
+  background: var(--info-weak);
+  border: 1px solid var(--info);
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
+}
+.row:hover .help,
+.help:focus-visible {
+  opacity: 1;
+}
+.help:hover {
+  background: var(--info-hover);
+}

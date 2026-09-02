@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Zap, Plus, ChevronDown } from "lucide-react";
 import { useStore, useUI } from "@core/store";
-import type { Column, Table } from "@core/model/types";
+import { uniqueTableLabels } from "@core/compute";
+import type { Column, LedgerRole, Table } from "@core/model/types";
 import { Button, Menu, MenuItem, MenuLabel, TextInput, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import styles from "./quickAddBar.module.css";
@@ -28,13 +29,18 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   const { t } = useTranslation();
   const project = useCurrentProject();
   const month = project?.months[monthIndex];
-  const candidates: Table[] = month?.tables.filter((t) => t.kind !== "ledger") ?? [];
+  // Every table in the month, ledgers included — a ledger just needs to be told which of
+  // its two money columns the amount belongs in (see `role` below).
+  const candidates: Table[] = month?.tables ?? [];
+  const labels = useMemo(() => uniqueTableLabels(candidates), [candidates]);
 
   const [selectedTableId, setSelectedTableId] = useState<string | null>(
     candidates[0]?.id ?? null,
   );
   const [concepto, setConcepto] = useState("");
   const [monto, setMonto] = useState("");
+  // Ledgers only: which column the amount lands in. Gasto is the common entry.
+  const [role, setRole] = useState<LedgerRole>("withdrawal");
   const conceptoRef = useRef<HTMLInputElement>(null);
 
   // Keep selection valid as tables come and go.
@@ -54,8 +60,14 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     if (!concept && !amount) return;
 
     const firstText = firstOfType(table.columns, "text");
-    const firstMoney = firstOfType(table.columns, "money");
     const firstDate = firstOfType(table.columns, "date");
+    // In a ledger the amount is routed by column role, not by position: putting an
+    // expense in "Depósito" would silently invert the saldo.
+    const firstMoney =
+      table.kind === "ledger"
+        ? (table.columns.find((c) => c.type === "money" && c.role === role) ??
+          firstOfType(table.columns, "money"))
+        : firstOfType(table.columns, "money");
 
     const values: Record<string, string> = {};
     if (firstText && concept) values[firstText.id] = concept;
@@ -66,7 +78,7 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     }
 
     useStore.getState().addRowWithValues(monthIndex, table.id, values);
-    useUI.getState().toast(t("month.added", { name: table.title }), "success");
+    useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
     setConcepto("");
     setMonto("");
     conceptoRef.current?.focus();
@@ -95,22 +107,45 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         align="start"
         trigger={
           <Button variant="secondary" size={btnSize} className={styles.picker}>
-            <span className={styles.pickerLabel}>{selected?.title ?? "—"}</span>
+            <span className={styles.pickerLabel}>
+              {selected ? (labels[selected.id] ?? selected.title) : "—"}
+            </span>
             <ChevronDown size={15} className={styles.chev} aria-hidden />
           </Button>
         }
       >
         <MenuLabel>{t("month.table")}</MenuLabel>
-        {candidates.map((t) => (
+        {candidates.map((c) => (
           <MenuItem
-            key={t.id}
-            checked={t.id === selected?.id}
-            onClick={() => setSelectedTableId(t.id)}
+            key={c.id}
+            checked={c.id === selected?.id}
+            onClick={() => setSelectedTableId(c.id)}
           >
-            {t.title}
+            {labels[c.id] ?? c.title}
           </MenuItem>
         ))}
       </Menu>
+
+      {selected?.kind === "ledger" && (
+        <div className={styles.roles} role="group" aria-label={t("month.ledgerTarget")}>
+          <button
+            type="button"
+            className={cn(styles.roleBtn, role === "deposit" && styles.roleOn)}
+            aria-pressed={role === "deposit"}
+            onClick={() => setRole("deposit")}
+          >
+            {t("widgets.deposits")}
+          </button>
+          <button
+            type="button"
+            className={cn(styles.roleBtn, role === "withdrawal" && styles.roleOn)}
+            aria-pressed={role === "withdrawal"}
+            onClick={() => setRole("withdrawal")}
+          >
+            {t("widgets.expenses")}
+          </button>
+        </div>
+      )}
 
       <TextInput
         ref={conceptoRef}

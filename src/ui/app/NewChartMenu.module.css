@@ -1,0 +1,229 @@
+.pop {
+  z-index: var(--z-overlay);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
+  width: 340px;
+  overflow: hidden;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Keyed per screen, so each one slides in as you step forward or back. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: screenIn 200ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+@keyframes screenIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+
+/* ---------- screen 2 header ---------- */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.back {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.back:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+.headTitle {
+  margin: 0;
+  flex: 1;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.headMeta {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+
+/* ---------- screen 1 gallery ---------- */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0 calc(var(--space-1) * -1);
+  padding: 0 var(--space-1);
+}
+.typeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  text-align: left;
+  cursor: pointer;
+}
+.typeRow:hover {
+  background: var(--surface-hover);
+}
+.typeRowOn {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.typeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.typeName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.typeAbout {
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.typeCheck {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: var(--accent-contrast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.typeBtn {
+  height: 26px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.typeBtn:hover {
+  color: var(--text);
+}
+.typeOn {
+  background: var(--accent-weak);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.tables {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow: auto;
+}
+.tableRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.tableRow:hover {
+  background: var(--surface-hover);
+}
+.tableRowOn {
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.tableName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--accent-contrast);
+}
+.checkOn {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+.count {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}

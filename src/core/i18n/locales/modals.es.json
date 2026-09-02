@@ -104,6 +104,7 @@
     "toastBackupSaved": "Respaldo guardado.",
     "toastBackupError": "No se pudo crear el respaldo.",
     "toastBackupRestored": "Respaldo restaurado.",
-    "toastRestoreError": "No se pudo restaurar el respaldo."
+    "toastRestoreError": "No se pudo restaurar el respaldo.",
+    "categoryGroup": "Grupo de la categoría"
   }
 }

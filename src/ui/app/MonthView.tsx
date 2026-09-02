@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { TableProperties, Plus, ArrowRightLeft, Send, X } from "lucide-react";
+import { TableProperties, Plus, ArrowRightLeft, Send, X, ChevronRight } from "lucide-react";
 import { useUI } from "@core/store";
-import { carryOverStart, kpiBreakdown, materializeMonth } from "@core/compute";
+import { carryOverStart, fiscalTotal, hasFiscalTable, kpiBreakdown, materializeMonth } from "@core/compute";
 import { Button } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
@@ -21,6 +21,8 @@ export function MonthView() {
   const monthIndex = useUI((s) => s.monthIndex);
   const view = useUI((s) => s.view);
   const kpiExclusions = useUI((s) => s.kpiExclusions);
+  const balanceMode = useUI((s) => s.balanceMode);
+  const toggleBalanceMode = useUI((s) => s.toggleBalanceMode);
   const sendValue = useUI((s) => s.sendValue);
   const cancelSendValue = useUI((s) => s.cancelSendValue);
   const fmt = useFormat();
@@ -41,8 +43,17 @@ export function MonthView() {
   const month = project.months[monthIndex];
   // Breakdown drives both the totals shown and the per-card menus (#11/#12); exclusions
   // are an ephemeral what-if applied here in the month view only.
-  const breakdown = kpiBreakdown(materializeMonth(project, monthIndex), kpiExclusions);
-  const totals = { entro: breakdown.entro, salio: breakdown.salio, teQueda: breakdown.teQueda };
+  const materialized = materializeMonth(project, monthIndex);
+  const breakdown = kpiBreakdown(materialized, kpiExclusions);
+  // The third card flips between the month's net and the fiscal tables' saldo final (#1);
+  // the toggle only appears once something in the month is marked fiscal.
+  const canShowSaldo = hasFiscalTable(materialized);
+  const showSaldo = canShowSaldo && balanceMode === "saldoFinal";
+  const totals = {
+    entro: breakdown.entro,
+    salio: breakdown.salio,
+    teQueda: showSaldo ? fiscalTotal(materialized, kpiExclusions) : breakdown.teQueda,
+  };
   const hasWidgets = month.tables.length > 0 || month.charts.length > 0;
 
   const carry = project.carryOver ? carryOverStart(project, monthIndex) : null;
@@ -52,10 +63,26 @@ export function MonthView() {
       <div className={styles.heroBand} data-tour="kpi">
         <KpiHero
           totals={totals}
-          goal={project.goal?.monthlyProfitTarget}
+          goal={showSaldo ? undefined : project.goal?.monthlyProfitTarget}
+          labels={
+            showSaldo
+              ? { entro: t("month.entro"), salio: t("month.salio"), teQueda: t("widgets.finalBalance") }
+              : undefined
+          }
           menus={{
             entro: <KpiBreakdownMenu kind="income" contributions={breakdown.income} monthIndex={monthIndex} />,
             salio: <KpiBreakdownMenu kind="expense" contributions={breakdown.expense} monthIndex={monthIndex} />,
+            teQueda: canShowSaldo ? (
+              <button
+                type="button"
+                className={styles.balanceToggle}
+                title={showSaldo ? t("month.showTeQueda") : t("month.showSaldoFinal")}
+                aria-label={showSaldo ? t("month.showTeQueda") : t("month.showSaldoFinal")}
+                onClick={toggleBalanceMode}
+              >
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            ) : undefined,
           }}
         />
         {carry != null && (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Share2, Search } from "lucide-react";
+import { Share2, Search, ArrowDown, ArrowUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { monthlyExpenseCategories, yearlyResumen } from "@core/compute";
 import { useUI } from "@core/store";
@@ -11,7 +11,20 @@ import { useChartColors } from "@ui/hooks/useChartColors";
 import { KpiHero } from "./KpiHero";
 import styles from "./ResumenView.module.css";
 
-type SortMode = "amount" | "name";
+/**
+ * What the "Gastos por categoría" list is keyed on:
+ * - "category": the project's real categories, everything else folded into "Sin categoría";
+ * - "amount" / "name": every distinct description value, ordered by total or alphabetically.
+ * Picking a category writes it into the description cell, so the two views are the same
+ * column read two ways — which is why the mode also decides the grouping, not just the sort.
+ */
+type CatMode = "category" | "amount" | "name";
+
+const MODE_KEY: Record<CatMode, string> = {
+  category: "dash.groupCategory",
+  amount: "dash.sortAmount",
+  name: "dash.sortName",
+};
 
 export function ResumenView() {
   const { t } = useTranslation();
@@ -22,18 +35,25 @@ export function ResumenView() {
   const openModal = useUI((s) => s.openModal);
 
   const [search, setSearch] = useState("");
-  const [sortMode, setSortMode] = useState<SortMode>("amount");
+  const [mode, setMode] = useState<CatMode>("category");
+  const [descending, setDescending] = useState(true);
   const [distinct, setDistinct] = useState(true);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 
-  const catRows = useMemo(() => (project ? monthlyExpenseCategories(project) : []), [project]);
+  const catRows = useMemo(
+    () => (project ? monthlyExpenseCategories(project, { byCategory: mode === "category" }) : []),
+    [project, mode],
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const dir = descending ? 1 : -1;
     return catRows
       .filter((c) => !q || c.label.toLowerCase().includes(q))
-      .sort((a, b) => (sortMode === "name" ? a.label.localeCompare(b.label) : b.total - a.total));
-  }, [catRows, search, sortMode]);
+      .sort((a, b) =>
+        mode === "name" ? a.label.localeCompare(b.label) * dir : (b.total - a.total) * dir,
+      );
+  }, [catRows, search, mode, descending]);
 
   if (!project) return null;
   const { months, totals } = yearlyResumen(project);
@@ -112,22 +132,28 @@ export function ResumenView() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </span>
-            <div className={styles.segmented} role="group" aria-label={t("dash.sortBy")}>
-              <button
-                type="button"
-                className={cn(styles.segBtn, sortMode === "amount" && styles.segOn)}
-                onClick={() => setSortMode("amount")}
-              >
-                {t("dash.sortAmount")}
-              </button>
-              <button
-                type="button"
-                className={cn(styles.segBtn, sortMode === "name" && styles.segOn)}
-                onClick={() => setSortMode("name")}
-              >
-                {t("dash.sortName")}
-              </button>
+            <div className={styles.segmented} role="group" aria-label={t("dash.groupBy")}>
+              {(["category", "amount", "name"] as CatMode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={cn(styles.segBtn, mode === m && styles.segOn)}
+                  aria-pressed={mode === m}
+                  onClick={() => setMode(m)}
+                >
+                  {t(MODE_KEY[m])}
+                </button>
+              ))}
             </div>
+            <button
+              type="button"
+              className={styles.sortDir}
+              aria-label={descending ? t("dash.sortDesc") : t("dash.sortAsc")}
+              title={descending ? t("dash.sortDesc") : t("dash.sortAsc")}
+              onClick={() => setDescending((d) => !d)}
+            >
+              {descending ? <ArrowDown size={15} aria-hidden /> : <ArrowUp size={15} aria-hidden />}
+            </button>
             <button
               type="button"
               className={styles.colorToggle}

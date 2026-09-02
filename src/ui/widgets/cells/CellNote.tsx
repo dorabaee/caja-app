@@ -4,15 +4,7 @@ import { StickyNote } from "lucide-react";
 import { Popover, cn } from "@ui/common";
 import styles from "../widget.module.css";
 
-export function CellNote({
-  note,
-  onChange,
-  side,
-}: {
-  note: string;
-  onChange: (value: string) => void;
-  side: string;
-}) {
+export function CellNote({ note, onChange }: { note: string; onChange: (value: string) => void }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(note);
 
@@ -28,7 +20,7 @@ export function CellNote({
       trigger={
         <button
           type="button"
-          className={cn(styles.note, side, note && styles.noteOn)}
+          className={cn(styles.cellBtn, note && styles.noteOn)}
           aria-label={note ? t("widgets.editNote") : t("widgets.addNote")}
         >
           <StickyNote size={12} />

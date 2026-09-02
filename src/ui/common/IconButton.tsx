@@ -8,10 +8,12 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   icon: ReactNode;
   size?: "sm" | "md";
   active?: boolean;
+  /** "info" paints the classic blue help affordance (outline + tint + blue glyph). */
+  tone?: "default" | "info";
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, icon, size = "md", active, className, type = "button", ...rest },
+  { label, icon, size = "md", active, tone = "default", className, type = "button", ...rest },
   ref,
 ) {
   return (
@@ -21,7 +23,13 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       aria-pressed={active || undefined}
-      className={cn(styles.btn, styles[size], active && styles.active, className)}
+      className={cn(
+        styles.btn,
+        styles[size],
+        active && styles.active,
+        tone === "info" && styles.info,
+        className,
+      )}
       {...rest}
     >
       {icon}

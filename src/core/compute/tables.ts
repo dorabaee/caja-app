@@ -25,6 +25,23 @@ export function columnTotals(table: Table): Record<string, number> {
   return out;
 }
 
+/**
+ * Display labels for a month's tables, disambiguated: tables sharing a title get
+ * "(1)", "(2)"… appended from the second one on, in canvas order. Purely for pickers —
+ * the tables themselves are never renamed, so the suffix disappears by itself the moment
+ * the user retitles one.
+ */
+export function uniqueTableLabels(tables: Table[]): Record<string, string> {
+  const seen = new Map<string, number>();
+  const out: Record<string, string> = {};
+  for (const t of tables) {
+    const n = seen.get(t.title) ?? 0;
+    seen.set(t.title, n + 1);
+    out[t.id] = n === 0 ? t.title : `${t.title} (${n})`;
+  }
+  return out;
+}
+
 export interface LedgerResult {
   initial: number;
   deposits: number;

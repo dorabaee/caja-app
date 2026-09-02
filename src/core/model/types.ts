@@ -10,6 +10,18 @@ export type LedgerRole = "deposit" | "withdrawal";
 
 export type ChartType = "bar" | "stacked" | "line" | "area" | "combo" | "pie";
 
+/** Bank a fiscal table is tagged with, so two fiscal tables stay tellable apart. */
+export type BankKey = "banorte" | "santander" | "mercadopago" | "spin" | "bbva" | "coppel";
+
+/** Which half of the chart of accounts a category belongs to. */
+export type CategoryGroup = "fiscal" | "noFiscal";
+
+export interface Category {
+  name: string;
+  /** Unset on categories carried over from before the grouped model. */
+  group?: CategoryGroup;
+}
+
 export interface Column {
   id: string;
   name: string;
@@ -46,6 +58,10 @@ export interface Table {
   layout: WidgetLayout;
   /** Ledger only: starting balance for the month. */
   initialBalance?: number;
+  /** Counts toward the month's "Saldo final", and shows a bank tag. Any kind may be one. */
+  fiscal?: boolean;
+  /** Fiscal only: the bank account this table tracks (a label, not a real connection). */
+  bank?: BankKey;
 }
 
 export interface Chart {
@@ -100,7 +116,7 @@ export interface Project {
   currency?: string;
   goal?: Goal;
   recurring?: RecurringDef[];
-  categories?: string[];
+  categories?: Category[];
   months: Month[]; // always length 12
 }
 
@@ -128,5 +144,5 @@ export interface AppDoc {
   migratedFromLegacy?: boolean;
 }
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 export const MONTHS_PER_YEAR = 12;

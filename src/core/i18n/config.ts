@@ -18,9 +18,13 @@ import modalsEs from "./locales/modals.es.json";
 import modalsEn from "./locales/modals.en.json";
 import tourEs from "./locales/tour.es.json";
 import tourEn from "./locales/tour.en.json";
+import previewEs from "./locales/preview.es.json";
+import previewEn from "./locales/preview.en.json";
+import shortcutsEs from "./locales/shortcuts.es.json";
+import shortcutsEn from "./locales/shortcuts.en.json";
 
-const es = { ...commonEs, ...shellEs, ...monthEs, ...widgetsEs, ...dashEs, ...modalsEs, ...tourEs };
-const en = { ...commonEn, ...shellEn, ...monthEn, ...widgetsEn, ...dashEn, ...modalsEn, ...tourEn };
+const es = { ...commonEs, ...shellEs, ...monthEs, ...widgetsEs, ...dashEs, ...modalsEs, ...tourEs, ...previewEs, ...shortcutsEs };
+const en = { ...commonEn, ...shellEn, ...monthEn, ...widgetsEn, ...dashEn, ...modalsEn, ...tourEn, ...previewEn, ...shortcutsEn };
 
 void i18n.use(initReactI18next).init({
   resources: {

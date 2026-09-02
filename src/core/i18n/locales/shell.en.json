@@ -47,8 +47,8 @@
     "createBusiness": "Create business",
     "templates": "Templates",
     "tplIncome": "Daily income",
-    "tplExpense": "Expenses",
-    "tplLedger": "Bank account ledger",
+    "tplExpense": "Personal Bookkeeping",
+    "tplLedger": "Fiscal Bank",
     "tplBlank": "Blank table",
     "clipboard": "Clipboard",
     "pasteWithData": "Paste \"{{title}}\" with data",
@@ -64,6 +64,9 @@
     "exportStatementPdf": "Income statement (PDF)",
     "exportResumenCsv": "Summary as CSV",
     "exportResumenExcel": "Summary as Excel",
-    "shareEllipsis": "Share…"
+    "shareEllipsis": "Share…",
+    "moreTools": "More tools",
+    "quickAdd": "Quick add",
+    "help": "Help"
   }
 }

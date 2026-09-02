@@ -19,6 +19,11 @@ const STEPS: Step[] = [
   { target: "[data-tour='kpi']", titleKey: "tour.kpiTitle", bodyKey: "tour.kpiBody" },
   { target: "[data-tour='addTable']", titleKey: "tour.addTableTitle", bodyKey: "tour.addTableBody" },
   { target: "[data-tour='months']", titleKey: "tour.monthsTitle", bodyKey: "tour.monthsBody" },
+  // The canvas gestures are invisible until someone tells you about them — these three
+  // steps introduce them, and the last points at the cheat sheet that documents the rest.
+  { target: "[data-tour='canvas']", titleKey: "tour.moveTitle", bodyKey: "tour.moveBody" },
+  { target: "[data-tour='canvas']", titleKey: "tour.multiTitle", bodyKey: "tour.multiBody" },
+  { target: "[data-tour='help']", titleKey: "tour.shortcutsTitle", bodyKey: "tour.shortcutsBody" },
   { target: "[data-tour='settings']", titleKey: "tour.settingsTitle", bodyKey: "tour.settingsBody" },
 ];
 

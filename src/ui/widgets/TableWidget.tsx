@@ -20,7 +20,10 @@ import { useStore, useUI } from "@core/store";
 import { Button, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, cn } from "@ui/common";
 import { useFormat } from "@ui/hooks/useFormat";
 import { useRecurringRows } from "@ui/hooks/useRecurringRows";
+import { useTableMode } from "@ui/hooks/useTableMode";
 import { WidgetGrid } from "./WidgetGrid";
+import { BankTag } from "./cells/BankTag";
+import { ModeActions, TableModeMenuItems } from "./TableFiscal";
 import { DRAG_HANDLE } from "./dragHandle";
 import styles from "./widget.module.css";
 
@@ -51,8 +54,9 @@ export const TableWidget = memo(function TableWidget({
   const fmt = useFormat();
   const select = useUI((u) => u.select);
   const openModal = useUI((u) => u.openModal);
-  const selected = useUI((u) => u.selectedWidgetId === table.id);
+  const selected = useUI((u) => u.selectedIds.has(table.id));
 
+  const mode = useTableMode(monthIndex, table);
   const recurringRows = useRecurringRows(monthIndex, table);
   const totals = columnTotals(
     recurringRows.length ? { ...table, rows: [...table.rows, ...recurringRows] } : table,
@@ -70,8 +74,18 @@ export const TableWidget = memo(function TableWidget({
 
   return (
     <div
-      className={cn(styles.card, fill && styles.cardFill, selected && styles.selected)}
-      onMouseDown={() => select(table.id)}
+      className={cn(
+        styles.card,
+        fill && styles.cardFill,
+        selected && styles.selected,
+        mode.mode !== "idle" && styles.cardEditing,
+      )}
+      onPointerDownCapture={(e) => {
+        // Modifier clicks and clicks inside an existing multi-selection belong to the
+        // canvas (toggle / group drag); a plain click on an unselected widget selects it.
+        if (e.ctrlKey || e.metaKey || e.shiftKey || selected) return;
+        select(table.id);
+      }}
     >
       <div className={styles.whead}>
         <span className={cn(styles.handle, DRAG_HANDLE)} title={t("widgets.move")} aria-hidden>
@@ -89,6 +103,10 @@ export const TableWidget = memo(function TableWidget({
           }}
         />
 
+        {table.fiscal && <BankTag bank={table.bank} />}
+        <ModeActions mode={mode} />
+
+        {mode.mode === "idle" && (
         <Menu
           align="end"
           trigger={
@@ -109,7 +127,9 @@ export const TableWidget = memo(function TableWidget({
             {t("widgets.kindNone")}
           </MenuItem>
         </Menu>
+        )}
 
+        {mode.mode === "idle" && (
         <Menu align="end" trigger={<IconButton label={t("widgets.tableOptions")} icon={<MoreHorizontal />} size="sm" />}>
           <MenuLabel>{t("widgets.addColumn")}</MenuLabel>
           <MenuItem icon={<Type />} onClick={() => s().addColumn(monthIndex, table.id, "text")}>
@@ -151,13 +171,24 @@ export const TableWidget = memo(function TableWidget({
           <MenuItem icon={<Trash2 />} danger onClick={() => s().removeTable(monthIndex, table.id)}>
             {t("widgets.deleteTable")}
           </MenuItem>
+          <TableModeMenuItems monthIndex={monthIndex} table={table} mode={mode} />
         </Menu>
+        )}
       </div>
 
       <WidgetGrid
         monthIndex={monthIndex}
         table={table}
         recurringRows={recurringRows}
+        mode={mode.mode}
+        rowOrder={mode.rowOrder}
+        onRowOrderChange={mode.setRowOrder}
+        columnOrder={mode.columnOrder}
+        onColumnOrderChange={mode.setColumnOrder}
+        pendingDeletes={mode.pendingDeletes}
+        canStageMore={mode.canStageMore}
+        onStageDelete={mode.stageDelete}
+        onUnstageDelete={mode.unstageDelete}
         footer={
           <div className={styles.totalRow}>
             {table.columns.map((col, i) => (
@@ -174,6 +205,7 @@ export const TableWidget = memo(function TableWidget({
         }
       />
 
+      {mode.mode === "idle" && (
       <div className={styles.wfoot}>
         <Button variant="ghost" size="sm" icon={<Plus />} onClick={() => s().addRow(monthIndex, table.id)}>
           {t("widgets.addRow")}
@@ -192,6 +224,7 @@ export const TableWidget = memo(function TableWidget({
           ))}
         </Menu>
       </div>
+      )}
     </div>
   );
 });

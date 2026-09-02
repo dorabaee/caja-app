@@ -18,6 +18,12 @@
     "monthsTitle": "Month by month",
     "monthsBody": "Tap a month to view or enter its information.",
     "settingsTitle": "Make it yours",
-    "settingsBody": "Change the theme, color, language, and currency from Settings."
+    "settingsBody": "Change the theme, color, language, and currency from Settings.",
+    "moveTitle": "Arrange your board",
+    "moveBody": "Drag tables wherever you like. They line up with their neighbours on their own; hold Alt if you'd rather they didn't.",
+    "multiTitle": "Several at once",
+    "multiBody": "Ctrl + drag draws a box to pick several tables and move them together.",
+    "shortcutsTitle": "Everything else",
+    "shortcutsBody": "The tour and the full list of shortcuts and gestures live here, whenever you need them."
   }
 }
