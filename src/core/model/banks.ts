@@ -24,15 +24,20 @@ export interface BankMeta {
   tint: string;
   /** Filename under `public/banks/`, or null for custom banks (no artwork). */
   logo: string | null;
+  /**
+   * "wordmark" logos spell the bank's name themselves, so the chip shows the artwork
+   * alone; a "glyph" is only a symbol and still needs the name printed beside it.
+   */
+  mark: "wordmark" | "glyph";
 }
 
 export const BANKS: readonly BankMeta[] = [
-  { key: "banorte", label: "Banorte", short: "BNT", color: "#EB0029", tint: "#fbe9ec", logo: "banorte.svg" },
-  { key: "santander", label: "Santander", short: "SAN", color: "#EC0000", tint: "#fde8e8", logo: "santander.svg" },
-  { key: "bbva", label: "BBVA", short: "BBV", color: "#004481", tint: "#e5eef6", logo: "bbva.svg" },
-  { key: "mercadopago", label: "Mercado Pago", short: "MP", color: "#009EE3", tint: "#e4f5fd", logo: "mercadopago.svg" },
-  { key: "spin", label: "Spin by OXXO", short: "SPN", color: "#5B21B6", tint: "#efe9fb", logo: "spin.svg" },
-  { key: "coppel", label: "Coppel", short: "CPL", color: "#002F6C", tint: "#e5eaf2", logo: "coppel.svg" },
+  { key: "banorte", label: "Banorte", short: "BNT", color: "#EB0029", tint: "#fbe9ec", logo: "banorte.svg", mark: "wordmark" },
+  { key: "santander", label: "Santander", short: "SAN", color: "#EC0000", tint: "#fde8e8", logo: "santander.svg", mark: "wordmark" },
+  { key: "bbva", label: "BBVA", short: "BBV", color: "#004481", tint: "#e5eef6", logo: "bbva.svg", mark: "wordmark" },
+  { key: "mercadopago", label: "Mercado Pago", short: "MP", color: "#00B1EA", tint: "#e4f5fd", logo: "mercadopago.svg", mark: "glyph" },
+  { key: "spin", label: "Spin by OXXO", short: "SPN", color: "#5B21B6", tint: "#efe9fb", logo: "spin.svg", mark: "wordmark" },
+  { key: "coppel", label: "Coppel", short: "CPL", color: "#0266AE", tint: "#e5eaf2", logo: "coppel.svg", mark: "wordmark" },
 ] as const;
 
 const BY_KEY = new Map(BANKS.map((b) => [b.key, b]));
@@ -68,5 +73,6 @@ export function bankMeta(key: string | undefined, custom?: CustomBank[]): BankMe
     color: "var(--text-muted)",
     tint: "var(--surface-2)",
     logo: null,
+    mark: "glyph",
   };
 }

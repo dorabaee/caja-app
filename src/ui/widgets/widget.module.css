@@ -726,8 +726,23 @@
   font-weight: 600;
   white-space: nowrap;
 }
-/* The bank's own logo: a small rounded rectangle, letterboxed on a light plate so marks
-   with transparent or white backgrounds read in both themes. */
+/* A wordmark logo carries the bank's name itself, so the chip is just a white plate
+   holding the artwork — no text, and no brand tint competing with the logo's colours. */
+.bankTagLogo {
+  padding: 2px var(--space-2);
+  background: #fff;
+  border-color: var(--border-strong);
+}
+.bankWordmark {
+  height: 15px;
+  max-width: 96px;
+  width: auto;
+  flex: none;
+  object-fit: contain;
+  display: block;
+}
+
+/* A symbol-only logo: a small rounded square beside the printed name. */
 .bankLogo {
   width: 26px;
   height: 20px;

@@ -91,12 +91,13 @@ export function BankModal() {
                 aria-pressed={on}
                 onClick={() => pick(b.key)}
               >
-                <img
-                  className={styles.logo}
-                  src={`${import.meta.env.BASE_URL}banks/${b.logo}`}
-                  alt=""
-                  aria-hidden
-                />
+                <span className={styles.logoPlate} aria-hidden>
+                  <img
+                    className={styles.logo}
+                    src={`${import.meta.env.BASE_URL}banks/${b.logo}`}
+                    alt=""
+                  />
+                </span>
                 <span className={styles.name}>{b.label}</span>
                 {on && (
                   <span className={styles.check} aria-hidden>

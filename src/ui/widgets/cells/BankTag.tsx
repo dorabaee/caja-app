@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { bankMeta } from "@core/model/banks";
 import type { BankKey } from "@core/model/types";
+import { cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import styles from "../widget.module.css";
 
@@ -9,9 +10,10 @@ import styles from "../widget.module.css";
  * The bank a fiscal table is tagged with, shown next to its title so two fiscal tables
  * are tellable apart at a glance.
  *
- * Built-in banks draw their mark from `public/banks/<key>.svg`; a bank the user added
- * has no artwork and falls back to its initials on a neutral chip. The same fallback
- * covers a missing or unreadable file, so the tag can never render broken.
+ * Built-in banks draw their real mark from `public/banks/<key>.svg`. Most of those are
+ * wordmarks that already spell the bank out, so the chip shows the artwork on its own
+ * rather than printing the name twice; only a symbol-only logo (and a bank the user
+ * added, which has no artwork at all) gets the name beside it.
  */
 export function BankTag({ bank }: { bank: BankKey | undefined }) {
   const { t } = useTranslation();
@@ -22,16 +24,18 @@ export function BankTag({ bank }: { bank: BankKey | undefined }) {
 
   const style = { "--bank-color": meta.color, "--bank-tint": meta.tint } as CSSProperties;
   const showLogo = !!meta.logo && !logoFailed;
+  const wordmark = showLogo && meta.mark === "wordmark";
 
   return (
     <span
-      className={styles.bankTag}
+      className={cn(styles.bankTag, wordmark && styles.bankTagLogo)}
       style={style}
       title={t("widgets.bankAccount", { name: meta.label })}
+      aria-label={t("widgets.bankAccount", { name: meta.label })}
     >
       {showLogo ? (
         <img
-          className={styles.bankLogo}
+          className={wordmark ? styles.bankWordmark : styles.bankLogo}
           src={`${import.meta.env.BASE_URL}banks/${meta.logo}`}
           alt=""
           aria-hidden
@@ -43,7 +47,7 @@ export function BankTag({ bank }: { bank: BankKey | undefined }) {
           {meta.short}
         </span>
       )}
-      {meta.label}
+      {!wordmark && meta.label}
     </span>
   );
 }

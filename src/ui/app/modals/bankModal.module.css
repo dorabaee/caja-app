@@ -34,7 +34,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: var(--space-2);
 }
 .card {
@@ -69,12 +69,25 @@
   text-align: left;
   cursor: pointer;
 }
-.logo {
-  width: 30px;
-  height: 30px;
+.logoPlate {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 34px;
   flex: none;
-  object-fit: contain;
+  padding: 4px 6px;
+  background: #fff;
+  border: 1px solid var(--border);
   border-radius: 7px;
+}
+.logo {
+  /* Explicit px caps: a percentage would resolve against the grid area, which stretches. */
+  max-width: 72px;
+  max-height: 26px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 .initials {
   display: grid;
