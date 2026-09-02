@@ -61,6 +61,15 @@ export const TableWidget = memo(function TableWidget({
   const totals = columnTotals(
     recurringRows.length ? { ...table, rows: [...table.rows, ...recurringRows] } : table,
   );
+  // The "Total" word rides on the first column that has no figure of its own. When every
+  // column is money (delete "Fecha" and BANCOS becomes column 0), no cell can spare the
+  // room, so the label drops out of the grid and only the footer carries it — a total is
+  // never overwritten by its own label.
+  const labelIndex = table.columns.findIndex((c) => c.type !== "money");
+  const grandTotal = table.columns.reduce(
+    (sum, c) => (c.type === "money" ? sum + (totals[c.id] ?? 0) : sum),
+    0,
+  );
   const [title, setTitle] = useState(table.title);
   useEffect(() => setTitle(table.title), [table.title]);
 
@@ -193,10 +202,10 @@ export const TableWidget = memo(function TableWidget({
           <div className={styles.totalRow}>
             {table.columns.map((col, i) => (
               <div key={col.id} className={cn(styles.totalCell, col.type === "money" && styles.totalMoney)}>
-                {i === 0 ? (
-                  <span className={styles.totalLabel}>{t("widgets.total")}</span>
-                ) : col.type === "money" ? (
+                {col.type === "money" ? (
                   fmt.moneyPlain(totals[col.id] ?? 0)
+                ) : i === labelIndex ? (
+                  <span className={styles.totalLabel}>{t("widgets.total")}</span>
                 ) : null}
               </div>
             ))}
@@ -223,6 +232,10 @@ export const TableWidget = memo(function TableWidget({
             </MenuItem>
           ))}
         </Menu>
+        <span className={styles.footTotal}>
+          <span className={styles.footTotalLabel}>{t("widgets.total")}</span>
+          <span className={cn(styles.footTotalValue, "tnum")}>{fmt.moneyPlain(grandTotal)}</span>
+        </span>
       </div>
       )}
     </div>

@@ -555,6 +555,29 @@
   padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border);
 }
+/* The table's grand total, parked at the end of the footer beside "Agregar columna".
+   The per-column figures stay in the grid's total row; this is the one place the word
+   "Total" is guaranteed a home, whatever the columns are. */
+.footTotal {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-left: auto;
+  padding-left: var(--space-3);
+}
+.footTotalLabel {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.footTotalValue {
+  font-family: var(--font-num);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
 
 /* ---------- note popover ---------- */
 .notePop {
