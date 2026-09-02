@@ -111,35 +111,6 @@
   color: var(--text-subtle);
 }
 
-/* The table's grand total, in the header beside the "Cuenta como ..." pill — colored by
-   the table's kind so the figure reads as an expense/income/neutral at a glance, without
-   a second "Total" competing with the per-column total row inside the grid. */
-.grandTotalChip {
-  display: inline-flex;
-  align-items: center;
-  height: 30px;
-  padding: 0 var(--space-3);
-  flex: none;
-  font-family: var(--font-num);
-  font-size: var(--text-md);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  border-radius: var(--radius-full);
-  font-variant-numeric: tabular-nums;
-}
-.grandTotal_expense {
-  color: var(--expense);
-  background: color-mix(in srgb, var(--expense) 12%, transparent);
-}
-.grandTotal_income {
-  color: var(--income);
-  background: color-mix(in srgb, var(--income) 12%, transparent);
-}
-.grandTotal_none {
-  color: var(--text-muted);
-  background: var(--surface-2);
-}
-
 .pill {
   display: inline-flex;
   align-items: center;
@@ -564,6 +535,17 @@
   font-variant-numeric: tabular-nums;
   font-size: var(--text-md);
   letter-spacing: -0.01em;
+  color: var(--text);
+}
+/* A money column's total colored by the table's kind, so the figures read as
+   expense/income/neutral at a glance — the header no longer repeats a grand total. */
+.totalMoney_expense {
+  color: var(--expense);
+}
+.totalMoney_income {
+  color: var(--income);
+}
+.totalMoney_none {
   color: var(--text);
 }
 

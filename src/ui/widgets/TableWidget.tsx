@@ -77,10 +77,6 @@ export const TableWidget = memo(function TableWidget({
   // label steps out of the grid rather than overwrite a total or drift to the far right,
   // and the footer carries it instead.
   const showRowLabel = table.columns[0]?.type !== "money";
-  const grandTotal = table.columns.reduce(
-    (sum, c) => (c.type === "money" ? sum + (totals[c.id] ?? 0) : sum),
-    0,
-  );
   const [title, setTitle] = useState(table.title);
   useEffect(() => setTitle(table.title), [table.title]);
 
@@ -125,12 +121,6 @@ export const TableWidget = memo(function TableWidget({
 
         {table.fiscal && <BankTag bank={table.bank} />}
         <ModeActions mode={mode} />
-
-        {mode.mode === "idle" && (
-          <span className={cn(styles.grandTotalChip, styles[`grandTotal_${kind}`])}>
-            {fmt.moneyPlain(grandTotal)}
-          </span>
-        )}
 
         {mode.mode === "idle" && (
         <Menu
@@ -221,7 +211,14 @@ export const TableWidget = memo(function TableWidget({
         footer={
           <div className={styles.totalRow}>
             {table.columns.map((col, i) => (
-              <div key={col.id} className={cn(styles.totalCell, col.type === "money" && styles.totalMoney)}>
+              <div
+                key={col.id}
+                className={cn(
+                  styles.totalCell,
+                  col.type === "money" && styles.totalMoney,
+                  col.type === "money" && styles[`totalMoney_${kind}`],
+                )}
+              >
                 {col.type === "money" ? (
                   fmt.moneyPlain(totals[col.id] ?? 0)
                 ) : i === 0 && showRowLabel ? (
