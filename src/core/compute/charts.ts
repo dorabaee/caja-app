@@ -1,5 +1,5 @@
 import { parseMoney } from "../format/money";
-import type { Column, Table } from "../model/types";
+import type { Column, Row, Table } from "../model/types";
 
 export interface ChartPoint {
   /** X-axis label / pie slice name. */
@@ -8,13 +8,24 @@ export interface ChartPoint {
   value: number;
 }
 
-/** The column used for X-axis labels: explicit, else the first text/date column. */
+/** What a row reads as under a label column: its category, or the column's text. */
+export function chartLabel(column: Column | undefined, row: Row): string {
+  if (!column) return "";
+  // A category column has no text of its own — the label is the category itself, which
+  // is also what makes "chart by category" work without a second column to type into.
+  if (column.type === "category") return (row.category ?? "").trim();
+  return (row.cells[column.id] ?? "").trim();
+}
+
+/** The column used for X-axis labels: explicit, else the first text/date/category one. */
 export function chartLabelColumn(table: Table, xColumnId?: string | null): Column | undefined {
   if (xColumnId) {
     const explicit = table.columns.find((c) => c.id === xColumnId);
     if (explicit) return explicit;
   }
-  return table.columns.find((c) => c.type === "text" || c.type === "date");
+  return table.columns.find(
+    (c) => c.type === "text" || c.type === "date" || c.type === "category",
+  );
 }
 
 /** The money column charted: explicit, else the first money column. */
@@ -45,7 +56,7 @@ export function chartSeries(table: Table, opts: ChartSeriesOptions = {}): ChartP
   const labelCol = chartLabelColumn(table, opts.xColumnId);
 
   const points: ChartPoint[] = table.rows.map((row, i) => {
-    const raw = labelCol ? (row.cells[labelCol.id] ?? "").trim() : "";
+    const raw = chartLabel(labelCol, row);
     return { name: raw || `Fila ${i + 1}`, value: parseMoney(row.cells[valueCol.id]) };
   });
 

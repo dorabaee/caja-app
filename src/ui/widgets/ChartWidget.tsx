@@ -122,7 +122,10 @@ export const ChartWidget = memo(function ChartWidget({
   // Column pickers only make sense for a single linked table.
   const labelColId = single ? chartLabelColumn(single, chart.xColumnId)?.id : undefined;
   const valueColId = single ? chartValueColumn(single, chart.valueColumnId)?.id : undefined;
-  const labelCols = single?.columns.filter((c) => c.type === "text" || c.type === "date") ?? [];
+  const labelCols =
+    single?.columns.filter(
+      (c) => c.type === "text" || c.type === "date" || c.type === "category",
+    ) ?? [];
   const moneyCols = single?.columns.filter((c) => c.type === "money") ?? [];
 
   const anim = !colors.reduceMotion;
