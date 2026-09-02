@@ -127,6 +127,12 @@ export const TableWidget = memo(function TableWidget({
         <ModeActions mode={mode} />
 
         {mode.mode === "idle" && (
+          <span className={cn(styles.grandTotalChip, styles[`grandTotal_${kind}`])}>
+            {fmt.moneyPlain(grandTotal)}
+          </span>
+        )}
+
+        {mode.mode === "idle" && (
         <Menu
           align="end"
           trigger={
@@ -246,10 +252,6 @@ export const TableWidget = memo(function TableWidget({
             </MenuItem>
           ))}
         </Menu>
-        <span className={styles.footTotal}>
-          <span className={styles.footTotalLabel}>{t("widgets.total")}</span>
-          <span className={cn(styles.footTotalValue, "tnum")}>{fmt.moneyPlain(grandTotal)}</span>
-        </span>
       </div>
       )}
     </div>
