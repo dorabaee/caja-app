@@ -10,6 +10,7 @@ export type ModalKind =
   | "addTable"
   | "backup"
   | "categories"
+  | "bank"
   | "recurring"
   | "copyMonth";
 export type ViewMode = "canvas" | "list";
@@ -147,7 +148,7 @@ export interface UIState {
   modal: ModalKind;
   /** When the project modal is open: the project being renamed, or null to create a new one. */
   editProjectId: string | null;
-  /** Target table for table-scoped modals ("categories" / "recurring"). */
+  /** Target table for table-scoped modals ("categories" / "recurring" / "bank"). */
   modalTableId: string | null;
   quickAddOpen: boolean;
   toasts: Toast[];

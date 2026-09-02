@@ -10,8 +10,17 @@ export type LedgerRole = "deposit" | "withdrawal";
 
 export type ChartType = "bar" | "stacked" | "line" | "area" | "combo" | "pie";
 
-/** Bank a fiscal table is tagged with, so two fiscal tables stay tellable apart. */
-export type BankKey = "banorte" | "santander" | "mercadopago" | "spin" | "bbva" | "coppel";
+/**
+ * Bank a fiscal table is tagged with, so two fiscal tables stay tellable apart: either
+ * one of the built-in keys (which ship a logo) or the id of a bank the user added.
+ */
+export type BankKey = string;
+
+/** A bank the user added themselves. Drawn as initials — only built-ins have artwork. */
+export interface CustomBank {
+  id: string;
+  name: string;
+}
 
 /** Which half of the chart of accounts a category belongs to. */
 export type CategoryGroup = "fiscal" | "noFiscal";
@@ -117,6 +126,8 @@ export interface Project {
   goal?: Goal;
   recurring?: RecurringDef[];
   categories?: Category[];
+  /** Banks the user added on top of the built-in list. */
+  banks?: CustomBank[];
   months: Month[]; // always length 12
 }
 

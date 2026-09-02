@@ -97,6 +97,8 @@
     "prevMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "today": "Hoy",
-    "datePlaceholder": "dd/mm/aaaa"
+    "datePlaceholder": "dd/mm/aaaa",
+    "bankChoose": "Cuenta bancaria…",
+    "bankNamed": "Cuenta: {{name}}"
   }
 }

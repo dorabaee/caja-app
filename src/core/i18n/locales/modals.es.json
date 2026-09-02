@@ -105,6 +105,14 @@
     "toastBackupError": "No se pudo crear el respaldo.",
     "toastBackupRestored": "Respaldo restaurado.",
     "toastRestoreError": "No se pudo restaurar el respaldo.",
-    "categoryGroup": "Grupo de la categoría"
+    "categoryGroup": "Grupo de la categoría",
+    "bankDescription": "Elige a qué cuenta corresponde esta tabla fiscal.",
+    "bankBuiltIn": "Bancos",
+    "bankCustom": "Tus cuentas",
+    "bankNoneYet": "Aún no agregas ninguna cuenta propia.",
+    "bankAdd": "Agregar banco",
+    "bankPlaceholder": "Nombre del banco o cuenta",
+    "bankRemove": "Quitar {{name}}",
+    "bankCustomHint": "Las cuentas que agregues se muestran con sus iniciales, sin logo."
   }
 }

@@ -1,10 +1,11 @@
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X, Landmark, ArrowUpDown, Columns3 } from "lucide-react";
-import { BANKS } from "@core/model/banks";
+import { bankMeta } from "@core/model/banks";
 import type { Table } from "@core/model/types";
-import { useStore } from "@core/store";
-import { IconButton, MenuItem, MenuLabel, MenuSeparator } from "@ui/common";
+import { useStore, useUI } from "@core/store";
+import { IconButton, MenuItem, MenuSeparator } from "@ui/common";
+import { useCurrentProject } from "@ui/hooks/useProject";
 import type { TableModeApi } from "@ui/hooks/useTableMode";
 import styles from "./widget.module.css";
 
@@ -54,6 +55,9 @@ export function TableModeMenuItems({
 }) {
   const { t } = useTranslation();
   const s = useStore.getState;
+  const openModal = useUI((u) => u.openModal);
+  const project = useCurrentProject();
+  const bank = bankMeta(table.bank, project?.banks);
   return (
     <Fragment>
       <MenuSeparator />
@@ -72,23 +76,9 @@ export function TableModeMenuItems({
         {t("widgets.markFiscal")}
       </MenuItem>
       {table.fiscal && (
-        <Fragment>
-          <MenuLabel>{t("widgets.bank")}</MenuLabel>
-          {BANKS.map((b) => (
-            <MenuItem
-              key={b.key}
-              checked={table.bank === b.key}
-              onClick={() => s().setTableBank(monthIndex, table.id, table.bank === b.key ? null : b.key)}
-            >
-              {b.label}
-            </MenuItem>
-          ))}
-          {table.bank && (
-            <MenuItem onClick={() => s().setTableBank(monthIndex, table.id, null)}>
-              {t("widgets.bankNone")}
-            </MenuItem>
-          )}
-        </Fragment>
+        <MenuItem icon={<Landmark />} onClick={() => openModal("bank", table.id)}>
+          {bank ? t("widgets.bankNamed", { name: bank.label }) : t("widgets.bankChoose")}
+        </MenuItem>
       )}
     </Fragment>
   );

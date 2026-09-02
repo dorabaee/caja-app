@@ -105,6 +105,14 @@
     "toastBackupError": "Couldn't create the backup.",
     "toastBackupRestored": "Backup restored.",
     "toastRestoreError": "Couldn't restore the backup.",
-    "categoryGroup": "Category group"
+    "categoryGroup": "Category group",
+    "bankDescription": "Choose which account this fiscal table stands for.",
+    "bankBuiltIn": "Banks",
+    "bankCustom": "Your accounts",
+    "bankNoneYet": "You haven't added an account of your own yet.",
+    "bankAdd": "Add bank",
+    "bankPlaceholder": "Bank or account name",
+    "bankRemove": "Remove {{name}}",
+    "bankCustomHint": "Accounts you add show as initials, without a logo."
   }
 }

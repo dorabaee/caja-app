@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Coppel">
+  <rect width="48" height="48" rx="10" fill="#002F6C"/>
+  <!-- Coppel's yellow key: clover bow, shaft, two teeth. -->
+  <g fill="#FFD100">
+    <circle cx="15.5" cy="20" r="3.6"/>
+    <circle cx="15.5" cy="28" r="3.6"/>
+    <circle cx="21.5" cy="24" r="3.6"/>
+    <rect x="21" y="21.8" width="18" height="4.4" rx="1.2"/>
+    <rect x="30" y="26" width="3.4" height="5.4" rx="1"/>
+    <rect x="35.6" y="26" width="3.4" height="4" rx="1"/>
+  </g>
+  <circle cx="18.5" cy="24" r="1.9" fill="#002F6C"/>
+</svg>

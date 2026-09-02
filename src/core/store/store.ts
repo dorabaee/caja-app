@@ -50,6 +50,10 @@ export interface StoreState {
   updateProject(projectId: string, patch: Partial<Project>): void;
   /** Reorder businesses to match the given id order (sidebar drag-reorder; persisted + undoable). */
   setProjectOrder(orderedIds: string[]): void;
+  /** Add a bank the user named themselves; returns its id. */
+  addCustomBank(projectId: string, name: string): string;
+  /** Forget a custom bank, and untag any table still pointing at it. */
+  removeCustomBank(projectId: string, bankId: string): void;
 
   // recurring entries (per project)
   addRecurring(projectId: string, def: Omit<RecurringDef, "id">): string;
@@ -202,6 +206,28 @@ export const useStore = create<StoreState>()((set, get) => {
         // Stable sort by the requested order; any id not listed sorts to the end.
         const rank = new Map(orderedIds.map((id, i) => [id, i] as const));
         d.projects.sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
+      }),
+
+    addCustomBank: (projectId, name) => {
+      const bankId = id();
+      commit((d) => {
+        const p = d.projects.find((x) => x.id === projectId);
+        if (!p) return;
+        p.banks = [...(p.banks ?? []), { id: bankId, name }];
+      });
+      return bankId;
+    },
+
+    removeCustomBank: (projectId, bankId) =>
+      commit((d) => {
+        const p = d.projects.find((x) => x.id === projectId);
+        if (!p) return;
+        p.banks = (p.banks ?? []).filter((b) => b.id !== bankId);
+        // A table tagged with a bank that no longer exists would render no tag at all;
+        // clear the reference so its fiscal state stays coherent.
+        for (const month of p.months) {
+          for (const t of month.tables) if (t.bank === bankId) delete t.bank;
+        }
       }),
 
     addRecurring: (projectId, def) => {

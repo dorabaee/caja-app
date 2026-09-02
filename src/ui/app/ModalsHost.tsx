@@ -2,6 +2,7 @@ import { SettingsModal } from "./modals/SettingsModal";
 import { NewProjectModal } from "./modals/NewProjectModal";
 import { ShareModal } from "./modals/ShareModal";
 import { CategoriesModal } from "./modals/CategoriesModal";
+import { BankModal } from "./modals/BankModal";
 import { RecurringModal } from "./modals/RecurringModal";
 import { CopyMonthModal } from "./modals/CopyMonthModal";
 
@@ -13,6 +14,7 @@ export function ModalsHost() {
       <NewProjectModal />
       <ShareModal />
       <CategoriesModal />
+      <BankModal />
       <RecurringModal />
       <CopyMonthModal />
     </>
