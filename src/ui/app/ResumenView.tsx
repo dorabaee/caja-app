@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
-import { Share2, Search, ArrowDown, ArrowUp } from "lucide-react";
+import { useMemo, useState, type CSSProperties } from "react";
+import { Share2, Search, ArrowDown, ArrowUp, Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { monthlyExpenseCategories, yearlyResumen } from "@core/compute";
+import { UNCATEGORIZED, monthlyExpenseCategories, yearlyResumen } from "@core/compute";
+import type { CategoryGroup } from "@core/model/types";
 import { useUI } from "@core/store";
 import { Button, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
 import { useMonths } from "@ui/hooks/useMonths";
 import { useChartColors } from "@ui/hooks/useChartColors";
-import { KpiHero } from "./KpiHero";
 import styles from "./ResumenView.module.css";
 
 /**
@@ -26,6 +26,15 @@ const MODE_KEY: Record<CatMode, string> = {
   name: "dash.sortName",
 };
 
+/** Which half of the chart of accounts the list is showing. */
+type GroupFilter = "all" | CategoryGroup;
+
+const GROUP_KEY: Record<GroupFilter, string> = {
+  all: "dash.groupAll",
+  fiscal: "widgets.group_fiscal",
+  noFiscal: "widgets.group_noFiscal",
+};
+
 export function ResumenView() {
   const { t } = useTranslation();
   const monthLabels = useMonths();
@@ -36,13 +45,22 @@ export function ResumenView() {
 
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<CatMode>("category");
+  const [group, setGroup] = useState<GroupFilter>("all");
   const [descending, setDescending] = useState(true);
   const [distinct, setDistinct] = useState(true);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 
   const catRows = useMemo(
-    () => (project ? monthlyExpenseCategories(project, { byCategory: mode === "category" }) : []),
-    [project, mode],
+    () =>
+      project
+        ? monthlyExpenseCategories(project, {
+            // Splitting fiscal from no fiscal is a question about categories, so asking
+            // it groups by category too, whatever the sort control says.
+            byCategory: mode === "category" || group !== "all",
+            group: group === "all" ? undefined : group,
+          })
+        : [],
+    [project, mode, group],
   );
 
   const filtered = useMemo(() => {
@@ -66,11 +84,14 @@ export function ResumenView() {
       return next;
     });
 
-  // Months (with expense activity) → the filtered categories that have a value that month.
+  // Months (with expense activity) → the filtered categories that have a value that
+  // month. Selecting chips narrows this too: highlighting alone left the month lists
+  // unchanged, so picking a category told you nothing you couldn't already see.
   const monthGroups = months
     .map((m) => ({
       monthIndex: m.monthIndex,
       cats: filtered
+        .filter((c) => selected.size === 0 || selected.has(c.label))
         .map((c) => ({ label: c.label, value: c.byMonth[m.monthIndex] }))
         .filter((c) => c.value !== 0),
     }))
@@ -78,11 +99,8 @@ export function ResumenView() {
 
   return (
     <div className={styles.wrap}>
-      <KpiHero
-        totals={totals}
-        labels={{ entro: t("dash.yearIn"), salio: t("dash.yearOut"), teQueda: t("dash.yearBalance") }}
-      />
-
+      {/* No KPI cards here: the year table below ends with the very same three
+          figures, so the hero only said everything twice. MonthView keeps its own. */}
       <div className={styles.tableCard}>
         <table className={styles.table}>
           <thead>
@@ -121,6 +139,22 @@ export function ResumenView() {
       <div className={styles.catCard}>
         <div className={styles.catHead}>
           <h3 className={styles.catTitle}>{t("dash.categoriesTitle")}</h3>
+          <div className={styles.tabs} role="group" aria-label={t("dash.bookHalf")}>
+            {(["all", "fiscal", "noFiscal"] as GroupFilter[]).map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={cn(styles.tab, group === g && styles.tabOn)}
+                aria-pressed={group === g}
+                onClick={() => {
+                  setGroup(g);
+                  setSelected(new Set());
+                }}
+              >
+                {t(GROUP_KEY[g])}
+              </button>
+            ))}
+          </div>
           <div className={styles.catControls}>
             <span className={styles.searchBox}>
               <Search size={14} aria-hidden />
@@ -174,23 +208,34 @@ export function ResumenView() {
           <>
             <div className={styles.chips}>
               {filtered.map((c) => {
-                const color = colors.categoryColor(c.label, distinct);
                 const on = selected.has(c.label);
+                const none = c.label === UNCATEGORIZED;
                 return (
                   <button
                     key={c.label}
                     type="button"
-                    className={cn(styles.chip, on && styles.chipOn)}
-                    style={on ? { borderColor: color, background: `${color}22` } : undefined}
+                    // The color rides on a custom property so hover, selection and the
+                    // dark theme are all expressed in CSS instead of two inline styles.
+                    className={cn(styles.chip, on && styles.chipOn, none && styles.chipNone)}
+                    style={{ "--cat-color": colors.categoryColor(c.label, distinct) } as CSSProperties}
                     aria-pressed={on}
                     onClick={() => toggle(c.label)}
                   >
-                    <span className={styles.chipDot} style={{ background: color }} aria-hidden />
+                    <span className={styles.chipMark} aria-hidden>
+                      {/* A check, not just a color: selection has to read without it. */}
+                      {on ? <Check size={11} strokeWidth={3} /> : <span className={styles.chipDot} />}
+                    </span>
                     <span className={styles.chipName}>{c.label}</span>
                     <span className={cn(styles.chipVal, "tnum")}>{fmt.moneyPlain(c.total)}</span>
                   </button>
                 );
               })}
+              {selected.size > 0 && (
+                <button type="button" className={styles.chipClear} onClick={() => setSelected(new Set())}>
+                  <X size={12} aria-hidden />
+                  {t("dash.showAll")}
+                </button>
+              )}
             </div>
 
             <div className={styles.breakdown}>
@@ -203,15 +248,15 @@ export function ResumenView() {
                     </span>
                   </div>
                   {g.cats.map((c) => {
-                    const color = colors.categoryColor(c.label, distinct);
                     const on = selected.has(c.label);
+                    const none = c.label === UNCATEGORIZED;
                     return (
                       <div
                         key={c.label}
-                        className={cn(styles.catSubRow, on && styles.catSubRowOn)}
-                        style={on ? { background: `${color}1f`, boxShadow: `inset 3px 0 0 ${color}` } : undefined}
+                        className={cn(styles.catSubRow, on && styles.catSubRowOn, none && styles.catSubRowNone)}
+                        style={{ "--cat-color": colors.categoryColor(c.label, distinct) } as CSSProperties}
                       >
-                        <span className={styles.chipDot} style={{ background: color }} aria-hidden />
+                        <span className={styles.chipDot} aria-hidden />
                         <span className={styles.catSubName}>{c.label}</span>
                         <span className={cn(styles.catSubVal, "tnum")}>{fmt.moneyPlain(c.value)}</span>
                       </div>

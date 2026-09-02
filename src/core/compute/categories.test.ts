@@ -104,3 +104,42 @@ describe("monthlyExpenseCategories", () => {
     expect(gas.byMonth[1]).toBe(0);
   });
 });
+
+describe("monthlyExpenseCategories — one half of the books at a time", () => {
+  function project(): Project {
+    const p = newProject("P");
+    p.categories = [
+      { name: "Gasolina", group: "fiscal" },
+      { name: "Extras", group: "noFiscal" },
+    ];
+    const table = expenseTable([
+      ["Gasolina de la camioneta", "600"],
+      ["Propina", "70"],
+      ["Cubeta y Trapeador", "870"],
+    ]);
+    table.rows[0].category = "Gasolina";
+    table.rows[1].category = "Extras";
+    p.months[0].tables = [table];
+    return p;
+  }
+
+  it("keeps only the fiscal categories", () => {
+    const rows = monthlyExpenseCategories(project(), { byCategory: true, group: "fiscal" });
+    expect(rows.map((r) => r.label)).toEqual(["Gasolina"]);
+    expect(rows[0].total).toBe(600);
+  });
+
+  it("keeps only the non-fiscal categories", () => {
+    const rows = monthlyExpenseCategories(project(), { byCategory: true, group: "noFiscal" });
+    expect(rows.map((r) => r.label)).toEqual(["Extras"]);
+  });
+
+  it("shows uncategorised spending only when neither half is asked for", () => {
+    const all = monthlyExpenseCategories(project(), { byCategory: true });
+    expect(all.map((r) => r.label)).toContain(UNCATEGORIZED);
+    for (const g of ["fiscal", "noFiscal"] as const) {
+      const half = monthlyExpenseCategories(project(), { byCategory: true, group: g });
+      expect(half.map((r) => r.label)).not.toContain(UNCATEGORIZED);
+    }
+  });
+});

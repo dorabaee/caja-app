@@ -1,6 +1,6 @@
 import { parseMoney } from "../format/money";
 import { categoryColumnOf, rowCategory } from "./categoryColumn";
-import type { Month, Project, Table } from "../model/types";
+import type { CategoryGroup, Month, Project, Table } from "../model/types";
 import { tableTotal } from "./tables";
 import { materializeMonth, materializedMonths, monthlyTotals, yearlyResumen } from "./monthly";
 
@@ -104,18 +104,30 @@ export interface CategoryYearRow {
  * breakdown by category name into a 12-month vector. Sorted by year total desc.
  *
  * With `byCategory`, rows are grouped by the project's real categories (anything else
- * folded into "Sin categoría"); without it, by the raw description text.
+ * folded into "Sin categoría"); without it, by the raw description text. `group` narrows
+ * the result to one half of the chart of accounts (fiscal / no fiscal).
  */
 export function monthlyExpenseCategories(
   project: Project,
-  opts?: { byCategory?: boolean },
+  opts?: { byCategory?: boolean; group?: CategoryGroup },
 ): CategoryYearRow[] {
   const known = opts?.byCategory ? (project.categories ?? []).map((c) => c.name) : undefined;
+  // Filtering to one half of the books keeps only the categories filed under it. A row
+  // with no category (or one carried over from before the split, which belongs to
+  // neither half) is only ever shown unfiltered — putting it on a side would be a guess.
+  const inGroup = opts?.group
+    ? new Set(
+        (project.categories ?? [])
+          .filter((c) => c.group === opts.group)
+          .map((c) => c.name.toLowerCase()),
+      )
+    : null;
   const map = new Map<string, number[]>();
   materializedMonths(project).forEach((m, i) => {
     for (const t of m.tables) {
       if (t.kind !== "expense") continue;
       for (const slice of categoryBreakdownForTable(t, known)) {
+        if (inGroup && !inGroup.has(slice.label.toLowerCase())) continue;
         let arr = map.get(slice.label);
         if (!arr) {
           arr = new Array(12).fill(0);

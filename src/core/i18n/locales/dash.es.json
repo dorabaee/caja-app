@@ -53,6 +53,9 @@
     "groupBy": "Agrupar",
     "groupCategory": "Categoría",
     "sortDesc": "De mayor a menor",
-    "sortAsc": "De menor a mayor"
+    "sortAsc": "De menor a mayor",
+    "groupAll": "Todos",
+    "bookHalf": "Fiscal o no fiscal",
+    "showAll": "Mostrar todo"
   }
 }

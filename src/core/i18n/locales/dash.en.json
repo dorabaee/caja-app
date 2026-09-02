@@ -53,6 +53,9 @@
     "groupBy": "Group by",
     "groupCategory": "Category",
     "sortDesc": "Highest to lowest",
-    "sortAsc": "Lowest to highest"
+    "sortAsc": "Lowest to highest",
+    "groupAll": "All",
+    "bookHalf": "Fiscal or non-fiscal",
+    "showAll": "Show all"
   }
 }
