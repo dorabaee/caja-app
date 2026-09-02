@@ -48,6 +48,8 @@
   --z-sticky: 50;
   --z-overlay: 100;
   --z-modal: 110;
+  /* Confirmations can be raised from inside a modal, so they outrank it. */
+  --z-confirm: 115;
   --z-toast: 120;
 }
 

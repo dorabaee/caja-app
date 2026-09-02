@@ -113,6 +113,11 @@
     "bankAdd": "Agregar banco",
     "bankPlaceholder": "Nombre del banco o cuenta",
     "bankRemove": "Quitar {{name}}",
-    "bankCustomHint": "Las cuentas que agregues se muestran con sus iniciales, sin logo."
+    "bankCustomHint": "Las cuentas que agregues se muestran con sus iniciales, sin logo.",
+    "bankAddTitle": "Agregar una cuenta tuya",
+    "bankAddHint": "¿Tu banco no está en la lista? Agrégalo con el nombre que quieras.",
+    "bankManageDesc": "Escribe el nombre del banco o de la cuenta y agrégala a tu lista.",
+    "bankConfirmDelete": "¿Seguro que deseas eliminar «{{name}}»?",
+    "confirmDeleteCategory": "¿Seguro que deseas eliminar «{{name}}»?"
   }
 }

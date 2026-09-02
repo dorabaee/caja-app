@@ -4,7 +4,7 @@ import { X, Plus } from "lucide-react";
 import type { CategoryGroup } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
 import { categoryBreakdownForTable } from "@core/compute";
-import { Button, Modal, TextInput } from "@ui/common";
+import { Button, ConfirmPopover, Modal, TextInput } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
 import styles from "./categoriesModal.module.css";
@@ -98,14 +98,19 @@ export function CategoriesModal() {
                 {group.items.map((cat) => (
                   <span key={cat.name} className={styles.chip}>
                     {cat.name}
-                    <button
-                      type="button"
-                      className={styles.chipRemove}
-                      aria-label={t("modals.removeCategory", { name: cat.name })}
-                      onClick={() => removeCategory(cat.name)}
-                    >
-                      <X size={13} strokeWidth={2.5} aria-hidden />
-                    </button>
+                    <ConfirmPopover
+                      message={t("modals.confirmDeleteCategory", { name: cat.name })}
+                      onConfirm={() => removeCategory(cat.name)}
+                      trigger={
+                        <button
+                          type="button"
+                          className={styles.chipRemove}
+                          aria-label={t("modals.removeCategory", { name: cat.name })}
+                        >
+                          <X size={13} strokeWidth={2.5} aria-hidden />
+                        </button>
+                      }
+                    />
                   </span>
                 ))}
               </div>

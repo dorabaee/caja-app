@@ -113,6 +113,11 @@
     "bankAdd": "Add bank",
     "bankPlaceholder": "Bank or account name",
     "bankRemove": "Remove {{name}}",
-    "bankCustomHint": "Accounts you add show as initials, without a logo."
+    "bankCustomHint": "Accounts you add show as initials, without a logo.",
+    "bankAddTitle": "Add an account of your own",
+    "bankAddHint": "Bank not on the list? Add it under whatever name you like.",
+    "bankManageDesc": "Type the bank or account name and add it to your list.",
+    "bankConfirmDelete": "Delete “{{name}}”?",
+    "confirmDeleteCategory": "Delete “{{name}}”?"
   }
 }

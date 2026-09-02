@@ -1,0 +1,48 @@
+.pop {
+  z-index: var(--z-confirm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--text);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.no,
+.yes {
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.no {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.no:hover {
+  background: var(--surface-hover);
+}
+.yes {
+  background: var(--expense);
+  color: #fff;
+}
+.yes:hover {
+  filter: brightness(0.94);
+}

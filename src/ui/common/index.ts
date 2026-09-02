@@ -4,6 +4,7 @@ export { IconButton } from "./IconButton";
 export type { IconButtonProps } from "./IconButton";
 export { Menu, MenuItem, MenuSeparator, MenuLabel } from "./Menu";
 export { Popover } from "./Popover";
+export { ConfirmPopover } from "./ConfirmPopover";
 export type { PopoverApi, PopoverProps } from "./Popover";
 export { Modal } from "./Modal";
 export type { ModalProps } from "./Modal";

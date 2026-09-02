@@ -23,7 +23,7 @@ import type { Column, ColumnType, Row, Table } from "@core/model/types";
 import { recurringDefIdFromRowId } from "@core/compute";
 import { MIN_COLUMN_WIDTH } from "@core/model/defaults";
 import { useStore, useUI } from "@core/store";
-import { IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, Popover, cn } from "@ui/common";
+import { ConfirmPopover, IconButton, Menu, MenuItem, MenuLabel, MenuSeparator, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useListReorder } from "@ui/hooks/useListReorder";
 import type { WidgetMode } from "@ui/hooks/useTableMode";
@@ -517,48 +517,19 @@ function ColumnHeader({
             <span className={styles.colUndo}>{t("widgets.undoDelete")}</span>
           </button>
         ) : (
-          <Popover
+          <ConfirmPopover
             align="start"
-            minWidth={248}
-            className={styles.confirmPop}
-            onOpenChange={(open) => {
-              if (!open) onHover(false);
+            message={t("widgets.confirmDeleteColumn")}
+            onConfirm={() => {
+              onStage();
+              onHover(false);
             }}
             trigger={
               <button type="button" className={styles.colDangerBtn} disabled={!canStage}>
                 {column.name}
               </button>
             }
-          >
-            {({ close }) => (
-              <div className={styles.confirmPanel}>
-                <p className={styles.confirmText}>{t("widgets.confirmDeleteColumn")}</p>
-                <div className={styles.confirmActions}>
-                  <button
-                    type="button"
-                    className={styles.confirmNo}
-                    onClick={() => {
-                      onHover(false);
-                      close();
-                    }}
-                  >
-                    {t("common.no")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.confirmYes}
-                    onClick={() => {
-                      onStage();
-                      onHover(false);
-                      close();
-                    }}
-                  >
-                    {t("common.yes")}
-                  </button>
-                </div>
-              </div>
-            )}
-          </Popover>
+          />
         )}
       </div>
     );
