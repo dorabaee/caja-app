@@ -50,6 +50,23 @@ npm run dev          # web preview at http://localhost:1420
 npm run tauri dev    # the desktop app (first run compiles Rust)
 ```
 
+## Testing with example data
+
+An empty table hides the bugs that only appear on a full month, so the app can boot with
+one already filled in:
+
+```bash
+npm run dev:demo     # same as npm run dev, plus a month of example data
+                     # (or open http://localhost:1420/?demo=1)
+```
+
+The demo writes to its own storage key, so it can never overwrite your real document,
+and it is dev-only — a production build does not contain it.
+
+The committed dataset is fictional. To test against your own books instead, copy
+`src/dev/seed.local.example.ts` to `src/dev/seed.local.ts` and put your figures there:
+that file is gitignored, so real amounts and vendor names never reach the repository.
+
 ## Build & test
 
 ```bash

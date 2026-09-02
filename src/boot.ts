@@ -24,7 +24,14 @@ export async function boot(): Promise<void> {
   const storage = getStorage();
   let doc: AppDoc | null = null;
 
-  const raw = await storage.readDoc(DOC_KEY);
+  // Development only, and behind its own storage key: a demo boot fills the app with
+  // example data without ever touching the real document. The whole module is behind
+  // `import.meta.env.DEV`, so a production build never pulls the seed in at all.
+  const dev = import.meta.env.DEV ? await import("./dev/seed") : null;
+  const demo = !!dev?.isDemoRequested();
+  const docKey = demo && dev ? dev.DEMO_DOC_KEY : DOC_KEY;
+
+  const raw = await storage.readDoc(docKey);
   if (raw) {
     try {
       doc = JSON.parse(raw) as AppDoc;
@@ -33,11 +40,13 @@ export async function boot(): Promise<void> {
     }
   }
 
+  if (!doc && demo && dev) doc = dev.demoDoc();
+
   if (!doc) {
     const legacy = importLegacy();
     if (legacy) {
       doc = legacy;
-      await storage.writeDoc(DOC_KEY, JSON.stringify(doc));
+      await storage.writeDoc(docKey, JSON.stringify(doc));
     }
   }
 
@@ -48,5 +57,5 @@ export async function boot(): Promise<void> {
   applyTheme(doc.settings);
   setLocale(doc.settings.locale);
   useStore.getState().load(doc);
-  startPersistence();
+  startPersistence(500, docKey);
 }

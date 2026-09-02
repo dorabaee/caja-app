@@ -30,6 +30,9 @@ REDESIGN_PLAN.md
 .uiaudit/
 __verify/
 
+# Local example data for `npm run dev:demo` — real books never get committed
+src/dev/seed.local.ts
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
