@@ -11,12 +11,13 @@ export interface MenuProps {
   trigger: ReactElement;
   align?: "start" | "end";
   minWidth?: number;
+  className?: string;
   children: ReactNode;
 }
 
-export function Menu({ trigger, align = "start", minWidth = 184, children }: MenuProps) {
+export function Menu({ trigger, align = "start", minWidth = 184, className, children }: MenuProps) {
   return (
-    <Popover trigger={trigger} align={align} minWidth={minWidth} role="menu" className={styles.menu}>
+    <Popover trigger={trigger} align={align} minWidth={minWidth} role="menu" className={cn(styles.menu, className)}>
       {({ close }) => <MenuContext.Provider value={{ close }}>{children}</MenuContext.Provider>}
     </Popover>
   );

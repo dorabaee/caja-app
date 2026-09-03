@@ -52,6 +52,7 @@
     "restoreWarning": "Restaurar reemplaza todos los datos actuales por los del respaldo. Esto no se puede deshacer.",
     "yesRestore": "Sí, restaurar",
     "createBackup": "Crear respaldo",
+    "versionInfo": "Caja v{{version}} · Hecho por {{author}} · {{date}}",
     "newBusiness": "Nuevo negocio",
     "editBusiness": "Editar negocio",
     "newBusinessDescription": "Cada negocio lleva su propia caja por separado.",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { UNCATEGORIZED, categoryBreakdownForTable, monthlyExpenseCategories } from "@core/compute";
-import { makeColumn, makeRow, newProject } from "@core/model/defaults";
+import { makeColumn, makeLedgerTable, makeRow, newProject } from "@core/model/defaults";
 import type { Project, Table } from "@core/model/types";
 
 /** An expense table whose description column doubles as the category column. */
@@ -105,41 +105,89 @@ describe("monthlyExpenseCategories", () => {
   });
 });
 
-describe("monthlyExpenseCategories — one half of the books at a time", () => {
+describe("monthlyExpenseCategories — fiscal source tables", () => {
   function project(): Project {
     const p = newProject("P");
     p.categories = [
       { name: "Gasolina", group: "fiscal" },
       { name: "Extras", group: "noFiscal" },
     ];
-    const table = expenseTable([
-      ["Gasolina de la camioneta", "600"],
-      ["Propina", "70"],
-      ["Cubeta y Trapeador", "870"],
+    const fiscal = expenseTable([
+      ["Pago extraordinario", "600"],
+      ["Sin etiqueta", "70"],
     ]);
-    table.rows[0].category = "Gasolina";
-    table.rows[1].category = "Extras";
-    p.months[0].tables = [table];
+    fiscal.id = "fiscal";
+    fiscal.fiscal = true;
+    // Deliberately use a no-fiscal category in a fiscal table: the table owns the tab.
+    fiscal.rows[0].category = "Extras";
+
+    const noFiscal = expenseTable([["Gasolina personal", "870"]]);
+    noFiscal.id = "no-fiscal";
+    // Deliberately use a fiscal category in a non-fiscal table.
+    noFiscal.rows[0].category = "Gasolina";
+    p.months[0].tables = [fiscal, noFiscal];
     return p;
   }
 
-  it("keeps only the fiscal categories", () => {
+  it("filters by the table fiscal flag, not by the category group", () => {
     const rows = monthlyExpenseCategories(project(), { byCategory: true, group: "fiscal" });
-    expect(rows.map((r) => r.label)).toEqual(["Gasolina"]);
-    expect(rows[0].total).toBe(600);
+    expect(rows.map((r) => r.label).sort()).toEqual([UNCATEGORIZED, "Extras"].sort());
+    expect(rows.find((r) => r.label === "Extras")?.total).toBe(600);
   });
 
-  it("keeps only the non-fiscal categories", () => {
+  it("keeps non-fiscal table expenses under No fiscal", () => {
     const rows = monthlyExpenseCategories(project(), { byCategory: true, group: "noFiscal" });
-    expect(rows.map((r) => r.label)).toEqual(["Extras"]);
+    expect(rows.map((r) => r.label)).toEqual(["Gasolina"]);
+    expect(rows[0].total).toBe(870);
   });
 
-  it("shows uncategorised spending only when neither half is asked for", () => {
-    const all = monthlyExpenseCategories(project(), { byCategory: true });
-    expect(all.map((r) => r.label)).toContain(UNCATEGORIZED);
-    for (const g of ["fiscal", "noFiscal"] as const) {
-      const half = monthlyExpenseCategories(project(), { byCategory: true, group: g });
-      expect(half.map((r) => r.label)).not.toContain(UNCATEGORIZED);
-    }
+  it("keeps uncategorised spending in its table's fiscal half", () => {
+    const fiscal = monthlyExpenseCategories(project(), { byCategory: true, group: "fiscal" });
+    expect(fiscal.find((r) => r.label === UNCATEGORIZED)?.total).toBe(70);
+  });
+
+  it("includes both halves under Todos", () => {
+    const rows = monthlyExpenseCategories(project(), { byCategory: true });
+    expect(rows.map((r) => r.label).sort()).toEqual([UNCATEGORIZED, "Extras", "Gasolina"].sort());
+  });
+});
+
+describe("monthlyExpenseCategories — fiscal ledgers", () => {
+  function project(): Project {
+    const p = newProject("P");
+    p.categories = [{ name: "Limpieza", group: "fiscal" }];
+    const ledger = makeLedgerTable();
+    ledger.bank = "bbva";
+    const deposit = ledger.columns.find((c) => c.role === "deposit")!;
+    const withdrawal = ledger.columns.find((c) => c.role === "withdrawal")!;
+    const description = ledger.columns.find((c) => c.withCategory)!;
+    ledger.rows[0].cells[deposit.id] = "3300";
+    ledger.rows[0].cells[withdrawal.id] = "297";
+    ledger.rows[0].cells[description.id] = "Productos de limpieza";
+    ledger.rows[0].category = "Limpieza";
+    ledger.rows[1].cells[deposit.id] = "3025";
+    ledger.rows[1].cells[withdrawal.id] = "800";
+    ledger.rows[1].cells[description.id] = "Gasolina";
+    p.months[0].tables = [ledger];
+    return p;
+  }
+
+  it("includes only withdrawals from a fiscal bank ledger", () => {
+    const rows = monthlyExpenseCategories(project(), { byCategory: true, group: "fiscal" });
+    expect(rows.find((r) => r.label === "Limpieza")?.total).toBe(297);
+    expect(rows.find((r) => r.label === UNCATEGORIZED)?.total).toBe(800);
+    expect(rows.reduce((sum, row) => sum + row.total, 0)).toBe(1097);
+  });
+
+  it("can display ledger descriptions without overwriting their categories", () => {
+    const rows = monthlyExpenseCategories(project(), { group: "fiscal" });
+    expect(Object.fromEntries(rows.map((r) => [r.label, r.total]))).toEqual({
+      Gasolina: 800,
+      "Productos de limpieza": 297,
+    });
+  });
+
+  it("does not list a fiscal ledger under No fiscal", () => {
+    expect(monthlyExpenseCategories(project(), { byCategory: true, group: "noFiscal" })).toEqual([]);
   });
 });

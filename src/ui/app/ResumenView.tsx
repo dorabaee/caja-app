@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { UNCATEGORIZED, monthlyExpenseCategories, yearlyResumen } from "@core/compute";
 import type { CategoryGroup } from "@core/model/types";
 import { useUI } from "@core/store";
-import { Button, cn } from "@ui/common";
+import { Button, SegmentedControl, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { useFormat } from "@ui/hooks/useFormat";
 import { useMonths } from "@ui/hooks/useMonths";
@@ -14,16 +14,17 @@ import styles from "./ResumenView.module.css";
 /**
  * What the "Gastos por categoría" list is keyed on:
  * - "category": the project's real categories, everything else folded into "Sin categoría";
- * - "amount" / "name": every distinct description value, ordered by total or alphabetically.
- * Picking a category writes it into the description cell, so the two views are the same
- * column read two ways — which is why the mode also decides the grouping, not just the sort.
+ * - "description": every distinct description, ordered alphabetically;
+ * - "amount": those descriptions ranked with the amount visually first.
+ * Category and description are separate row fields. The fiscal filter is independent:
+ * it follows the source table's fiscal flag, never the category's organisational group.
  */
-type CatMode = "category" | "amount" | "name";
+type CatMode = "category" | "amount" | "description";
 
 const MODE_KEY: Record<CatMode, string> = {
   category: "dash.groupCategory",
   amount: "dash.sortAmount",
-  name: "dash.sortName",
+  description: "dash.groupDescription",
 };
 
 /** Which half of the chart of accounts the list is showing. */
@@ -54,9 +55,7 @@ export function ResumenView() {
     () =>
       project
         ? monthlyExpenseCategories(project, {
-            // Splitting fiscal from no fiscal is a question about categories, so asking
-            // it groups by category too, whatever the sort control says.
-            byCategory: mode === "category" || group !== "all",
+            byCategory: mode === "category",
             group: group === "all" ? undefined : group,
           })
         : [],
@@ -77,26 +76,22 @@ export function ResumenView() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const dir = descending ? 1 : -1;
     return catRows
       .filter((c) => !q || c.label.toLowerCase().includes(q))
-      .sort((a, b) =>
-        mode === "name" ? a.label.localeCompare(b.label) * dir : (b.total - a.total) * dir,
-      );
+      .sort((a, b) => {
+        if (mode === "description") {
+          return descending ? b.label.localeCompare(a.label) : a.label.localeCompare(b.label);
+        }
+        return descending ? b.total - a.total : a.total - b.total;
+      });
   }, [catRows, search, mode, descending]);
 
   if (!project) return null;
   const { months, totals } = yearlyResumen(project);
 
-  // Fiscal/No fiscal tabs own the grouping (they force byCategory), so the sort
-  // control has to read as "Categoría" while one of them is active — it can't keep
-  // showing "Nombre" highlighted while the list is actually grouped by category. The
-  // two controls speak with one voice: picking Cantidad/Nombre snaps the tab back to
-  // Todos, and the tab, while active, is what the segmented control shows as selected.
-  const effectiveMode: CatMode = group !== "all" ? "category" : mode;
-  const setModeAndGroup = (m: CatMode) => {
+  const setDisplayMode = (m: CatMode) => {
     setMode(m);
-    if (m !== "category") setGroup("all");
+    setSelected(new Set());
   };
 
   const toggle = (label: string) =>
@@ -162,22 +157,20 @@ export function ResumenView() {
       <div className={styles.catCard}>
         <div className={styles.catHead}>
           <h3 className={styles.catTitle}>{t("dash.categoriesTitle")}</h3>
-          <div className={styles.tabs} role="group" aria-label={t("dash.bookHalf")}>
-            {(["all", "fiscal", "noFiscal"] as GroupFilter[]).map((g) => (
-              <button
-                key={g}
-                type="button"
-                className={cn(styles.tab, group === g && styles.tabOn)}
-                aria-pressed={group === g}
-                onClick={() => {
-                  setGroup(g);
-                  setSelected(new Set());
-                }}
-              >
-                {t(GROUP_KEY[g])}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            className={styles.bookTabs}
+            variant="pill"
+            aria-label={t("dash.bookHalf")}
+            value={group}
+            options={(["all", "fiscal", "noFiscal"] as GroupFilter[]).map((g) => ({
+              value: g,
+              label: t(GROUP_KEY[g]),
+            }))}
+            onChange={(g) => {
+              setGroup(g);
+              setSelected(new Set());
+            }}
+          />
           <div className={styles.catControls}>
             <span className={styles.searchBox}>
               <Search size={14} aria-hidden />
@@ -189,19 +182,16 @@ export function ResumenView() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </span>
-            <div className={styles.segmented} role="group" aria-label={t("dash.groupBy")}>
-              {(["category", "amount", "name"] as CatMode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={cn(styles.segBtn, effectiveMode === m && styles.segOn)}
-                  aria-pressed={effectiveMode === m}
-                  onClick={() => setModeAndGroup(m)}
-                >
-                  {t(MODE_KEY[m])}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              className={styles.summaryModes}
+              aria-label={t("dash.groupBy")}
+              value={mode}
+              options={(["category", "amount", "description"] as CatMode[]).map((m) => ({
+                value: m,
+                label: t(MODE_KEY[m]),
+              }))}
+              onChange={setDisplayMode}
+            />
             <button
               type="button"
               className={styles.sortDir}
@@ -243,7 +233,7 @@ export function ResumenView() {
         ) : filtered.length === 0 ? (
           <p className={styles.catEmpty}>{t("dash.noCategoryMatch")}</p>
         ) : (
-          <>
+          <div className={styles.results} key={`${group}-${mode}`}>
             <div className={styles.chips}>
               {filtered.map((c) => {
                 const on = selected.has(c.label);
@@ -263,8 +253,15 @@ export function ResumenView() {
                       {/* A check, not just a color: selection has to read without it. */}
                       {on ? <Check size={11} strokeWidth={3} /> : <span className={styles.chipDot} />}
                     </span>
+                    {mode === "amount" && (
+                      <span className={cn(styles.chipVal, styles.chipValFirst, "tnum")}>
+                        {fmt.moneyPlain(c.total)}
+                      </span>
+                    )}
                     <span className={styles.chipName}>{c.label}</span>
-                    <span className={cn(styles.chipVal, "tnum")}>{fmt.moneyPlain(c.total)}</span>
+                    {mode !== "amount" && (
+                      <span className={cn(styles.chipVal, "tnum")}>{fmt.moneyPlain(c.total)}</span>
+                    )}
                   </button>
                 );
               })}
@@ -291,19 +288,31 @@ export function ResumenView() {
                     return (
                       <div
                         key={c.label}
-                        className={cn(styles.catSubRow, on && styles.catSubRowOn, none && styles.catSubRowNone)}
+                        className={cn(
+                          styles.catSubRow,
+                          on && styles.catSubRowOn,
+                          none && styles.catSubRowNone,
+                          mode === "amount" && styles.catSubRowAmount,
+                        )}
                         style={{ "--cat-color": colors.categoryColor(c.label, distinct) } as CSSProperties}
                       >
                         <span className={styles.chipDot} aria-hidden />
+                        {mode === "amount" && (
+                          <span className={cn(styles.catSubVal, styles.catSubValFirst, "tnum")}>
+                            {fmt.moneyPlain(c.value)}
+                          </span>
+                        )}
                         <span className={styles.catSubName}>{c.label}</span>
-                        <span className={cn(styles.catSubVal, "tnum")}>{fmt.moneyPlain(c.value)}</span>
+                        {mode !== "amount" && (
+                          <span className={cn(styles.catSubVal, "tnum")}>{fmt.moneyPlain(c.value)}</span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
 

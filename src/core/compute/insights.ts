@@ -1,6 +1,6 @@
 import { parseMoney } from "../format/money";
 import { categoryColumnOf, rowCategory } from "./categoryColumn";
-import type { CategoryGroup, Month, Project, Table } from "../model/types";
+import type { Month, Project, Table } from "../model/types";
 import { tableTotal } from "./tables";
 import { materializeMonth, materializedMonths, monthlyTotals, yearlyResumen } from "./monthly";
 
@@ -59,6 +59,18 @@ export interface CategorySlice {
 export const UNCATEGORIZED = "Sin categoría";
 
 /**
+ * The amount that represents an expense row in Resumen. Ordinary expense tables keep
+ * their established first-money-column behaviour. A ledger is different: deposits are
+ * money too, but only its explicitly marked withdrawal column is an expense.
+ */
+function expenseValueColumn(table: Table) {
+  if (table.kind === "ledger") {
+    return table.columns.find((c) => c.type === "money" && c.role === "withdrawal");
+  }
+  return table.columns.find((c) => c.type === "money");
+}
+
+/**
  * Group a single table's money total by its category column value.
  *
  * Picking a category writes its name into that column, so the column holds a mix of
@@ -69,7 +81,7 @@ export const UNCATEGORIZED = "Sin categoría";
 export function categoryBreakdownForTable(table: Table, known?: string[]): CategorySlice[] {
   const catCol =
     categoryColumnOf(table) ?? table.columns.find((c) => c.type === "text") ?? null;
-  const moneyCol = table.columns.find((c) => c.type === "money");
+  const moneyCol = expenseValueColumn(table);
   if (!catCol || !moneyCol) return [];
   const canon = known && new Map(known.map((n) => [n.trim().toLowerCase(), n]));
   const map = new Map<string, number>();
@@ -104,30 +116,24 @@ export interface CategoryYearRow {
  * breakdown by category name into a 12-month vector. Sorted by year total desc.
  *
  * With `byCategory`, rows are grouped by the project's real categories (anything else
- * folded into "Sin categoría"); without it, by the raw description text. `group` narrows
- * the result to one half of the chart of accounts (fiscal / no fiscal).
+ * folded into "Sin categoría"); without it, by the raw description text. `group` filters
+ * by the source table's fiscal flag. Category groups still organise the picker, but do
+ * not decide whether money belongs to the fiscal or non-fiscal account view.
  */
 export function monthlyExpenseCategories(
   project: Project,
-  opts?: { byCategory?: boolean; group?: CategoryGroup },
+  opts?: { byCategory?: boolean; group?: "fiscal" | "noFiscal" },
 ): CategoryYearRow[] {
   const known = opts?.byCategory ? (project.categories ?? []).map((c) => c.name) : undefined;
-  // Filtering to one half of the books keeps only the categories filed under it. A row
-  // with no category (or one carried over from before the split, which belongs to
-  // neither half) is only ever shown unfiltered — putting it on a side would be a guess.
-  const inGroup = opts?.group
-    ? new Set(
-        (project.categories ?? [])
-          .filter((c) => c.group === opts.group)
-          .map((c) => c.name.toLowerCase()),
-      )
-    : null;
   const map = new Map<string, number[]>();
   materializedMonths(project).forEach((m, i) => {
     for (const t of m.tables) {
-      if (t.kind !== "expense") continue;
+      // Ledgers contribute their withdrawals; deposits are excluded by
+      // `expenseValueColumn`. Income and neutral tables are not expense sources.
+      if (t.kind !== "expense" && t.kind !== "ledger") continue;
+      if (opts?.group === "fiscal" && !t.fiscal) continue;
+      if (opts?.group === "noFiscal" && t.fiscal) continue;
       for (const slice of categoryBreakdownForTable(t, known)) {
-        if (inGroup && !inGroup.has(slice.label.toLowerCase())) continue;
         let arr = map.get(slice.label);
         if (!arr) {
           arr = new Array(12).fill(0);

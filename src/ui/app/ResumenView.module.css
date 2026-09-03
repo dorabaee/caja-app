@@ -150,30 +150,8 @@
 .searchInput:focus {
   outline: none;
 }
-.segmented {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.segBtn {
-  height: 26px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.segBtn:hover {
-  color: var(--text);
-}
-.segOn {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
+.summaryModes {
+  min-width: 304px;
 }
 /* direction flip for whichever ordering the mode buttons chose */
 .sortDir {
@@ -224,6 +202,24 @@
   line-height: 1.5;
 }
 
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: summaryReveal 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes summaryReveal {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -241,9 +237,9 @@
   font-size: var(--text-sm);
   color: var(--text-muted);
   transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    box-shadow 120ms ease;
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
 }
 .chip:hover {
   border-color: color-mix(in srgb, var(--cat-color, var(--border-strong)) 55%, transparent);
@@ -253,14 +249,13 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-/* Selected: a filled tint, a ring in the category's own color, and a check — so the
-   state survives a monochrome palette and a color-blind reader alike. */
+/* Selection stays quiet: the check is the primary signal and the category colour is
+   limited to a restrained border/tint instead of stacking a ring and saturated fill. */
 .chipOn {
   color: var(--text);
   font-weight: 600;
-  border-color: var(--cat-color, var(--accent));
-  background: color-mix(in srgb, var(--cat-color, var(--accent)) 14%, var(--surface));
-  box-shadow: 0 0 0 1px var(--cat-color, var(--accent));
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 45%, var(--border));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 6%, var(--surface));
 }
 /* "Sin categoría" is an absence, not a category: dashed and neutral, so a glance tells
    you these rows are still waiting to be filed. */
@@ -273,7 +268,6 @@
 .chipNone.chipOn {
   border-color: var(--border-strong);
   background: var(--surface-2);
-  box-shadow: 0 0 0 1px var(--border-strong);
   color: var(--text-muted);
 }
 .chipMark {
@@ -302,6 +296,10 @@
   font-family: var(--font-num);
   color: var(--text-subtle);
 }
+.chipValFirst {
+  color: var(--text);
+  font-weight: 650;
+}
 .chipOn .chipVal {
   color: var(--text-muted);
 }
@@ -321,28 +319,8 @@
 }
 
 /* Fiscal / no fiscal tabs — which half of the books the list below is about. */
-.tabs {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-}
-.tab {
-  height: 28px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-}
-.tab:hover {
-  color: var(--text);
-}
-.tabOn {
-  background: var(--surface);
-  color: var(--text);
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
+.bookTabs {
+  min-width: 270px;
 }
 
 .breakdown {
@@ -374,8 +352,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-2);
+  min-height: 38px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
 }
 .catSubName {
   flex: 1;
@@ -387,8 +370,8 @@
   color: var(--text-muted);
 }
 .catSubRowOn {
-  background: color-mix(in srgb, var(--cat-color, var(--accent)) 12%, transparent);
-  box-shadow: inset 3px 0 0 var(--cat-color, var(--accent));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 22%, var(--border));
 }
 .catSubRowOn .catSubName {
   color: var(--text);
@@ -398,6 +381,15 @@
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   color: var(--text);
+}
+.catSubRowAmount {
+  gap: var(--space-3);
+}
+.catSubValFirst {
+  min-width: 104px;
+  text-align: right;
+  color: var(--expense);
+  font-weight: 650;
 }
 
 .actions {
@@ -411,4 +403,14 @@
 .catSubRowNone .catSubName {
   color: var(--text-muted);
   font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .catSubRow {
+    transition: none;
+  }
+  .results {
+    animation: none;
+  }
 }

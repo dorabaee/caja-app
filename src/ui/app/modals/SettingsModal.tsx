@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon, Check, Droplet, Palette, DatabaseBackup, RotateCcw, AlertTriangle } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Check,
+  Droplet,
+  Palette,
+  DatabaseBackup,
+  RotateCcw,
+  AlertTriangle,
+  ChevronDown,
+  Info,
+} from "lucide-react";
 import type { AccentName, ChartPalette, Locale, ThemeMode } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
-import { Button, Modal, cn } from "@ui/common";
+import { Button, Menu, MenuItem, Modal, SegmentedControl, cn } from "@ui/common";
 import { useExport } from "@ui/hooks/useExport";
+import appPackage from "../../../../package.json";
 import styles from "./SettingsModal.module.css";
 
 const ACCENTS: { name: AccentName; labelKey: string; color: string }[] = [
@@ -33,6 +45,11 @@ export function SettingsModal() {
   const update = useStore((s) => s.updateSettings);
   const { exportBackup, restoreBackup } = useExport();
   const [confirmRestore, setConfirmRestore] = useState(false);
+  const selectedCurrency = CURRENCIES.find((currency) => currency.code === settings.currency) ?? CURRENCIES[0];
+  const releaseDate = new Intl.DateTimeFormat(settings.locale === "es" ? "es-MX" : "en-US", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(`${appPackage.releaseDate}T00:00:00Z`));
 
   const doRestore = async () => {
     setConfirmRestore(false);
@@ -55,20 +72,16 @@ export function SettingsModal() {
 
         <div className={styles.row}>
           <span className={styles.label}>{t("modals.mode")}</span>
-          <div className={styles.segmented} role="group" aria-label={t("modals.mode")}>
-            {(["light", "dark"] as ThemeMode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                className={cn(styles.seg, settings.theme === m && styles.segOn)}
-                aria-pressed={settings.theme === m}
-                onClick={() => update({ theme: m })}
-              >
-                {m === "light" ? <Sun size={15} /> : <Moon size={15} />}
-                {m === "light" ? t("modals.light") : t("modals.dark")}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl<ThemeMode>
+            className={styles.settingSegments}
+            aria-label={t("modals.mode")}
+            value={settings.theme}
+            options={[
+              { value: "light", label: t("modals.light"), icon: <Sun /> },
+              { value: "dark", label: t("modals.dark"), icon: <Moon /> },
+            ]}
+            onChange={(theme) => update({ theme })}
+          />
         </div>
 
         <div className={styles.row}>
@@ -93,20 +106,16 @@ export function SettingsModal() {
 
         <div className={styles.row}>
           <span className={styles.label}>{t("modals.charts")}</span>
-          <div className={styles.segmented} role="group" aria-label={t("modals.chartStyle")}>
-            {(["mono", "colorful"] as ChartPalette[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={cn(styles.seg, settings.chartPalette === p && styles.segOn)}
-                aria-pressed={settings.chartPalette === p}
-                onClick={() => update({ chartPalette: p })}
-              >
-                {p === "mono" ? <Droplet size={15} /> : <Palette size={15} />}
-                {p === "mono" ? t("modals.monochrome") : t("modals.colorful")}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl<ChartPalette>
+            className={styles.settingSegments}
+            aria-label={t("modals.chartStyle")}
+            value={settings.chartPalette}
+            options={[
+              { value: "mono", label: t("modals.monochrome"), icon: <Droplet /> },
+              { value: "colorful", label: t("modals.colorful"), icon: <Palette /> },
+            ]}
+            onChange={(chartPalette) => update({ chartPalette })}
+          />
         </div>
       </section>
 
@@ -115,54 +124,60 @@ export function SettingsModal() {
 
         <div className={styles.row}>
           <span className={styles.label}>{t("modals.language")}</span>
-          <div className={styles.segmented} role="group" aria-label={t("modals.language")}>
-            {(["es", "en"] as Locale[]).map((l) => (
-              <button
-                key={l}
-                type="button"
-                className={cn(styles.seg, settings.locale === l && styles.segOn)}
-                aria-pressed={settings.locale === l}
-                onClick={() => update({ locale: l })}
-              >
-                {l === "es" ? t("modals.spanish") : t("modals.english")}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl<Locale>
+            className={styles.settingSegments}
+            aria-label={t("modals.language")}
+            value={settings.locale}
+            options={[
+              { value: "es", label: t("modals.spanish") },
+              { value: "en", label: t("modals.english") },
+            ]}
+            onChange={(locale) => update({ locale })}
+          />
         </div>
 
         <div className={styles.row}>
           <label className={styles.label} htmlFor="set-currency">
             {t("modals.currency")}
           </label>
-          <select
-            id="set-currency"
-            className={styles.select}
-            value={settings.currency}
-            onChange={(e) => update({ currency: e.target.value })}
+          <Menu
+            align="end"
+            minWidth={240}
+            className={styles.currencyMenu}
+            trigger={
+              <button id="set-currency" type="button" className={styles.currencyTrigger}>
+                <span>{t(selectedCurrency.labelKey)}</span>
+                <ChevronDown size={15} aria-hidden />
+              </button>
+            }
           >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {t(c.labelKey)}
-              </option>
+            {CURRENCIES.map((currency) => (
+              <MenuItem
+                key={currency.code}
+                checked={settings.currency === currency.code}
+                onClick={() => update({ currency: currency.code })}
+              >
+                <span className={styles.currencyOption}>
+                  <span>{t(currency.labelKey)}</span>
+                  <span className={styles.currencyCode}>{currency.code}</span>
+                </span>
+              </MenuItem>
             ))}
-          </select>
+          </Menu>
         </div>
 
         <div className={styles.row}>
           <span className={styles.label}>{t("modals.decimals")}</span>
-          <div className={styles.segmented} role="group" aria-label={t("modals.decimals")}>
-            {[0, 2].map((d) => (
-              <button
-                key={d}
-                type="button"
-                className={cn(styles.seg, settings.decimals === d && styles.segOn)}
-                aria-pressed={settings.decimals === d}
-                onClick={() => update({ decimals: d })}
-              >
-                {d === 0 ? t("modals.noCents") : t("modals.withCents")}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl<number>
+            className={styles.settingSegments}
+            aria-label={t("modals.decimals")}
+            value={settings.decimals}
+            options={[
+              { value: 0, label: t("modals.noCents") },
+              { value: 2, label: t("modals.withCents") },
+            ]}
+            onChange={(decimals) => update({ decimals })}
+          />
         </div>
       </section>
 
@@ -195,6 +210,16 @@ export function SettingsModal() {
             </Button>
           </div>
         )}
+        <div className={styles.versionInfo}>
+          <Info size={14} aria-hidden />
+          <span>
+            {t("modals.versionInfo", {
+              version: appPackage.version,
+              author: appPackage.author,
+              date: releaseDate,
+            })}
+          </span>
+        </div>
       </section>
     </Modal>
   );

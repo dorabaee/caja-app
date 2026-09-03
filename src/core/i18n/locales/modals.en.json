@@ -52,6 +52,7 @@
     "restoreWarning": "Restoring replaces all current data with the backup. This can't be undone.",
     "yesRestore": "Yes, restore",
     "createBackup": "Create backup",
+    "versionInfo": "Caja v{{version}} · Made by {{author}} · {{date}}",
     "newBusiness": "New business",
     "editBusiness": "Edit business",
     "newBusinessDescription": "Each business keeps its own separate cash box.",

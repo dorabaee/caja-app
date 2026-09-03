@@ -11,5 +11,7 @@ export type { ModalProps } from "./Modal";
 export { Field, TextInput } from "./Field";
 export { Switch } from "./Switch";
 export type { SwitchProps } from "./Switch";
+export { SegmentedControl } from "./SegmentedControl";
+export type { SegmentOption, SegmentedControlProps } from "./SegmentedControl";
 export { ToastHost } from "./ToastHost";
 export { cn } from "./cn";
