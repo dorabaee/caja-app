@@ -1,8 +1,10 @@
-import { TrendingUp, TrendingDown, Scale, Percent, Layers, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { TrendingUp, TrendingDown, Scale, Percent, Layers, Info, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { allBusinessesMetrics } from "@core/compute";
 import { useStore } from "@core/store";
 import { useFormat } from "@ui/hooks/useFormat";
+import { Button, Popover, Switch } from "@ui/common";
 import { StatCard } from "@ui/widgets/StatCard";
 import { ChartCard, TrendBars, BalanceArea, RankedBars } from "@ui/widgets/MiniChart";
 import styles from "./AllBusinesses.module.css";
@@ -11,13 +13,32 @@ export function AllBusinessesView() {
   const { t } = useTranslation();
   const projects = useStore((s) => s.doc.projects);
   const fmt = useFormat();
+  // `null` deliberately means every business: a new business is automatically included
+  // until the person viewing the overview chooses a narrower selection.
+  const [selectedIds, setSelectedIds] = useState<Set<string> | null>(null);
+  const visibleProjects = useMemo(
+    () => selectedIds === null ? projects : projects.filter((project) => selectedIds.has(project.id)),
+    [projects, selectedIds],
+  );
 
-  const m = allBusinessesMetrics(projects);
+  const m = allBusinessesMetrics(visibleProjects);
   const active = m.totals.entro !== 0 || m.totals.salio !== 0;
   const comparison = m.businesses
     .map((b) => ({ label: b.name, value: b.totals.teQueda }))
     .sort((a, b) => b.value - a.value);
   const hasCategories = m.topCategories.length > 0;
+
+  const toggleProject = (id: string) => {
+    const next = new Set(selectedIds ?? projects.map((project) => project.id));
+    if (next.has(id)) {
+      // Keep at least one business selected: an empty overview is not a useful state.
+      if (next.size === 1) return;
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next.size === projects.length ? null : next);
+  };
 
   return (
     <div className={styles.wrap}>
@@ -26,10 +47,47 @@ export function AllBusinessesView() {
           <Layers size={18} aria-hidden />
           <h1>{t("dash.allBusinesses")}</h1>
         </div>
-        <span className={styles.currencyNote}>
-          <Info size={13} aria-hidden />
-          {t("dash.businessesNote", { count: m.businesses.length, currency: fmt.currency })}
-        </span>
+        <div className={styles.leadActions}>
+          <span className={styles.currencyNote}>
+            <Info size={13} aria-hidden />
+            {t("dash.businessesNote", { count: m.businesses.length, currency: fmt.currency })}
+          </span>
+          <Popover
+            align="end"
+            minWidth={260}
+            className={styles.businessPicker}
+            trigger={
+              <Button variant="secondary" size="sm" icon={<SlidersHorizontal size={15} />}>
+                {selectedIds === null ? t("dash.showAllBusinesses") : t("dash.businessesSelected", { count: visibleProjects.length })}
+              </Button>
+            }
+          >
+            <div className={styles.pickerHeader}>
+              <strong>{t("dash.filterBusinesses")}</strong>
+              <button type="button" className={styles.showAllButton} onClick={() => setSelectedIds(null)}>
+                {t("dash.showAll")}
+              </button>
+            </div>
+            <p className={styles.pickerHint}>{t("dash.filterBusinessesHint")}</p>
+            <div className={styles.businessOptions}>
+              {projects.map((project) => {
+                const checked = selectedIds === null || selectedIds.has(project.id);
+                const onlySelection = checked && selectedIds !== null && selectedIds.size === 1;
+                return (
+                  <label key={project.id} className={styles.businessOption}>
+                    <span>{project.name}</span>
+                    <Switch
+                      checked={checked}
+                      disabled={onlySelection}
+                      aria-label={t("dash.toggleBusiness", { name: project.name })}
+                      onChange={() => toggleProject(project.id)}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </Popover>
+        </div>
       </header>
 
       {!active ? (

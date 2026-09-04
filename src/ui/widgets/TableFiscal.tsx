@@ -1,10 +1,10 @@
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, X, Landmark, ArrowUpDown, Columns3 } from "lucide-react";
+import { Check, X, Landmark, ArrowUpDown, Columns3, ArrowDownAZ, ArrowUpAZ } from "lucide-react";
 import { bankMeta } from "@core/model/banks";
 import type { Table } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
-import { IconButton, MenuItem, MenuSeparator } from "@ui/common";
+import { IconButton, Menu, MenuItem, MenuLabel, MenuSeparator } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import type { TableModeApi } from "@ui/hooks/useTableMode";
 import styles from "./widget.module.css";
@@ -81,5 +81,31 @@ export function TableModeMenuItems({
         </MenuItem>
       )}
     </Fragment>
+  );
+}
+
+/** A compact, table-wide sorting control shared by regular tables and ledgers. */
+export function TableSortMenu({ monthIndex, table }: { monthIndex: number; table: Table }) {
+  const { t } = useTranslation();
+  const s = useStore.getState;
+  const sortable = table.columns.filter((column) => column.type !== "category");
+  if (!sortable.length) return null;
+  return (
+    <Menu
+      align="end"
+      trigger={<IconButton label={t("widgets.sortRows")} icon={<ArrowUpDown />} size="sm" />}
+    >
+      <MenuLabel>{t("widgets.sortRows")}</MenuLabel>
+      {sortable.map((column) => (
+        <Fragment key={column.id}>
+          <MenuItem icon={<ArrowUpAZ />} onClick={() => s().sortRows(monthIndex, table.id, column.id, "asc")}>
+            {t("widgets.sortAscending", { column: column.name })}
+          </MenuItem>
+          <MenuItem icon={<ArrowDownAZ />} onClick={() => s().sortRows(monthIndex, table.id, column.id, "desc")}>
+            {t("widgets.sortDescending", { column: column.name })}
+          </MenuItem>
+        </Fragment>
+      ))}
+    </Menu>
   );
 }

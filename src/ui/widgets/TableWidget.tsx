@@ -24,7 +24,7 @@ import { useRecurringRows } from "@ui/hooks/useRecurringRows";
 import { useTableMode } from "@ui/hooks/useTableMode";
 import { WidgetGrid } from "./WidgetGrid";
 import { BankTag } from "./cells/BankTag";
-import { ModeActions, TableModeMenuItems } from "./TableFiscal";
+import { ModeActions, TableModeMenuItems, TableSortMenu } from "./TableFiscal";
 import { DRAG_HANDLE } from "./dragHandle";
 import styles from "./widget.module.css";
 
@@ -121,6 +121,7 @@ export const TableWidget = memo(function TableWidget({
 
         {table.fiscal && <BankTag bank={table.bank} />}
         <ModeActions mode={mode} />
+        {mode.mode === "idle" && <TableSortMenu monthIndex={monthIndex} table={table} />}
 
         {mode.mode === "idle" && (
         <Menu

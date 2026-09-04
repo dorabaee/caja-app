@@ -116,15 +116,22 @@ export function nextWidgetSlot(
   return advance(size.w, size.h);
 }
 
-/** Number of "Día N" rows seeded into a fresh daily-income table.
- *  Month-agnostic: 28 covers the shortest month; users extend to 29–31 by adding
- *  rows (the day number auto-increments — see addRow). */
-export const INCOME_TABLE_DAYS = 28;
+/**
+ * Days in one of the app's month tabs. The workbook is not tied to a calendar year,
+ * so February deliberately uses 28 days instead of guessing whether a future year is
+ * a leap year.
+ */
+export function daysInMonth(monthIndex: number): number {
+  return new Date(2025, monthIndex + 1, 0).getDate();
+}
+
+/** Number of rows in the default January income table (kept for API compatibility). */
+export const INCOME_TABLE_DAYS = daysInMonth(0);
 
 /** Table templates (titles/columns mirror the original app). */
-export function makeIncomeTable(layout?: Partial<WidgetLayout>): Table {
+export function makeIncomeTable(layout?: Partial<WidgetLayout>, monthIndex = 0): Table {
   const cols = [makeColumn("Día", "text"), makeColumn("Efectivo recibido", "money")];
-  const rows = Array.from({ length: INCOME_TABLE_DAYS }, (_, i) =>
+  const rows = Array.from({ length: daysInMonth(monthIndex) }, (_, i) =>
     makeRow(cols, { [cols[0].id]: String(i + 1) }),
   );
   return {
@@ -285,10 +292,14 @@ export function cloneMonth(src: Month, withData: boolean): Month {
 
 export type TemplateKey = "income" | "expense" | "ledger" | "blank";
 
-export function makeTableFromTemplate(template: TemplateKey, layout?: Partial<WidgetLayout>): Table {
+export function makeTableFromTemplate(
+  template: TemplateKey,
+  layout?: Partial<WidgetLayout>,
+  monthIndex = 0,
+): Table {
   switch (template) {
     case "income":
-      return makeIncomeTable(layout);
+      return makeIncomeTable(layout, monthIndex);
     case "expense":
       return makeExpenseTable(layout);
     case "ledger":

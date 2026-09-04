@@ -3,6 +3,7 @@ import {
   INCOME_TABLE_DAYS,
   cloneMonth,
   cloneTable,
+  daysInMonth,
   makeBlankTable,
   makeChart,
   makeColumn,
@@ -31,10 +32,17 @@ function sampleTable(): Table {
 }
 
 describe("makeIncomeTable", () => {
-  it("seeds a full month of day rows (>= 28)", () => {
+  it("seeds every day of the selected month", () => {
     const t = makeIncomeTable();
     expect(t.rows.length).toBe(INCOME_TABLE_DAYS);
-    expect(INCOME_TABLE_DAYS).toBeGreaterThanOrEqual(28);
+    expect(INCOME_TABLE_DAYS).toBe(31);
+  });
+
+  it("uses 28, 30, or 31 rows according to the selected month", () => {
+    expect(daysInMonth(1)).toBe(28); // February
+    expect(makeIncomeTable(undefined, 1).rows).toHaveLength(28);
+    expect(makeIncomeTable(undefined, 3).rows).toHaveLength(30); // April
+    expect(makeIncomeTable(undefined, 4).rows).toHaveLength(31); // May
   });
 
   it("fills the Día column with sequential numbers 1..N", () => {

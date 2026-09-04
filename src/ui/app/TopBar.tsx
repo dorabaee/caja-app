@@ -35,11 +35,11 @@ import styles from "./TopBar.module.css";
  * weight. Below the last tier the secondary tools live in an overflow menu — nothing is
  * ever allowed to overlap, which is what used to happen once the bar ran out of room.
  */
-const TIER_CHART_ICON = 1280;
+const TIER_CHART_ICON = 2100;
 // The inline composer is deliberately held back until there is room for both its plus
 // button and the Add table control. Below this it becomes the compact popover.
-const TIER_QUICK_ADD = 1320;
-const TIER_OVERFLOW = 1000;
+const TIER_QUICK_ADD = 2400;
+const TIER_OVERFLOW = 1800;
 
 export function TopBar() {
   const { t } = useTranslation();

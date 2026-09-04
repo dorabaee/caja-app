@@ -2,6 +2,7 @@
   flex: none;
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: var(--space-4);
   height: 64px;
   padding: 0 var(--space-6);
@@ -78,7 +79,7 @@
   align-items: center;
   gap: var(--space-2);
   /* Shrinkable, so a tight bar squeezes the tools instead of overflowing the header. */
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   margin-left: auto;
 }

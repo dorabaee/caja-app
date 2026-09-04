@@ -28,6 +28,8 @@ import {
   type TemplateKey,
 } from "../model/defaults";
 import { nextRowValues } from "../compute/rows";
+import { parseMoney } from "../format/money";
+import { parseDateCell } from "../format/date";
 
 const HISTORY_LIMIT = 60;
 
@@ -115,6 +117,8 @@ export interface StoreState {
   // rows
   addRow(monthIndex: number, tableId: string): void;
   addRowWithValues(monthIndex: number, tableId: string, values: Record<string, string>): string;
+  /** Permanently sort saved rows by one column. */
+  sortRows(monthIndex: number, tableId: string, columnId: string, direction: "asc" | "desc"): void;
   removeRow(monthIndex: number, tableId: string, rowId: string): void;
   duplicateRow(monthIndex: number, tableId: string, rowId: string): void;
   /** Reorder a table's rows to match the given id order (row-reorder mode's ✓). */
@@ -306,7 +310,7 @@ export const useStore = create<StoreState>()((set, get) => {
       commit((d) => {
         const month = currentProject(d)?.months[monthIndex];
         if (!month) return;
-        const t = makeTableFromTemplate(template);
+        const t = makeTableFromTemplate(template, undefined, monthIndex);
         const slot = nextWidgetSlot([...month.tables, ...month.charts], t.layout);
         t.layout.x = slot.x;
         t.layout.y = slot.y;
@@ -591,10 +595,35 @@ export const useStore = create<StoreState>()((set, get) => {
         if (!t) return;
         const row = makeRow(t.columns, values);
         row.id = newId;
-        t.rows.push(row);
+        // Quick Add is an inbox: the entry the user just created belongs at the top.
+        t.rows.unshift(row);
       });
       return newId;
     },
+
+    sortRows: (monthIndex, tableId, columnId, direction) =>
+      commit((d) => {
+        const t = findTable(d, monthIndex, tableId);
+        const col = t?.columns.find((c) => c.id === columnId);
+        if (!t || !col) return;
+        const multiplier = direction === "asc" ? 1 : -1;
+        // Native sort is stable in supported browsers, preserving the user's ordering
+        // when two rows have the same value or neither has one.
+        t.rows.sort((a, b) => {
+          const left = a.cells[col.id] ?? "";
+          const right = b.cells[col.id] ?? "";
+          if (!left && !right) return 0;
+          if (!left) return 1;
+          if (!right) return -1;
+          if (col.type === "money") return (parseMoney(left) - parseMoney(right)) * multiplier;
+          if (col.type === "date") {
+            const aDate = parseDateCell(left)?.getTime() ?? 0;
+            const bDate = parseDateCell(right)?.getTime() ?? 0;
+            return (aDate - bDate) * multiplier;
+          }
+          return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }) * multiplier;
+        });
+      }),
 
     removeRow: (monthIndex, tableId, rowId) =>
       commit((d) => {

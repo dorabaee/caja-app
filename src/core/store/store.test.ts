@@ -100,6 +100,52 @@ describe("setProjectOrder", () => {
   });
 });
 
+describe("quick-add insertion and sorting", () => {
+  beforeEach(() => {
+    const { doc } = seedDoc();
+    useStore.getState().load(doc);
+  });
+
+  it("creates new quick-add rows at the top", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    const [day, amount] = table.columns;
+    const newId = useStore.getState().addRowWithValues(0, table.id, {
+      [day.id]: "2",
+      [amount.id]: "200",
+    });
+    expect(useStore.getState().doc.projects[0].months[0].tables[0].rows[0].id).toBe(newId);
+  });
+
+  it("sorts money columns in either direction", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    const [, amount] = table.columns;
+    useStore.getState().addRowWithValues(0, table.id, { [amount.id]: "20" });
+    useStore.getState().addRowWithValues(0, table.id, { [amount.id]: "300" });
+
+    useStore.getState().sortRows(0, table.id, amount.id, "asc");
+    expect(useStore.getState().doc.projects[0].months[0].tables[0].rows.map((r) => r.cells[amount.id])).toEqual(["20", "100", "300"]);
+
+    useStore.getState().sortRows(0, table.id, amount.id, "desc");
+    expect(useStore.getState().doc.projects[0].months[0].tables[0].rows.map((r) => r.cells[amount.id])).toEqual(["300", "100", "20"]);
+  });
+
+  it("creates a February income table with 28 day rows", () => {
+    const id = useStore.getState().addTable(1, "income");
+    expect(useStore.getState().doc.projects[0].months[1].tables.find((t) => t.id === id)?.rows).toHaveLength(28);
+  });
+
+  it("keeps Quick Add requirements on the business when a table is copied to another month", () => {
+    useStore.getState().updateProject("p1", {
+      quickAddRequirements: { Ventas: { amount: true, date: true } },
+    });
+    useStore.getState().copyMonthInto(0, [1], false);
+
+    const project = useStore.getState().doc.projects[0];
+    expect(project.months[1].tables[0].title).toBe("Ventas");
+    expect(project.quickAddRequirements?.Ventas).toEqual({ amount: true, date: true });
+  });
+});
+
 describe("copyMonthInto", () => {
   beforeEach(() => {
     const { doc } = seedDoc(); // month 0 has table "t1" with one row of data

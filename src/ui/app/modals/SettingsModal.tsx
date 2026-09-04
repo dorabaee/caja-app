@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Sun, Moon, Check, Droplet, Palette, DatabaseBackup, RotateCcw, AlertTriangle,
   ChevronDown, Info, ChevronLeft, GripVertical, Trash2, Plus,
 } from "lucide-react";
-import type { AccentName, ChartPalette, Locale, ThemeMode } from "@core/model/types";
+import type { AccentName, ChartPalette, Locale, QuickAddRequirements, Table, ThemeMode } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
-import { Button, Menu, MenuItem, Modal, SegmentedControl, TextInput, cn } from "@ui/common";
+import { Button, Menu, MenuItem, Modal, SegmentedControl, Switch, TextInput, cn } from "@ui/common";
 import { useExport } from "@ui/hooks/useExport";
 import appPackage from "../../../../package.json";
 import { useCurrentProject } from "@ui/hooks/useProject";
@@ -29,6 +29,23 @@ const CURRENCIES: { code: string; labelKey: string }[] = [
   { code: "ARS", labelKey: "modals.currencyARS" },
   { code: "GTQ", labelKey: "modals.currencyGTQ" },
 ];
+
+const QUICK_ADD_FIELDS: { key: keyof QuickAddRequirements; labelKey: string }[] = [
+  { key: "amount", labelKey: "modals.quickAddRequireAmount" },
+  { key: "concept", labelKey: "modals.quickAddRequireConcept" },
+  { key: "date", labelKey: "modals.quickAddRequireDate" },
+];
+
+function quickAddFieldsFor(table: Table) {
+  const hasMoney = table.columns.some((column) => column.type === "money");
+  const textColumns = table.columns.filter((column) => column.type === "text");
+  const hasConcept = table.kind === "income"
+    ? textColumns.some((column) => !/^d[ií]a$/i.test(column.name.trim()))
+    : textColumns.length > 0;
+  return QUICK_ADD_FIELDS.filter((field) =>
+    field.key === "amount" ? hasMoney : field.key === "concept" ? hasConcept : true,
+  );
+}
 
 export function SettingsModal() {
   const { t } = useTranslation();
@@ -53,6 +70,13 @@ export function SettingsModal() {
 
   const categoryKey = (name: string, group?: string) => `${group ?? "other"}:${name}`;
   const categories = project?.categories ?? [];
+  const quickAddTables = useMemo(() => {
+    const byTitle = new Map<string, Table>();
+    for (const month of project?.months ?? []) {
+      for (const table of month.tables) if (!byTitle.has(table.title)) byTitle.set(table.title, table);
+    }
+    return [...byTitle.values()];
+  }, [project]);
   const addCategory = () => {
     const name = categoryDraft.trim();
     if (!project || !name || categories.some((c) => c.group === categoryGroup && c.name.toLowerCase() === name.toLowerCase())) return;
@@ -82,6 +106,14 @@ export function SettingsModal() {
     next.splice(targetIndex, 0, item);
     useStore.getState().updateProject(project.id, { categories: next });
     setDraggedCategory(null);
+  };
+  const setQuickAddRequirement = (title: string, field: keyof QuickAddRequirements, enabled: boolean) => {
+    if (!project) return;
+    const allRules = { ...(project.quickAddRequirements ?? {}) };
+    const nextRule = { ...(allRules[title] ?? {}), [field]: enabled };
+    if (Object.values(nextRule).some(Boolean)) allRules[title] = nextRule;
+    else delete allRules[title];
+    useStore.getState().updateProject(project.id, { quickAddRequirements: allRules });
   };
 
   const doRestore = async () => {
@@ -120,6 +152,39 @@ export function SettingsModal() {
             <Button type="submit" variant="secondary" icon={<Plus />}>{t("common.add")}</Button>
           </form>
           <p className={styles.muted}>{t("modals.editCategoriesHint")}</p>
+        </section>
+        <section className={styles.requirementsSection}>
+          <div className={styles.headingRow}>
+            <h3 className={styles.heading}>{t("modals.quickAddRequirements")}</h3>
+            <span className={styles.muted}>{t("modals.quickAddBusinessWide")}</span>
+          </div>
+          <p className={styles.muted}>{t("modals.quickAddRequirementsHint")}</p>
+          {quickAddTables.length ? (
+            <div className={styles.requirementTables}>
+              {quickAddTables.map((table) => {
+                const rules = project?.quickAddRequirements?.[table.title] ?? {};
+                return (
+                  <div key={table.title} className={styles.requirementTable}>
+                    <strong className={styles.requirementTitle}>{table.title}</strong>
+                    <div className={styles.requirementFields}>
+                      {quickAddFieldsFor(table).map((field) => (
+                        <label key={field.key} className={styles.requirementField}>
+                          <span>{t(field.labelKey)}</span>
+                          <Switch
+                            checked={!!rules[field.key]}
+                            aria-label={t("modals.quickAddRequirementFor", { field: t(field.labelKey), table: table.title })}
+                            onChange={(enabled) => setQuickAddRequirement(table.title, field.key, enabled)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className={styles.muted}>{t("modals.quickAddNoTables")}</p>
+          )}
         </section>
       </Modal>
     );

@@ -16,8 +16,14 @@ import { CellNote } from "./CellNote";
 import { DatePicker } from "./DatePicker";
 import styles from "../widget.module.css";
 
-/** How a date reads in the cell while you're not editing it. */
+/** A table belongs to one month, so cells show the useful part of a chosen date: its day. */
 function toDisplayDate(raw: string): string {
+  const d = parseDateCell(raw);
+  return d ? format(d, "d") : raw;
+}
+
+/** Keep the full date available when a user edits the compact day-only display. */
+function toEditableDate(raw: string): string {
   const d = parseDateCell(raw);
   return d ? format(d, "dd/MM/yyyy") : raw;
 }
@@ -171,6 +177,7 @@ export function Cell({
         value={draft}
         onFocus={() => {
           focused.current = true;
+          if (isDate) setDraft(toEditableDate(value));
         }}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {

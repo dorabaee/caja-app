@@ -129,6 +129,13 @@ export interface Goal {
   monthlyProfitTarget?: number;
 }
 
+/** Optional fields a business can require before Quick Add saves a row. */
+export interface QuickAddRequirements {
+  amount?: boolean;
+  concept?: boolean;
+  date?: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -142,6 +149,8 @@ export interface Project {
   categories?: Category[];
   /** Banks the user added on top of the built-in list. */
   banks?: CustomBank[];
+  /** Rules are keyed by table title, so they apply to the same copied table every month. */
+  quickAddRequirements?: Record<string, QuickAddRequirements>;
   months: Month[]; // always length 12
 }
 

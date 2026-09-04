@@ -8,11 +8,20 @@ import { Button, Menu, MenuItem, MenuLabel, TextInput, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { DatePicker } from "@ui/widgets/cells/DatePicker";
 import { parseDateCell } from "@core/format/date";
+import { parseMoney } from "@core/format/money";
 import { format } from "date-fns";
 import styles from "./quickAddBar.module.css";
 
 const firstOfType = (cols: Column[], type: Column["type"]): Column | undefined =>
   cols.find((c) => c.type === type);
+
+/** Income tables reserve their first text column for Día; an added text column is the concept. */
+const conceptColumn = (cols: Column[], kind: Table["kind"]): Column | undefined => {
+  const texts = cols.filter((column) => column.type === "text");
+  return kind === "income"
+    ? texts.find((column) => !/^d[ií]a$/i.test(column.name.trim()))
+    : texts[0];
+};
 
 /** Accept typed or pasted digits while keeping the visible DD/MM/YYYY structure. */
 const maskDate = (value: string): string => {
@@ -45,6 +54,7 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   // Keep selection valid as tables come and go.
   const selected =
     candidates.find((t) => t.id === selectedTableId) ?? candidates[0] ?? null;
+  const selectedHasConcept = !!selected && !!conceptColumn(selected.columns, selected.kind);
   useEffect(() => {
     if (selected && selected.id !== selectedTableId) setSelectedTableId(selected.id);
   }, [selected, selectedTableId, setSelectedTableId]);
@@ -56,19 +66,37 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     if (!table) return;
     const concept = concepto.trim();
     const amount = monto.trim();
-    if (!concept && !amount) return;
+    const requirements = project?.quickAddRequirements?.[table.title] ?? {};
+    if (!concept && !amount && !fecha.trim()) return;
+    if (requirements.amount && !amount) {
+      useUI.getState().toast(t("month.amountRequired"), "error");
+      return;
+    }
+    if (requirements.concept && !concept) {
+      useUI.getState().toast(t("month.conceptRequired"), "error");
+      return;
+    }
+    if (requirements.date && !fecha.trim()) {
+      useUI.getState().toast(t("month.dateRequired"), "error");
+      return;
+    }
     const parsedQuickDate = fecha.trim() ? parseDateCell(fecha.trim()) : null;
     if (fecha.trim() && !parsedQuickDate) {
       useUI.getState().toast(t("month.invalidDate"), "error");
       return;
     }
+    if (parsedQuickDate && parsedQuickDate.getMonth() !== monthIndex) {
+      useUI.getState().toast(t("month.dateOutsideMonth"), "error");
+      return;
+    }
 
     const firstText = firstOfType(table.columns, "text");
+    const conceptCell = conceptColumn(table.columns, table.kind);
     let firstDate = firstOfType(table.columns, "date");
     // Tables created before the date-aware quick add may not have a date column. Add one
     // only when the user actually supplies a date, so the shortcut remains useful for
     // legacy/custom tables without changing their structure on render.
-    if (!firstDate && fecha.trim()) {
+    if (!firstDate && fecha.trim() && table.kind !== "income") {
       useStore.getState().addColumn(monthIndex, table.id, "date");
       firstDate = firstOfType(
         useStore.getState().doc.projects.find((p) => p.id === project?.id)?.months[monthIndex]?.tables.find((t) => t.id === table.id)?.columns ?? [],
@@ -84,13 +112,42 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         : firstOfType(table.columns, "money");
 
     const values: Record<string, string> = {};
-    if (firstText && concept) values[firstText.id] = concept;
+
+    // An income table is a one-row-per-day tracker, not a transaction list. Its days
+    // are pre-created for the selected month, so selecting the 7th updates the existing
+    // "7" row and accumulates another receipt into that day's total.
+    if (table.kind === "income" && firstText && parsedQuickDate) {
+      const day = String(parsedQuickDate.getDate());
+      const existingDay = table.rows.find((row) => row.cells[firstText.id] === day);
+      if (existingDay) {
+        if (firstMoney && amount) {
+          const total = parseMoney(existingDay.cells[firstMoney.id]) + parseMoney(amount);
+          useStore.getState().setCell(monthIndex, table.id, existingDay.id, firstMoney.id, String(total));
+        }
+        if (conceptCell && concept) {
+          useStore.getState().setCell(monthIndex, table.id, existingDay.id, conceptCell.id, concept);
+        }
+        useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
+        setConcepto("");
+        setMonto("");
+        setFecha("");
+        conceptoRef.current?.focus();
+        return;
+      }
+      // Legacy income tables may only contain 28 rows. Keep the selected day visible
+      // as a day number and restore chronological order after adding the missing row.
+      values[firstText.id] = day;
+    }
+    if (conceptCell && concept) values[conceptCell.id] = concept;
     if (firstMoney && amount) values[firstMoney.id] = amount;
     if (firstDate && fecha.trim()) {
       values[firstDate.id] = format(parsedQuickDate!, "yyyy-MM-dd");
     }
 
     useStore.getState().addRowWithValues(monthIndex, table.id, values);
+    if (table.kind === "income" && firstText && parsedQuickDate) {
+      useStore.getState().sortRows(monthIndex, table.id, firstText.id, "asc");
+    }
     useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
     setConcepto("");
     setMonto("");
@@ -171,15 +228,17 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         onKeyDown={onKeyDown}
       />
 
-      <TextInput
-        ref={conceptoRef}
-        className={cn(styles.concepto, compact && styles.conceptoCompact)}
-        value={concepto}
-        placeholder={t("month.conceptPlaceholder")}
-        aria-label={t("month.concept")}
-        onChange={(e) => setConcepto(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
+      {selectedHasConcept && (
+        <TextInput
+          ref={conceptoRef}
+          className={cn(styles.concepto, compact && styles.conceptoCompact)}
+          value={concepto}
+          placeholder={t("month.conceptPlaceholder")}
+          aria-label={t("month.concept")}
+          onChange={(e) => setConcepto(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+      )}
 
       <div className={cn(styles.dateField, dateMode === "calendar" && styles.dateCalendarOnly)}>
         {dateMode === "typing" ? (

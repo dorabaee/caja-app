@@ -24,7 +24,7 @@ import { useFormat } from "@ui/hooks/useFormat";
 import { useTableMode } from "@ui/hooks/useTableMode";
 import { WidgetGrid } from "./WidgetGrid";
 import { BankTag } from "./cells/BankTag";
-import { ModeActions, TableModeMenuItems } from "./TableFiscal";
+import { ModeActions, TableModeMenuItems, TableSortMenu } from "./TableFiscal";
 import { DRAG_HANDLE } from "./dragHandle";
 import styles from "./widget.module.css";
 
@@ -101,6 +101,7 @@ export const LedgerWidget = memo(function LedgerWidget({
           </span>
         )}
         <ModeActions mode={mode} />
+        {mode.mode === "idle" && <TableSortMenu monthIndex={monthIndex} table={table} />}
         {mode.mode === "idle" && (
         <Menu align="end" trigger={<IconButton label={t("widgets.ledgerOptions")} icon={<MoreHorizontal />} size="sm" />}>
           <MenuLabel>{t("widgets.addColumn")}</MenuLabel>
