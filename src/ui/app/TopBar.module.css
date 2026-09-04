@@ -7,9 +7,9 @@
   padding: 0 var(--space-6);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  /* Last line of defence: below the narrowest tier the bar clips rather than letting
-     its children pile on top of each other. */
-  overflow: hidden;
+  /* Menus and our custom tooltips open below the bar. Width tiers prevent collisions,
+     so the bar must not crop those overlays. */
+  overflow: visible;
 }
 @container main (max-width: 1120px) {
   .bar {
@@ -69,8 +69,8 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  flex: 0 1 auto;
-  max-width: 360px;
+  flex: 1 1 360px;
+  max-width: 520px;
 }
 
 .tools {

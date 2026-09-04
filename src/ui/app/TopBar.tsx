@@ -16,6 +16,8 @@ import {
   ClipboardPaste,
   FileStack,
   CalendarPlus,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
@@ -34,7 +36,9 @@ import styles from "./TopBar.module.css";
  * ever allowed to overlap, which is what used to happen once the bar ran out of room.
  */
 const TIER_CHART_ICON = 1280;
-const TIER_QUICK_ADD = 1120;
+// The inline composer is deliberately held back until there is room for both its plus
+// button and the Add table control. Below this it becomes the compact popover.
+const TIER_QUICK_ADD = 1320;
 const TIER_OVERFLOW = 1000;
 
 export function TopBar() {
@@ -67,6 +71,8 @@ export function TopBar() {
   const pasteTable = useStore((s) => s.pasteTable);
   const clipboardTable = useUI((s) => s.clipboardTable);
   const openModal = useUI((s) => s.openModal);
+  const hiddenWidgets = useUI((s) => s.hiddenWidgets);
+  const toggleHiddenWidget = useUI((s) => s.toggleHiddenWidget);
 
   // Paste the copied table into this month, then clear the clipboard (the icon turns off).
   const pasteClip = (withData: boolean) => {
@@ -163,6 +169,33 @@ export function TopBar() {
               </Button>
             }
           />
+
+          <Menu
+            align="end"
+            minWidth={260}
+            trigger={
+              <IconButton
+                label={hiddenWidgets.has("kpi") ? t("shell.showKpi") : t("shell.hideKpi")}
+                icon={hiddenWidgets.has("kpi") ? <EyeOff /> : <Eye />}
+                active={hiddenWidgets.has("kpi")}
+              />
+            }
+          >
+            <MenuLabel>{t("shell.visibility")}</MenuLabel>
+            <MenuItem checked={!hiddenWidgets.has("kpi")} onClick={() => toggleHiddenWidget("kpi")}>
+              {t("shell.kpi")}
+            </MenuItem>
+            {current?.months[monthIndex]?.tables.map((table) => (
+              <MenuItem key={table.id} checked={!hiddenWidgets.has(table.id)} onClick={() => toggleHiddenWidget(table.id)}>
+                {table.title}
+              </MenuItem>
+            ))}
+            {current?.months[monthIndex]?.charts.map((chart) => (
+              <MenuItem key={chart.id} checked={!hiddenWidgets.has(chart.id)} onClick={() => toggleHiddenWidget(chart.id)}>
+                {chart.title}
+              </MenuItem>
+            ))}
+          </Menu>
 
           <NewChartMenu
             trigger={

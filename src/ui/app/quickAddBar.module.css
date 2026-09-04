@@ -53,7 +53,9 @@
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
 }
+.roleBtn:active { transform: scale(.97); }
 .roleBtn:hover {
   color: var(--text);
 }
@@ -75,6 +77,18 @@
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
+.dateField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 1 150px;
+  min-width: 120px;
+}
+.dateField > input { min-width: 0; flex: 1; }
+.dateField .cellBtn { flex: none; width: 30px; height: 30px; }
+.dateTrigger { display:grid; place-items:center; width:36px; height:36px; padding:0; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:var(--surface-2); color:var(--text-muted); }
+.dateTrigger:hover { color:var(--text); border-color:var(--accent); }
+.dateCalendarOnly { flex:0 0 36px; min-width:36px; }
 
 /* ---------- compact: inline inside the top bar ---------- */
 .compact {
@@ -95,9 +109,21 @@
   max-width: 92px;
 }
 .conceptoCompact {
-  flex: 1 1 90px;
-  min-width: 56px;
+  flex: 1 1 180px;
+  min-width: 140px;
 }
 .montoCompact {
   width: 80px;
+}
+.compact .dateField { flex: 0 0 150px; }
+.compact .dateCalendarOnly { flex:0 0 36px; }
+.compact .dateField > input { width: 112px; }
+@media (max-width: 1180px) {
+  .conceptoCompact { min-width: 120px; }
+  .compact .pickerLabel { max-width: 78px; }
+}
+@media (max-width: 920px) {
+  .compact { flex-wrap: wrap; }
+  .conceptoCompact { flex: 1 1 160px; }
+  .compact .dateField { flex: 1 1 150px; }
 }

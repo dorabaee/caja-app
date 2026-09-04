@@ -11,7 +11,7 @@ export interface CategoryPickerProps {
   categories: Category[];
   /** The host table's own half of the books — orders the list and seeds new entries. */
   preferredGroup: CategoryGroup;
-  onSelect: (name: string) => void;
+  onSelect: (name: string, group: CategoryGroup) => void;
   onCreate: (name: string, group: CategoryGroup) => void;
   onClear: () => void;
   /** The clickable element the popover hangs off (an icon, a chip, a whole cell). */
@@ -76,11 +76,14 @@ export function CategoryPicker({
                   <p className={styles.tagGroupLabel}>{section.label}</p>
                   {section.items.map((cat) => (
                     <button
-                      key={cat.name}
+                      key={`${cat.group ?? "other"}:${cat.name}`}
                       type="button"
-                      className={cn(styles.tagOption, cat.name === value && styles.tagOptionOn)}
+                      className={cn(
+                        styles.tagOption,
+                        cat.name === value && (cat.group ?? preferredGroup) === preferredGroup && styles.tagOptionOn,
+                      )}
                       onClick={() => {
-                        onSelect(cat.name);
+                        onSelect(cat.name, cat.group ?? preferredGroup);
                         close();
                       }}
                     >
@@ -101,8 +104,10 @@ export function CategoryPicker({
               e.preventDefault();
               const name = draft.trim();
               if (!name) return;
-              const existing = categories.find((c) => c.name.toLowerCase() === name.toLowerCase());
-              if (existing) onSelect(existing.name);
+              const existing = categories.find(
+                (c) => c.group === preferredGroup && c.name.toLowerCase() === name.toLowerCase(),
+              );
+              if (existing) onSelect(existing.name, existing.group ?? preferredGroup);
               else onCreate(name, preferredGroup);
               setDraft("");
               close();

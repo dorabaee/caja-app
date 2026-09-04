@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Check, Pencil } from "lucide-react";
 import type { CategoryGroup } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
 import { categoryBreakdownForTable, categoryColumnOf } from "@core/compute";
@@ -19,6 +19,8 @@ export function CategoriesModal() {
   const fmt = useFormat();
   const [draft, setDraft] = useState("");
   const [draftGroup, setDraftGroup] = useState<CategoryGroup>("fiscal");
+  const [editing, setEditing] = useState(false);
+  const [draftNames, setDraftNames] = useState<Record<string, string>>({});
 
   if (modal !== "categories") return null;
 
@@ -49,7 +51,7 @@ export function CategoriesModal() {
   const addCategory = () => {
     const name = draft.trim();
     if (!name) return;
-    if (categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+    if (categories.some((c) => c.group === draftGroup && c.name.toLowerCase() === name.toLowerCase())) {
       setDraft("");
       return;
     }
@@ -59,10 +61,8 @@ export function CategoriesModal() {
     setDraft("");
   };
 
-  const removeCategory = (name: string) => {
-    useStore
-      .getState()
-      .updateProject(project.id, { categories: categories.filter((c) => c.name !== name) });
+  const removeCategory = (name: string, group: CategoryGroup) => {
+    useStore.getState().removeProjectCategory(project.id, name, group);
   };
 
   // Grouped Fiscal / No Fiscal, with anything ungrouped (pre-v2 categories) last.
@@ -74,6 +74,15 @@ export function CategoriesModal() {
 
   const onColumnChange = (value: string) => {
     useStore.getState().setColumnCategory(monthIndex, table.id, value || null);
+  };
+
+  const finishEditing = () => {
+    for (const cat of categories) {
+      const next = draftNames[`${cat.group ?? "other"}:${cat.name}`]?.trim();
+      if (next && next !== cat.name && cat.group) useStore.getState().renameProjectCategory(project.id, cat.name, cat.group, next);
+    }
+    setEditing(false);
+    setDraftNames({});
   };
 
   return (
@@ -89,7 +98,12 @@ export function CategoriesModal() {
       }
     >
       <section className={styles.section}>
-        <h3 className={styles.heading}>{t("modals.categories")}</h3>
+        <div className={styles.headingRow}>
+          <h3 className={styles.heading}>{t("modals.categories")}</h3>
+          <Button variant="ghost" size="sm" icon={editing ? <Check /> : <Pencil />} onClick={() => editing ? finishEditing() : setEditing(true)}>
+            {editing ? t("common.done") : t("modals.editCategories")}
+          </Button>
+        </div>
         {groups.length > 0 ? (
           groups.map((group) => (
             <div key={group.key} className={styles.group}>
@@ -97,10 +111,13 @@ export function CategoriesModal() {
               <div className={styles.chips}>
                 {group.items.map((cat) => (
                   <span key={cat.name} className={styles.chip}>
-                    {cat.name}
+                    {editing ? (
+                      <input className={styles.editInput} value={draftNames[`${cat.group ?? "other"}:${cat.name}`] ?? cat.name}
+                        onChange={(e) => setDraftNames((s) => ({ ...s, [`${cat.group ?? "other"}:${cat.name}`]: e.target.value }))} />
+                    ) : cat.name}
                     <ConfirmPopover
                       message={t("modals.confirmDeleteCategory", { name: cat.name })}
-                      onConfirm={() => removeCategory(cat.name)}
+                      onConfirm={() => removeCategory(cat.name, cat.group ?? "noFiscal")}
                       trigger={
                         <button
                           type="button"

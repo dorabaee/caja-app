@@ -28,6 +28,7 @@
   /* react-rnd sets inline position/size; the widget fills it via fill prop */
   display: flex;
 }
+.rndArrange { transition: left 220ms ease, top 220ms ease; }
 /* Only the widget itself fills the box. react-rnd appends a wrapper div for its resize
    handles after the widget, and a blanket `.rnd > *` used to stretch that wrapper to
    100% × 100% — an invisible sheet over the whole card that ate every click meant for a

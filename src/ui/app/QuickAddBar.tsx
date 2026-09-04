@@ -1,44 +1,43 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Zap, Plus, ChevronDown } from "lucide-react";
+import { Zap, Plus, ChevronDown, CalendarDays } from "lucide-react";
 import { useStore, useUI } from "@core/store";
 import { uniqueTableLabels } from "@core/compute";
 import type { Column, LedgerRole, Table } from "@core/model/types";
 import { Button, Menu, MenuItem, MenuLabel, TextInput, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
+import { DatePicker } from "@ui/widgets/cells/DatePicker";
+import { parseDateCell } from "@core/format/date";
+import { format } from "date-fns";
 import styles from "./quickAddBar.module.css";
 
 const firstOfType = (cols: Column[], type: Column["type"]): Column | undefined =>
   cols.find((c) => c.type === type);
 
-/**
- * Date to stamp on a quick-added row: it belongs to the month being VIEWED, not
- * today's month. Uses the project's year + that month; the day is today's day
- * when the viewed month is the current one, otherwise the 1st.
- */
-const rowDateISO = (year: number, monthIndex: number): string => {
-  const now = new Date();
-  const day = year === now.getFullYear() && monthIndex === now.getMonth() ? now.getDate() : 1;
-  const mm = String(monthIndex + 1).padStart(2, "0");
-  const dd = String(day).padStart(2, "0");
-  return `${year}-${mm}-${dd}`;
+/** Accept typed or pasted digits while keeping the visible DD/MM/YYYY structure. */
+const maskDate = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
 
 export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   const { monthIndex, compact = false } = props;
   const { t } = useTranslation();
   const project = useCurrentProject();
+  const dateMode = useStore((s) => s.doc.settings.quickAddDateMode);
   const month = project?.months[monthIndex];
   // Every table in the month, ledgers included — a ledger just needs to be told which of
   // its two money columns the amount belongs in (see `role` below).
   const candidates: Table[] = month?.tables ?? [];
   const labels = useMemo(() => uniqueTableLabels(candidates), [candidates]);
 
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(
-    candidates[0]?.id ?? null,
-  );
+  const selectedTableId = useUI((s) => s.quickAddTableId);
+  const setSelectedTableId = useUI((s) => s.setQuickAddTable);
   const [concepto, setConcepto] = useState("");
   const [monto, setMonto] = useState("");
+  const [fecha, setFecha] = useState("");
   // Ledgers only: which column the amount lands in. Gasto is the common entry.
   const [role, setRole] = useState<LedgerRole>("withdrawal");
   const conceptoRef = useRef<HTMLInputElement>(null);
@@ -48,7 +47,7 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     candidates.find((t) => t.id === selectedTableId) ?? candidates[0] ?? null;
   useEffect(() => {
     if (selected && selected.id !== selectedTableId) setSelectedTableId(selected.id);
-  }, [selected, selectedTableId]);
+  }, [selected, selectedTableId, setSelectedTableId]);
 
   if (candidates.length === 0) return null;
 
@@ -58,9 +57,24 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     const concept = concepto.trim();
     const amount = monto.trim();
     if (!concept && !amount) return;
+    const parsedQuickDate = fecha.trim() ? parseDateCell(fecha.trim()) : null;
+    if (fecha.trim() && !parsedQuickDate) {
+      useUI.getState().toast(t("month.invalidDate"), "error");
+      return;
+    }
 
     const firstText = firstOfType(table.columns, "text");
-    const firstDate = firstOfType(table.columns, "date");
+    let firstDate = firstOfType(table.columns, "date");
+    // Tables created before the date-aware quick add may not have a date column. Add one
+    // only when the user actually supplies a date, so the shortcut remains useful for
+    // legacy/custom tables without changing their structure on render.
+    if (!firstDate && fecha.trim()) {
+      useStore.getState().addColumn(monthIndex, table.id, "date");
+      firstDate = firstOfType(
+        useStore.getState().doc.projects.find((p) => p.id === project?.id)?.months[monthIndex]?.tables.find((t) => t.id === table.id)?.columns ?? [],
+        "date",
+      );
+    }
     // In a ledger the amount is routed by column role, not by position: putting an
     // expense in "Depósito" would silently invert the saldo.
     const firstMoney =
@@ -72,15 +86,15 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     const values: Record<string, string> = {};
     if (firstText && concept) values[firstText.id] = concept;
     if (firstMoney && amount) values[firstMoney.id] = amount;
-    if (firstDate) {
-      const year = project ? new Date(project.createdAt).getFullYear() : new Date().getFullYear();
-      values[firstDate.id] = rowDateISO(year, monthIndex);
+    if (firstDate && fecha.trim()) {
+      values[firstDate.id] = format(parsedQuickDate!, "yyyy-MM-dd");
     }
 
     useStore.getState().addRowWithValues(monthIndex, table.id, values);
     useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
     setConcepto("");
     setMonto("");
+    setFecha("");
     conceptoRef.current?.focus();
   };
 
@@ -148,6 +162,16 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
       )}
 
       <TextInput
+        className={cn(styles.monto, compact && styles.montoCompact)}
+        value={monto}
+        inputMode="decimal"
+        placeholder="0.00"
+        aria-label={t("month.amount")}
+        onChange={(e) => setMonto(e.target.value)}
+        onKeyDown={onKeyDown}
+      />
+
+      <TextInput
         ref={conceptoRef}
         className={cn(styles.concepto, compact && styles.conceptoCompact)}
         value={concepto}
@@ -157,15 +181,17 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         onKeyDown={onKeyDown}
       />
 
-      <TextInput
-        className={cn(styles.monto, compact && styles.montoCompact)}
-        value={monto}
-        inputMode="decimal"
-        placeholder="0.00"
-        aria-label={t("month.amount")}
-        onChange={(e) => setMonto(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
+      <div className={cn(styles.dateField, dateMode === "calendar" && styles.dateCalendarOnly)}>
+        {dateMode === "typing" ? (
+          <TextInput value={fecha} inputMode="numeric" maxLength={10} placeholder={t("widgets.datePlaceholder")} aria-label={t("widgets.pickDate")} onChange={(e) => setFecha(maskDate(e.target.value))} onKeyDown={onKeyDown} />
+        ) : (
+          <DatePicker value={fecha} onChange={setFecha} initialDate={new Date(new Date().getFullYear(), monthIndex, 1)} trigger={
+            <button type="button" className={styles.dateTrigger} aria-label={t("widgets.pickDate")}>
+              <CalendarDays size={15} aria-hidden />
+            </button>
+          } />
+        )}
+      </div>
 
       <Button
         variant="primary"

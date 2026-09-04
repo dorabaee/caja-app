@@ -48,6 +48,8 @@ export interface StoreState {
   deleteProject(projectId: string): void;
   selectProject(projectId: string): void;
   updateProject(projectId: string, patch: Partial<Project>): void;
+  removeProjectCategory(projectId: string, name: string, group: "fiscal" | "noFiscal"): void;
+  renameProjectCategory(projectId: string, oldName: string, group: "fiscal" | "noFiscal", newName: string): void;
   /** Reorder businesses to match the given id order (sidebar drag-reorder; persisted + undoable). */
   setProjectOrder(orderedIds: string[]): void;
   /** Add a bank the user named themselves; returns its id. */
@@ -102,7 +104,7 @@ export interface StoreState {
   renameColumn(monthIndex: number, tableId: string, columnId: string, name: string): void;
   setColumnType(monthIndex: number, tableId: string, columnId: string, type: ColumnType): void;
   /** Set (or clear, with "") the row's own category — never touches its cells. */
-  setRowCategory(monthIndex: number, tableId: string, rowId: string, category: string): void;
+  setRowCategory(monthIndex: number, tableId: string, rowId: string, category: string, group?: "fiscal" | "noFiscal"): void;
   /** Mark a column as the table's category column (clears the flag from others). */
   setColumnCategory(monthIndex: number, tableId: string, columnId: string | null): void;
   /** Reorder a table's columns to match the given id order (reorder mode's ✓). */
@@ -201,6 +203,31 @@ export const useStore = create<StoreState>()((set, get) => {
       commit((d) => {
         const p = d.projects.find((x) => x.id === projectId);
         if (p) Object.assign(p, patch);
+      }),
+
+    removeProjectCategory: (projectId, name, group) =>
+      commit((d) => {
+        const p = d.projects.find((x) => x.id === projectId);
+        if (!p) return;
+        p.categories = (p.categories ?? []).filter((c) => !(c.name === name && c.group === group));
+        for (const month of p.months ?? [])
+          for (const table of month.tables ?? [])
+            for (const row of table.rows ?? [])
+              if (row.category === name && (row.categoryGroup ?? (table.fiscal ? "fiscal" : "noFiscal")) === group) {
+                delete row.category;
+                delete row.categoryGroup;
+              }
+      }),
+    renameProjectCategory: (projectId, oldName, group, newName) =>
+      commit((d) => {
+        const p = d.projects.find((x) => x.id === projectId);
+        if (!p || !newName.trim()) return;
+        const duplicate = (p.categories ?? []).some((c) => c.group === group && c.name.toLowerCase() === newName.trim().toLowerCase() && c.name !== oldName);
+        if (duplicate) return;
+        const cat = (p.categories ?? []).find((c) => c.group === group && c.name === oldName);
+        if (cat) cat.name = newName.trim();
+        for (const month of p.months ?? []) for (const table of month.tables ?? []) for (const row of table.rows ?? [])
+          if (row.category === oldName && (row.categoryGroup ?? (table.fiscal ? "fiscal" : "noFiscal")) === group) row.category = newName.trim();
       }),
 
     setProjectOrder: (orderedIds) =>
@@ -504,12 +531,18 @@ export const useStore = create<StoreState>()((set, get) => {
         else if (type !== "text") delete c.withCategory;
       }),
 
-    setRowCategory: (monthIndex, tableId, rowId, category) =>
+    setRowCategory: (monthIndex, tableId, rowId, category, group) =>
       commit((d) => {
         const r = findTable(d, monthIndex, tableId)?.rows.find((x) => x.id === rowId);
         if (!r) return;
-        if (category) r.category = category;
-        else delete r.category;
+        if (category) {
+          r.category = category;
+          if (group) r.categoryGroup = group;
+          else delete r.categoryGroup;
+        } else {
+          delete r.category;
+          delete r.categoryGroup;
+        }
       }),
 
     setColumnCategory: (monthIndex, tableId, columnId) =>

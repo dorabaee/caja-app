@@ -6,9 +6,11 @@ import { TableWidget } from "@ui/widgets/TableWidget";
 import { LedgerWidget } from "@ui/widgets/LedgerWidget";
 import { ChartWidget } from "@ui/widgets/ChartWidget";
 import { DRAG_HANDLE } from "@ui/widgets/dragHandle";
+import { autoArrange } from "@ui/util/autoArrange";
 import { useCanvasGestures, snapPosition, type Guide } from "@ui/hooks/useCanvasGestures";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { CanvasContextMenu, type CanvasMenuState } from "./CanvasContextMenu";
+import { cn } from "@ui/common";
 import styles from "./MonthCanvas.module.css";
 
 /**
@@ -29,6 +31,8 @@ const RESIZE_HANDLE_STYLES = {
 
 export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: Month }) {
   const zoom = useUI((s) => s.zoom);
+  const hiddenWidgets = useUI((s) => s.hiddenWidgets);
+  const hiddenWidgetsLayout = useStore((s) => s.doc.settings.hiddenWidgetsLayout);
   const selectedIds = useUI((s) => s.selectedIds);
   const select = useUI((s) => s.select);
   const toggleSelect = useUI((s) => s.toggleSelect);
@@ -40,18 +44,53 @@ export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [menu, setMenu] = useState<CanvasMenuState | null>(null);
+  const [isRearranging, setIsRearranging] = useState(false);
+  const arrangedKeyRef = useRef<string | null>(null);
+  const arrangeTimerRef = useRef<number | null>(null);
 
   const widgets = useMemo(
-    () => [...month.tables, ...month.charts].map((w) => ({ id: w.id, layout: w.layout })),
-    [month.tables, month.charts],
+    () => [...month.tables, ...month.charts]
+      .filter((w) => !hiddenWidgets.has(w.id))
+      .map((w) => ({ id: w.id, layout: w.layout })),
+    [month.tables, month.charts, hiddenWidgets],
   );
+  const visibleWidgetKey = widgets.map((w) => w.id).sort().join("|");
+
+  // "Rearrange" is an action when the visible widget set changes, not a permanent
+  // position override. Recomputing in render made every manual drag snap straight back.
+  useEffect(() => {
+    if (hiddenWidgetsLayout !== "arrange") {
+      arrangedKeyRef.current = null;
+      return;
+    }
+    const key = `${monthIndex}:${visibleWidgetKey}`;
+    if (arrangedKeyRef.current === key) return;
+    arrangedKeyRef.current = key;
+    const positions = autoArrange(widgets, 1400);
+    let moved = false;
+    for (const widget of widgets) {
+      const next = positions[widget.id];
+      if (!next || (next.x === widget.layout.x && next.y === widget.layout.y)) continue;
+      moved = true;
+      setWidgetLayout(monthIndex, widget.id, next);
+    }
+    if (!moved) return;
+    setIsRearranging(true);
+    if (arrangeTimerRef.current) window.clearTimeout(arrangeTimerRef.current);
+    arrangeTimerRef.current = window.setTimeout(() => setIsRearranging(false), 240);
+  }, [hiddenWidgetsLayout, monthIndex, setWidgetLayout, visibleWidgetKey, widgets]);
+
+  useEffect(() => () => {
+    if (arrangeTimerRef.current) window.clearTimeout(arrangeTimerRef.current);
+  }, []);
 
   const bounds = useMemo(() => {
     let w = 1200;
     let h = 700;
     for (const item of widgets) {
-      w = Math.max(w, item.layout.x + item.layout.w + 360);
-      h = Math.max(h, item.layout.y + item.layout.h + 280);
+      const layout = item.layout;
+      w = Math.max(w, layout.x + layout.w + 360);
+      h = Math.max(h, layout.y + layout.h + 280);
     }
     return { w, h };
   }, [widgets]);
@@ -190,7 +229,7 @@ export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: 
   ) => (
     <Rnd
       key={id}
-      className={styles.rnd}
+      className={cn(styles.rnd, isRearranging && styles.rndArrange)}
       scale={zoom}
       bounds="parent"
       dragHandleClassName={DRAG_HANDLE}
@@ -261,7 +300,7 @@ export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: 
             });
           }}
         >
-          {month.tables.map((t) =>
+          {month.tables.filter((t) => !hiddenWidgets.has(t.id)).map((t) =>
             rndFor(
               t.id,
               t.layout,
@@ -274,7 +313,7 @@ export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: 
             ),
           )}
 
-          {month.charts.map((c) =>
+          {month.charts.filter((c) => !hiddenWidgets.has(c.id)).map((c) =>
             rndFor(
               c.id,
               c.layout,

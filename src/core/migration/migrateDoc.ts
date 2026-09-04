@@ -18,9 +18,13 @@ function migrateV2(doc: AppDoc): void {
     // Categories: string[] → Category[], then top up with any missing defaults.
     const legacy = (project.categories ?? []) as unknown as (string | Category)[];
     const categories: Category[] = legacy.map((c) => (typeof c === "string" ? { name: c } : c));
-    const have = new Set(categories.map((c) => c.name.toLowerCase()));
+    const have = new Set(categories.map((c) => `${c.group ?? "other"}:${c.name.toLowerCase()}`));
     for (const def of DEFAULT_CATEGORIES) {
-      if (!have.has(def.name.toLowerCase())) categories.push({ ...def });
+      const key = `${def.group}:${def.name.toLowerCase()}`;
+      if (!have.has(key)) {
+        categories.push({ ...def });
+        have.add(key);
+      }
     }
     project.categories = categories;
 
@@ -34,6 +38,70 @@ function migrateV2(doc: AppDoc): void {
     }
   }
 }
+
+/** v3 → v4: restore the built-in grouped catalog once after the category regression. */
+function migrateV4(doc: AppDoc): void {
+  const builtInNames = new Map(
+    DEFAULT_CATEGORIES.map((c) => [`${c.group}:${c.name.trim().toLowerCase()}`, c.name]),
+  );
+  for (const project of doc.projects ?? []) {
+    const categories = [...(project.categories ?? [])];
+    for (const category of categories) {
+      const canonical = category.group
+        ? builtInNames.get(`${category.group}:${category.name.trim().toLowerCase()}`)
+        : undefined;
+      if (canonical) category.name = canonical;
+    }
+    const have = new Set(categories.map((c) => `${c.group ?? "other"}:${c.name.trim().toLowerCase()}`));
+    for (const def of DEFAULT_CATEGORIES) {
+      const key = `${def.group}:${def.name.toLowerCase()}`;
+      if (!have.has(key)) {
+        categories.push({ ...def });
+        have.add(key);
+      }
+    }
+    project.categories = categories;
+    for (const month of project.months ?? []) {
+      for (const table of month.tables ?? []) {
+        for (const row of table.rows ?? []) {
+          if (row.category && !row.categoryGroup) row.categoryGroup = table.fiscal ? "fiscal" : "noFiscal";
+          if (row.category && row.categoryGroup) {
+            const canonical = builtInNames.get(`${row.categoryGroup}:${row.category.trim().toLowerCase()}`);
+            if (canonical) row.category = canonical;
+          }
+        }
+      }
+    }
+  }
+}
+
+/** v4 → v5: apply the category repair to projects that had already been marked v4. */
+function migrateV5(doc: AppDoc): void {
+  const builtInNames = new Map(
+    DEFAULT_CATEGORIES.map((c) => [`${c.group}:${c.name.trim().toLowerCase()}`, c.name]),
+  );
+  for (const project of doc.projects ?? []) {
+    for (const category of project.categories ?? []) {
+      const canonical = category.group
+        ? builtInNames.get(`${category.group}:${category.name.trim().toLowerCase()}`)
+        : undefined;
+      if (canonical) category.name = canonical;
+    }
+    for (const month of project.months ?? []) {
+      for (const table of month.tables ?? []) {
+        for (const row of table.rows ?? []) {
+          if (row.category && !row.categoryGroup) row.categoryGroup = table.fiscal ? "fiscal" : "noFiscal";
+          if (row.category && row.categoryGroup) {
+            const canonical = builtInNames.get(`${row.categoryGroup}:${row.category.trim().toLowerCase()}`);
+            if (canonical) row.category = canonical;
+          }
+        }
+        backfillCategoryColumn(table);
+      }
+    }
+  }
+}
+
 
 /**
  * v2 → v3: the category used to BE the description — picking one overwrote the text you
@@ -58,7 +126,10 @@ function migrateV3(project: Project): void {
         for (const row of table.rows ?? []) {
           if (row.category) continue;
           const match = known.get((row.cells?.[col.id] ?? "").trim().toLowerCase());
-          if (match) row.category = match;
+          if (match) {
+            row.category = match;
+            row.categoryGroup = table.fiscal ? "fiscal" : "noFiscal";
+          }
         }
       }
     }
@@ -67,9 +138,13 @@ function migrateV3(project: Project): void {
 
 /** A category column is what makes the per-row tag appear; ledgers predate having one. */
 function backfillCategoryColumn(table: Table): void {
-  if (table.kind !== "ledger") return;
+  // Both original tables — Banco Fiscal and Salida de Dinero — keep a writable
+  // description with the tag/note actions beside it. Do not turn it into a chip-only
+  // column; just restore the marker that enables those shared controls.
+  if (table.kind !== "ledger" && table.kind !== "expense") return;
   if (table.columns.some((c) => c.withCategory || c.type === "category")) return;
-  const text = table.columns.find((c) => c.type === "text");
+  const text = table.columns.find((c) => c.type === "text" && /descripci[oó]n/i.test(c.name))
+    ?? table.columns.find((c) => c.type === "text");
   if (text) text.withCategory = true;
 }
 
@@ -85,7 +160,11 @@ function backfillCategoryColumn(table: Table): void {
  */
 export function migrateDoc(doc: AppDoc): AppDoc {
   const from = Number(doc.schemaVersion) || 1;
+  if (!doc.settings.hiddenWidgetsLayout) doc.settings.hiddenWidgetsLayout = "preserve";
+  if (!doc.settings.quickAddDateMode) doc.settings.quickAddDateMode = "calendar";
   if (from < 2) migrateV2(doc);
+  if (from < 4) migrateV4(doc);
+  if (from < 5) migrateV5(doc);
 
   for (const project of doc.projects ?? []) {
     // Idempotent in practice (it only reads the legacy flag, which it then clears), but

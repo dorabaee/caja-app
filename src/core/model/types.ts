@@ -58,6 +58,8 @@ export interface Row {
   /** The row's category, stored apart from any cell so a free-typed description
    *  ("Gasolina de la camioneta") and its category ("Gasolina") can differ. */
   category?: string;
+  /** Group of the selected category; allows equal names in Fiscal and No fiscal. */
+  categoryGroup?: CategoryGroup;
   notes?: Record<string, string>; // columnId -> note text
   links?: Record<string, string>; // columnId -> url
 }
@@ -157,6 +159,8 @@ export interface Settings {
   decimals: number; // 0 or 2
   onboarded: boolean;
   runTour: boolean;
+  hiddenWidgetsLayout: "preserve" | "arrange";
+  quickAddDateMode: "calendar" | "typing";
 }
 
 export interface AppDoc {
@@ -167,5 +171,5 @@ export interface AppDoc {
   migratedFromLegacy?: boolean;
 }
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 5;
 export const MONTHS_PER_YEAR = 12;

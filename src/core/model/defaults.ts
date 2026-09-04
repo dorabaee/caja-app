@@ -74,6 +74,8 @@ export function defaultSettings(): Settings {
     decimals: 2,
     onboarded: false,
     runTour: false,
+    hiddenWidgetsLayout: "preserve",
+    quickAddDateMode: "calendar",
   };
 }
 
@@ -218,6 +220,7 @@ export function cloneTable(src: Table, opts?: { withData?: boolean; titleSuffix?
   clone.rows = clone.rows.map((r) => ({
     id: id(),
     ...(withData && r.category ? { category: r.category } : {}),
+    ...(withData && r.categoryGroup ? { categoryGroup: r.categoryGroup } : {}),
     cells: withData ? remap(r.cells) : {},
     notes: withData ? remap(r.notes) : {},
     links: withData ? remap(r.links) : {},
@@ -258,6 +261,7 @@ export function cloneMonth(src: Month, withData: boolean): Month {
       rows: tbl.rows.map((r) => ({
         id: id(),
         ...(withData && r.category ? { category: r.category } : {}),
+        ...(withData && r.categoryGroup ? { categoryGroup: r.categoryGroup } : {}),
         cells: withData ? remap(r.cells) : {},
         notes: withData ? remap(r.notes) : {},
         links: withData ? remap(r.links) : {},
@@ -317,17 +321,24 @@ export function makeChart(
  */
 export const DEFAULT_CATEGORIES: readonly Category[] = [
   { name: "Gasolina", group: "fiscal" },
-  { name: "Papelería y equipo de oficina", group: "fiscal" },
+  { name: "Oficina", group: "fiscal" },
   { name: "Material e insumos", group: "fiscal" },
-  { name: "Servicios", group: "fiscal" },
+  { name: "Servicio", group: "fiscal" },
   { name: "Mantenimiento", group: "fiscal" },
-  { name: "Gastos de oficina", group: "fiscal" },
-  { name: "Cuotas", group: "fiscal" },
   { name: "Seguros", group: "fiscal" },
+  { name: "Servicios contables", group: "fiscal" },
+  { name: "Productos de limpieza", group: "fiscal" },
+  { name: "Luz, agua, internet", group: "fiscal" },
+  { name: "Telefonia", group: "fiscal" },
+  { name: "Renta", group: "fiscal" },
+  { name: "Material de limpieza", group: "fiscal" },
+  { name: "Material de insumos", group: "fiscal" },
+  { name: "Papelería y oficina", group: "fiscal" },
   { name: "Nóminas", group: "noFiscal" },
   { name: "Mano de obra", group: "noFiscal" },
   { name: "Gastos no facturados", group: "noFiscal" },
   { name: "Extras", group: "noFiscal" },
+  { name: "Mantenimiento", group: "noFiscal" },
 ] as const;
 
 export function defaultCategories(): Category[] {

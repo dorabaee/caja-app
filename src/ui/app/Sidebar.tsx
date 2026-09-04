@@ -27,6 +27,9 @@ import { useCurrentProject } from "@ui/hooks/useProject";
 import { useListReorder } from "@ui/hooks/useListReorder";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import styles from "./Sidebar.module.css";
+import appPackage from "../../../package.json";
+
+const APP_VERSION = appPackage.version;
 
 /** Vista tabs exclude "home" (that's the pinned launcher, reached separately). */
 type VistaKey = Exclude<NavView, "home">;
@@ -221,6 +224,7 @@ export function Sidebar() {
             </MenuItem>
           </Menu>
         </div>
+        <span className={styles.version} aria-label={`Caja version ${APP_VERSION}`}>v{APP_VERSION}</span>
       </div>
 
       <ShortcutsOverlay open={shortcuts} onClose={() => setShortcuts(false)} />

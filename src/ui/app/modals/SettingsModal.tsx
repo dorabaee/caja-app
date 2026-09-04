@@ -1,22 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Sun,
-  Moon,
-  Check,
-  Droplet,
-  Palette,
-  DatabaseBackup,
-  RotateCcw,
-  AlertTriangle,
-  ChevronDown,
-  Info,
+  Sun, Moon, Check, Droplet, Palette, DatabaseBackup, RotateCcw, AlertTriangle,
+  ChevronDown, Info, ChevronLeft, GripVertical, Trash2, Plus,
 } from "lucide-react";
 import type { AccentName, ChartPalette, Locale, ThemeMode } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
-import { Button, Menu, MenuItem, Modal, SegmentedControl, cn } from "@ui/common";
+import { Button, Menu, MenuItem, Modal, SegmentedControl, TextInput, cn } from "@ui/common";
 import { useExport } from "@ui/hooks/useExport";
 import appPackage from "../../../../package.json";
+import { useCurrentProject } from "@ui/hooks/useProject";
 import styles from "./SettingsModal.module.css";
 
 const ACCENTS: { name: AccentName; labelKey: string; color: string }[] = [
@@ -50,12 +43,87 @@ export function SettingsModal() {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(`${appPackage.releaseDate}T00:00:00Z`));
+  const [advanced, setAdvanced] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState("");
+  const [categoryGroup, setCategoryGroup] = useState<"fiscal" | "noFiscal">("fiscal");
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [removingCategory, setRemovingCategory] = useState<string | null>(null);
+  const [draggedCategory, setDraggedCategory] = useState<string | null>(null);
+  const project = useCurrentProject();
+
+  const categoryKey = (name: string, group?: string) => `${group ?? "other"}:${name}`;
+  const categories = project?.categories ?? [];
+  const addCategory = () => {
+    const name = categoryDraft.trim();
+    if (!project || !name || categories.some((c) => c.group === categoryGroup && c.name.toLowerCase() === name.toLowerCase())) return;
+    useStore.getState().updateProject(project.id, { categories: [...categories, { name, group: categoryGroup }] });
+    setCategoryDraft("");
+  };
+  const removeCategory = (name: string, group: "fiscal" | "noFiscal") => {
+    if (!project) return;
+    const key = categoryKey(name, group);
+    setRemovingCategory(key);
+    window.setTimeout(() => {
+      useStore.getState().removeProjectCategory(project.id, name, group);
+      setRemovingCategory((current) => (current === key ? null : current));
+    }, 180);
+  };
+  const renameCategory = (oldName: string, group: "fiscal" | "noFiscal", value: string) => {
+    if (project && value.trim() && value.trim() !== oldName) useStore.getState().renameProjectCategory(project.id, oldName, group, value);
+    setEditingCategory(null);
+  };
+  const moveCategory = (targetName: string, targetGroup?: string) => {
+    if (!project || !draggedCategory) return;
+    const sourceIndex = categories.findIndex((c) => categoryKey(c.name, c.group) === draggedCategory);
+    const targetIndex = categories.findIndex((c) => categoryKey(c.name, c.group) === categoryKey(targetName, targetGroup));
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+    const next = [...categories];
+    const [item] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, item);
+    useStore.getState().updateProject(project.id, { categories: next });
+    setDraggedCategory(null);
+  };
 
   const doRestore = async () => {
     setConfirmRestore(false);
     await restoreBackup();
     closeModal();
   };
+
+  if (advanced) {
+    return (
+      <Modal open={modal === "settings"} onClose={() => { setAdvanced(false); closeModal(); }} title={t("modals.advancedSettingsTitle")} description={t("modals.advancedSettingsDescription")}>
+        <section className={styles.section}>
+          <button type="button" className={styles.backButton} onClick={() => setAdvanced(false)}><ChevronLeft size={16} /> {t("modals.backToSettings")}</button>
+          <div className={styles.headingRow}><h3 className={styles.heading}>{t("modals.categories")}</h3><span className={styles.muted}>{t("modals.globalCategories")}</span></div>
+          <div className={styles.categoryGroups}>
+            {(["fiscal", "noFiscal"] as const).map((group) => (
+              <div key={group} className={styles.categoryGroup}>
+                <p className={styles.groupLabel}>{t(`widgets.group_${group}`)}</p>
+                {categories.filter((c) => c.group === group).map((cat) => (
+                  <div key={categoryKey(cat.name, cat.group)} className={cn(styles.manageCategory, removingCategory === categoryKey(cat.name, cat.group) && styles.categoryRemoving)} draggable
+                    onDragStart={() => setDraggedCategory(categoryKey(cat.name, cat.group))}
+                    onDragOver={(e) => e.preventDefault()} onDrop={() => moveCategory(cat.name, cat.group)}>
+                    <GripVertical size={15} className={styles.dragIcon} />
+                    {editingCategory === categoryKey(cat.name, cat.group) ? (
+                      <input autoFocus className={styles.editInput} defaultValue={cat.name} onBlur={(e) => renameCategory(cat.name, group, e.currentTarget.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
+                    ) : <button type="button" className={styles.categoryName} onDoubleClick={() => setEditingCategory(categoryKey(cat.name, cat.group))}>{cat.name}</button>}
+                    <button type="button" className={styles.iconDanger} aria-label={t("modals.removeCategory", { name: cat.name })} onClick={() => removeCategory(cat.name, group)}><Trash2 size={14} /></button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <form className={styles.addRow} onSubmit={(e) => { e.preventDefault(); addCategory(); }}>
+            <TextInput value={categoryDraft} placeholder={t("modals.newCategory")} onChange={(e) => setCategoryDraft(e.target.value)} />
+            <select className={styles.select} value={categoryGroup} onChange={(e) => setCategoryGroup(e.target.value as "fiscal" | "noFiscal")}><option value="fiscal">{t("widgets.group_fiscal")}</option><option value="noFiscal">{t("widgets.group_noFiscal")}</option></select>
+            <Button type="submit" variant="secondary" icon={<Plus />}>{t("common.add")}</Button>
+          </form>
+          <p className={styles.muted}>{t("modals.editCategoriesHint")}</p>
+        </section>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -82,6 +150,11 @@ export function SettingsModal() {
             ]}
             onChange={(theme) => update({ theme })}
           />
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.label}>{t("modals.advancedSettings")}</span>
+          <Button variant="secondary" onClick={() => setAdvanced(true)}>{t("modals.manageCategories")}</Button>
         </div>
 
         <div className={styles.row}>
@@ -121,6 +194,28 @@ export function SettingsModal() {
 
       <section className={styles.section}>
         <h3 className={styles.heading}>{t("modals.preferences")}</h3>
+
+        <div className={styles.row}>
+          <span className={styles.label}>{t("modals.hiddenWidgetsLayout")}</span>
+          <div className={styles.segmented} role="group" aria-label={t("modals.hiddenWidgetsLayout")}>
+            {(["preserve", "arrange"] as const).map((mode) => (
+              <button key={mode} type="button" className={cn(styles.seg, settings.hiddenWidgetsLayout === mode && styles.segOn)}
+                aria-pressed={settings.hiddenWidgetsLayout === mode} onClick={() => update({ hiddenWidgetsLayout: mode })}>
+                {t(`modals.hiddenWidgets_${mode}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.label}>{t("modals.quickAddDateMode")}</span>
+          <div className={styles.segmented} role="group" aria-label={t("modals.quickAddDateMode")}>
+            {(["calendar", "typing"] as const).map((mode) => (
+              <button key={mode} type="button" className={cn(styles.seg, settings.quickAddDateMode === mode && styles.segOn)} aria-pressed={settings.quickAddDateMode === mode} onClick={() => update({ quickAddDateMode: mode })}>
+                {t(`modals.quickAddDate_${mode}`)}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className={styles.row}>
           <span className={styles.label}>{t("modals.language")}</span>

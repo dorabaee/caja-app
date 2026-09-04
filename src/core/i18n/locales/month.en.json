@@ -21,6 +21,7 @@
     "conceptPlaceholder": "Item…",
     "amount": "Amount",
     "added": "Added to {{name}}",
+    "invalidDate": "Enter a valid date as DD/MM/YYYY",
     "showSaldoFinal": "Show the fiscal accounts' final balance",
     "showTeQueda": "Show what's left this month",
     "ledgerTarget": "Deposit or expense?",

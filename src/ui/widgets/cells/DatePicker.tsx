@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -31,17 +31,22 @@ export function DatePicker({
   value,
   onChange,
   className,
+  trigger,
+  initialDate,
 }: {
   /** The cell's raw stored value (any format `parseDateCell` understands). */
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  trigger?: ReactElement;
+  /** The month to open when no date is selected (quick-add uses the viewed month). */
+  initialDate?: Date;
 }) {
   const { t } = useTranslation();
   const locale = useStore((s) => s.doc.settings.locale);
   const dfns = locale === "es" ? es : enUS;
   const selected = parseDateCell(value);
-  const [cursor, setCursor] = useState<Date>(() => startOfMonth(selected ?? new Date()));
+  const [cursor, setCursor] = useState<Date>(() => startOfMonth(selected ?? initialDate ?? new Date()));
 
   // Six fixed weeks so the grid never changes height as you page through months.
   const days = useMemo(() => {
@@ -61,9 +66,9 @@ export function DatePicker({
       className={styles.calPop}
       onOpenChange={(open) => {
         // Reopening always lands on the selected date's month, not wherever you paged to.
-        if (open) setCursor(startOfMonth(parseDateCell(value) ?? new Date()));
+        if (open) setCursor(startOfMonth(parseDateCell(value) ?? initialDate ?? new Date()));
       }}
-      trigger={
+      trigger={trigger ?? (
         <button
           type="button"
           className={cn(styles.cellBtn, className)}
@@ -72,7 +77,7 @@ export function DatePicker({
         >
           <CalendarDays size={13} aria-hidden />
         </button>
-      }
+      )}
     >
       {({ close }) => (
         <div className={styles.calPanel}>

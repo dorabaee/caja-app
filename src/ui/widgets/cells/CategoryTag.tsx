@@ -18,8 +18,8 @@ export function CategoryTag(props: Omit<CategoryPickerProps, "trigger">) {
       trigger={
         <button
           type="button"
-          className={cn(styles.cellBtn, value && styles.noteOn)}
-          title={value || t("widgets.tagAdd")}
+          className={cn(styles.cellBtn, styles.categoryTooltip, value && styles.noteOn)}
+          data-tooltip={value || t("widgets.tagAdd")}
           aria-label={value ? t("widgets.tagEdit", { name: value }) : t("widgets.tagAdd")}
         >
           <Tag size={12} aria-hidden />

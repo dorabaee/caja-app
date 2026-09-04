@@ -109,6 +109,14 @@ function writeMonthIndex(i: number): void {
 // monthIndex, and (unlike monthIndex/sidebarCollapsed/navOrder) also carried in a backup
 // file's `prefs` block, since it's otherwise invisible outside this browser.
 const ZOOM_KEY = "caja:zoom";
+const HIDDEN_KEY = "caja:hiddenWidgets";
+const QUICK_TABLE_KEY = "caja:quickAddTable";
+function readQuickTable(): string | null { try { return localStorage.getItem(QUICK_TABLE_KEY); } catch { return null; } }
+function writeQuickTable(v: string | null): void { try { if (v) localStorage.setItem(QUICK_TABLE_KEY, v); else localStorage.removeItem(QUICK_TABLE_KEY); } catch { /* ignore */ } }
+function readHiddenWidgets(): string[] {
+  try { const raw = localStorage.getItem(HIDDEN_KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []; } catch { return []; }
+}
+function writeHiddenWidgets(v: ReadonlySet<string>): void { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify([...v])); } catch { /* ignore */ } }
 function readZoom(): number {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(ZOOM_KEY) : null;
@@ -156,6 +164,8 @@ export interface UIState {
   balanceMode: BalanceMode;
   /** Table ids opted out of their KPI total — an ephemeral "what-if" for the month view. */
   kpiExclusions: ReadonlySet<string>;
+  hiddenWidgets: ReadonlySet<string>;
+  quickAddTableId: string | null;
   /** A copied table held in a session clipboard (never persisted to the doc) for paste-into-month. */
   clipboardTable: Table | null;
   /** Active "send a value" flow (#7): the value picked up + the source cell key to exclude. */
@@ -180,6 +190,9 @@ export interface UIState {
   setSidebarCollapsed(collapsed: boolean): void;
   setNavOrder(order: NavView[]): void;
   toggleKpiExclusion(tableId: string): void;
+  toggleHiddenWidget(widgetId: string): void;
+  setHiddenWidgets(widgetIds: Iterable<string>): void;
+  setQuickAddTable(tableId: string | null): void;
   /** Flip the third KPI card between "Te queda" and "Saldo final". */
   toggleBalanceMode(): void;
   copyTableToClipboard(table: Table | null): void;
@@ -213,6 +226,8 @@ export const useUI = create<UIState>((set, get) => ({
   navOrder: readNavOrder(),
   balanceMode: "teQueda",
   kpiExclusions: new Set<string>(),
+  hiddenWidgets: new Set(readHiddenWidgets()),
+  quickAddTableId: readQuickTable(),
   clipboardTable: null,
   sendValue: null,
   selectedIds: new Set<string>(),
@@ -258,6 +273,9 @@ export const useUI = create<UIState>((set, get) => ({
       else next.add(tableId);
       return { kpiExclusions: next };
     }),
+  toggleHiddenWidget: (widgetId) => set((s) => { const next = new Set(s.hiddenWidgets); if (next.has(widgetId)) next.delete(widgetId); else next.add(widgetId); writeHiddenWidgets(next); return { hiddenWidgets: next }; }),
+  setHiddenWidgets: (widgetIds) => { const next = new Set(widgetIds); writeHiddenWidgets(next); set({ hiddenWidgets: next }); },
+  setQuickAddTable: (tableId) => { writeQuickTable(tableId); set({ quickAddTableId: tableId }); },
   copyTableToClipboard: (clipboardTable) => set({ clipboardTable }),
   startSendValue: (value, sourceKey) => set({ sendValue: { value, sourceKey } }),
   cancelSendValue: () => set({ sendValue: null }),
@@ -319,6 +337,7 @@ export interface ViewPrefs {
   zoom: number;
   navOrder: NavView[];
   sidebarCollapsed: boolean;
+  hiddenWidgets?: string[];
 }
 
 /** Snapshot of the current view preferences, for `createBackup()`. */
@@ -329,6 +348,7 @@ export function getViewPrefs(): ViewPrefs {
     zoom: s.zoom,
     navOrder: s.navOrder,
     sidebarCollapsed: s.sidebarCollapsed,
+    hiddenWidgets: [...s.hiddenWidgets],
   };
 }
 
@@ -346,4 +366,5 @@ export function applyViewPrefs(prefs: ViewPrefs): void {
     s.setNavOrder(prefs.navOrder);
   }
   if (typeof prefs.sidebarCollapsed === "boolean") s.setSidebarCollapsed(prefs.sidebarCollapsed);
+  if (Array.isArray(prefs.hiddenWidgets)) s.setHiddenWidgets(prefs.hiddenWidgets);
 }

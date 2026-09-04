@@ -259,13 +259,13 @@ export function WidgetGrid({
                     value: row.category ?? "",
                     categories,
                     preferredGroup: (table.fiscal ? "fiscal" : "noFiscal") as CategoryGroup,
-                    onSelect: (name: string) =>
-                      s().setRowCategory(monthIndex, table.id, row.id, name),
+                    onSelect: (name: string, group: CategoryGroup) =>
+                      s().setRowCategory(monthIndex, table.id, row.id, name, group),
                     onCreate: (name: string, group: CategoryGroup) => {
                       const pid = s().doc.currentProjectId;
                       if (pid)
                         s().updateProject(pid, { categories: [...categories, { name, group }] });
-                      s().setRowCategory(monthIndex, table.id, row.id, name);
+                      s().setRowCategory(monthIndex, table.id, row.id, name, group);
                     },
                     onClear: () => s().setRowCategory(monthIndex, table.id, row.id, ""),
                   }

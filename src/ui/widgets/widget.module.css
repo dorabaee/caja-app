@@ -328,6 +328,43 @@
   color: var(--text);
   background: var(--surface-2);
 }
+.cellBtn[data-tooltip] { position:relative; }
+.cellBtn[data-tooltip]::after { content:attr(data-tooltip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translate(-50%, 4px); padding:7px 10px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); box-shadow:var(--shadow-md); font-size:var(--text-xs); white-space:nowrap; pointer-events:none; opacity:0; transition:opacity 140ms ease, transform 140ms ease; z-index:20; }
+.cellBtn[data-tooltip]:hover::after, .cellBtn[data-tooltip]:focus-visible::after { opacity:1; transform:translate(-50%, 0); }
+/* The category name is a small piece of contextual information, so it reads as a glass
+   lens over the canvas rather than a heavy browser-style tooltip. The backdrop is the
+   actual pixels beneath it — including the canvas dots — softened by the blur. */
+.categoryTooltip::after {
+  bottom: calc(100% + 10px);
+  padding: 8px 11px;
+  border-color: color-mix(in srgb, var(--text) 18%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 68%, transparent);
+  backdrop-filter: blur(14px) saturate(155%);
+  -webkit-backdrop-filter: blur(14px) saturate(155%);
+  box-shadow: 0 10px 26px color-mix(in srgb, #000 24%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 24%, transparent);
+  letter-spacing: 0.01em;
+  transition: opacity 170ms ease, transform 190ms cubic-bezier(.2,.8,.2,1), filter 170ms ease;
+}
+.categoryTooltip::before {
+  content:"";
+  position:absolute;
+  z-index:20;
+  left:50%;
+  bottom:calc(100% + 5px);
+  width:8px;
+  height:8px;
+  transform:translate(-50%, 3px) rotate(45deg);
+  border-right:1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-bottom:1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  background:color-mix(in srgb, var(--surface-2) 68%, transparent);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 170ms ease, transform 190ms cubic-bezier(.2,.8,.2,1);
+}
+.categoryTooltip:hover::before,
+.categoryTooltip:focus-visible::before { opacity:1; transform:translate(-50%, 0) rotate(45deg); }
 .noteOn {
   opacity: 1;
   color: var(--accent-strong);

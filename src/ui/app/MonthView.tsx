@@ -21,6 +21,7 @@ export function MonthView() {
   const monthIndex = useUI((s) => s.monthIndex);
   const view = useUI((s) => s.view);
   const kpiExclusions = useUI((s) => s.kpiExclusions);
+  const hiddenWidgets = useUI((s) => s.hiddenWidgets);
   const balanceMode = useUI((s) => s.balanceMode);
   const toggleBalanceMode = useUI((s) => s.toggleBalanceMode);
   const sendValue = useUI((s) => s.sendValue);
@@ -60,7 +61,7 @@ export function MonthView() {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.heroBand} data-tour="kpi">
+      {!hiddenWidgets.has("kpi") && <div className={styles.heroBand} data-tour="kpi">
         <KpiHero
           totals={totals}
           goal={showSaldo ? undefined : project.goal?.monthlyProfitTarget}
@@ -101,7 +102,7 @@ export function MonthView() {
             </span>
           </div>
         )}
-      </div>
+      </div>}
 
       {sendValue && (
         <div className={styles.sendBanner} role="status">

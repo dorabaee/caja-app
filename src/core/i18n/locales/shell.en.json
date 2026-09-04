@@ -67,6 +67,10 @@
     "shareEllipsis": "Share…",
     "moreTools": "More tools",
     "quickAdd": "Quick add",
+    "hideKpi": "Hide indicators",
+    "showKpi": "Show indicators",
+    "visibility": "Visible elements",
+    "kpi": "Indicators",
     "help": "Help"
   }
 }

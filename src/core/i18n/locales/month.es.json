@@ -21,6 +21,7 @@
     "conceptPlaceholder": "Concepto…",
     "amount": "Monto",
     "added": "Agregado a {{name}}",
+    "invalidDate": "Ingresa una fecha válida como DD/MM/AAAA",
     "showSaldoFinal": "Ver el saldo final de las cuentas fiscales",
     "showTeQueda": "Ver lo que te queda del mes",
     "ledgerTarget": "¿Depósito o gasto?",
