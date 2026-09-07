@@ -18,14 +18,19 @@ import {
   GripVertical,
   Keyboard,
   Compass,
+  Copy,
+  Share2,
+  Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
 import type { NavView } from "@core/store/ui";
-import { IconButton, Menu, MenuItem, cn } from "@ui/common";
+import { IconButton, Menu, MenuItem, MenuSeparator, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
+import { useExport } from "@ui/hooks/useExport";
 import { useListReorder } from "@ui/hooks/useListReorder";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
+import { WhatsNewOverlay } from "./WhatsNewOverlay";
 import styles from "./Sidebar.module.css";
 import appPackage from "../../../package.json";
 
@@ -55,6 +60,8 @@ export function Sidebar() {
   const nav = useUI((s) => s.nav);
   const goTo = useUI((s) => s.goTo);
   const [shortcuts, setShortcuts] = useState(false);
+  const [whatsNew, setWhatsNew] = useState(false);
+  const { exportBusiness } = useExport();
 
   // Drag-reorder the business list (pointer-based; see useListReorder).
   const biz = useListReorder(setProjectOrder);
@@ -150,6 +157,7 @@ export function Sidebar() {
                       label={t("shell.optionsFor", { name: p.name })}
                       icon={<MoreHorizontal />}
                       size="sm"
+                      tooltipAlign="end"
                       className={styles.bizMenu}
                     />
                   }
@@ -163,6 +171,19 @@ export function Sidebar() {
                   >
                     {t("shell.editBusiness")}
                   </MenuItem>
+                  <MenuItem
+                    icon={<Copy />}
+                    onClick={() => {
+                      useStore.getState().duplicateProject(p.id);
+                      useUI.getState().toast(t("shell.businessDuplicated"), "success");
+                    }}
+                  >
+                    {t("shell.duplicateBusiness")}
+                  </MenuItem>
+                  <MenuItem icon={<Share2 />} onClick={() => void exportBusiness(p)}>
+                    {t("shell.export")}
+                  </MenuItem>
+                  <MenuSeparator />
                   <MenuItem
                     icon={<Trash2 />}
                     danger
@@ -216,6 +237,9 @@ export function Sidebar() {
               />
             }
           >
+            <MenuItem icon={<Sparkles />} onClick={() => setWhatsNew(true)}>
+              {t("shell.whatsNew")}
+            </MenuItem>
             <MenuItem icon={<Compass />} onClick={() => updateSettings({ runTour: true })}>
               {t("shell.replayTour")}
             </MenuItem>
@@ -228,6 +252,7 @@ export function Sidebar() {
       </div>
 
       <ShortcutsOverlay open={shortcuts} onClose={() => setShortcuts(false)} />
+      <WhatsNewOverlay open={whatsNew} onClose={() => setWhatsNew(false)} />
     </aside>
   );
 }

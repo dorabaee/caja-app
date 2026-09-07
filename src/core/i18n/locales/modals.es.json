@@ -37,7 +37,12 @@
     "hiddenWidgetsLayout": "Al ocultar elementos",
     "hiddenWidgets_preserve": "Conservar espacios",
     "hiddenWidgets_arrange": "Reacomodar",
-    "quickAddDateMode": "Fecha en alta rápida",
+    "tableDateMode": "Fechas en las tablas",
+    "tableDateModeHint": "Cómo capturas fechas directamente dentro de las filas.",
+    "quickAddDateMode": "Fecha de Agregar rápido",
+    "quickAddDateModeHint": "Cómo capturas la fecha opcional del compositor Agregar rápido.",
+    "dateMode_calendar": "Calendario",
+    "dateMode_typing": "Escritura manual",
     "quickAddDate_calendar": "Usar calendario",
     "quickAddDate_typing": "Escribir fecha",
     "language": "Idioma",
@@ -126,6 +131,8 @@
     "toastExcelError": "No se pudo exportar el Excel.",
     "toastBackupSaved": "Respaldo guardado.",
     "toastBackupError": "No se pudo crear el respaldo.",
+    "toastBusinessExported": "Negocio exportado.",
+    "toastBusinessExportError": "No se pudo exportar el negocio.",
     "toastBackupRestored": "Respaldo restaurado.",
     "toastRestoreError": "No se pudo restaurar el respaldo.",
     "categoryGroup": "Grupo de la categoría",
@@ -141,6 +148,7 @@
     "bankAddHint": "¿Tu banco no está en la lista? Agrégalo con el nombre que quieras.",
     "bankManageDesc": "Escribe el nombre del banco o de la cuenta y agrégala a tu lista.",
     "bankConfirmDelete": "¿Seguro que deseas eliminar «{{name}}»?",
-    "confirmDeleteCategory": "¿Seguro que deseas eliminar «{{name}}»?"
+    "confirmDeleteCategory": "¿Seguro que deseas eliminar «{{name}}»?",
+    "searchCategories": "Buscar categorías…"
   }
 }

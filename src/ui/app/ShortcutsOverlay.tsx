@@ -1,7 +1,7 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
+import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { Button } from "@ui/common";
 import styles from "./ShortcutsOverlay.module.css";
 
@@ -48,6 +48,18 @@ const DEMOS: Record<string, ReactNode> = {
       <span className={`${styles.demoBox} ${styles.demoPop}`} style={{ left: 20, top: 12 }} />
     </span>
   ),
+  fill: (
+    <span className={styles.demo}>
+      <span className={`${styles.demoBox} ${styles.demoFillSource}`} style={{ left: 8, top: 4 }} />
+      <span className={`${styles.demoBox} ${styles.demoFill}`} style={{ left: 8, top: 21 }} />
+    </span>
+  ),
+  fillRight: (
+    <span className={styles.demo}>
+      <span className={`${styles.demoBox} ${styles.demoFillSource}`} style={{ left: 4, top: 12 }} />
+      <span className={`${styles.demoBox} ${styles.demoFillRight}`} style={{ left: 29, top: 12 }} />
+    </span>
+  ),
 };
 
 /**
@@ -59,6 +71,7 @@ export function ShortcutsOverlay({ open, onClose }: { open: boolean; onClose: ()
   const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const [view, setView] = useState<"board" | "input">("board");
 
   useEffect(() => {
     if (!open) return;
@@ -106,7 +119,16 @@ export function ShortcutsOverlay({ open, onClose }: { open: boolean; onClose: ()
         </div>
         <p className={styles.intro}>{t("shortcuts.intro")}</p>
 
-        <div className={styles.groups}>
+        <div className={styles.viewSwitch}>
+          <button type="button" className={styles.viewArrow} aria-label={t("shortcuts.previousSection")} onClick={() => setView(view === "board" ? "input" : "board")}><ArrowLeft size={15} /></button>
+          <div className={styles.tabs} role="tablist">
+            <button type="button" role="tab" aria-selected={view === "board"} className={view === "board" ? styles.tabOn : undefined} onClick={() => setView("board")}>{t("shortcuts.boardTab")}</button>
+            <button type="button" role="tab" aria-selected={view === "input"} className={view === "input" ? styles.tabOn : undefined} onClick={() => setView("input")}>{t("shortcuts.inputTab")}</button>
+          </div>
+          <button type="button" className={styles.viewArrow} aria-label={t("shortcuts.nextSection")} onClick={() => setView(view === "board" ? "input" : "board")}><ArrowRight size={15} /></button>
+        </div>
+
+        {view === "board" ? <div className={styles.groups}>
           <section className={styles.group}>
             <h3 className={styles.groupTitle}>{t("shortcuts.selecting")}</h3>
             <ul className={styles.list}>
@@ -147,7 +169,22 @@ export function ShortcutsOverlay({ open, onClose }: { open: boolean; onClose: ()
               {row(null, <><K>Ctrl</K> + <K>Y</K></>, "shortcuts.redo")}
             </ul>
           </section>
-        </div>
+        </div> : <div className={styles.groups}>
+          <section className={styles.group}>
+            <h3 className={styles.groupTitle}>{t("shortcuts.filling")}</h3>
+            <ul className={styles.list}>
+              {row(DEMOS.fill, <><K>Ctrl</K> + <K>D</K></>, "shortcuts.fillDown")}
+              {row(DEMOS.fillRight, <><K>Ctrl</K> + <K>R</K></>, "shortcuts.fillRight")}
+            </ul>
+          </section>
+          <section className={styles.group}>
+            <h3 className={styles.groupTitle}>{t("shortcuts.rows")}</h3>
+            <ul className={styles.list}>
+              {row(DEMOS.add, <><K>Ctrl</K> + <K>Shift</K> + <K>D</K></>, "shortcuts.duplicateCurrentRow")}
+              {row(null, <K>Enter</K>, "shortcuts.nextCell")}
+            </ul>
+          </section>
+        </div>}
 
         <div className={styles.actions}>
           <Button variant="primary" size="sm" onClick={onClose}>

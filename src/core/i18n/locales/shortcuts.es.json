@@ -1,7 +1,17 @@
 {
   "shortcuts": {
     "title": "Atajos y gestos",
-    "intro": "Todo lo que puedes hacer en el tablero con el ratón y el teclado.",
+    "intro": "Todo lo que puedes hacer en el tablero y al capturar datos.",
+    "boardTab": "Tablero",
+    "inputTab": "Captura de datos",
+    "previousSection": "Sección anterior",
+    "nextSection": "Sección siguiente",
+    "filling": "Rellenar",
+    "rows": "Filas",
+    "fillDown": "Repite el valor de la celda en todas las filas inferiores.",
+    "fillRight": "Repite el valor en las columnas compatibles a la derecha.",
+    "duplicateCurrentRow": "Duplica la fila actual completa.",
+    "nextCell": "Confirma el valor y avanza a la celda inferior.",
     "selecting": "Seleccionar",
     "moving": "Mover",
     "canvas": "Lienzo",

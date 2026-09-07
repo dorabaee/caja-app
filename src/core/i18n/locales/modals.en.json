@@ -37,7 +37,12 @@
     "hiddenWidgetsLayout": "When hiding elements",
     "hiddenWidgets_preserve": "Preserve spaces",
     "hiddenWidgets_arrange": "Rearrange",
-    "quickAddDateMode": "Quick-add date",
+    "tableDateMode": "Dates in tables",
+    "tableDateModeHint": "How dates are entered directly inside table rows.",
+    "quickAddDateMode": "Quick Add date",
+    "quickAddDateModeHint": "How the optional date is entered in the separate Quick Add composer.",
+    "dateMode_calendar": "Calendar",
+    "dateMode_typing": "Type manually",
     "quickAddDate_calendar": "Use calendar",
     "quickAddDate_typing": "Type date",
     "language": "Language",
@@ -126,6 +131,8 @@
     "toastExcelError": "Couldn't export the Excel file.",
     "toastBackupSaved": "Backup saved.",
     "toastBackupError": "Couldn't create the backup.",
+    "toastBusinessExported": "Business exported.",
+    "toastBusinessExportError": "Couldn't export the business.",
     "toastBackupRestored": "Backup restored.",
     "toastRestoreError": "Couldn't restore the backup.",
     "categoryGroup": "Category group",
@@ -141,6 +148,7 @@
     "bankAddHint": "Bank not on the list? Add it under whatever name you like.",
     "bankManageDesc": "Type the bank or account name and add it to your list.",
     "bankConfirmDelete": "Delete “{{name}}”?",
-    "confirmDeleteCategory": "Delete “{{name}}”?"
+    "confirmDeleteCategory": "Delete “{{name}}”?",
+    "searchCategories": "Search categories…"
   }
 }

@@ -169,6 +169,9 @@ export interface Settings {
   onboarded: boolean;
   runTour: boolean;
   hiddenWidgetsLayout: "preserve" | "arrange";
+  /** How date cells inside every table are edited. */
+  tableDateMode: "calendar" | "typing";
+  /** How the separate Quick Add composer captures its optional date. */
   quickAddDateMode: "calendar" | "typing";
 }
 
@@ -180,5 +183,5 @@ export interface AppDoc {
   migratedFromLegacy?: boolean;
 }
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 export const MONTHS_PER_YEAR = 12;

@@ -285,6 +285,29 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
 }
+.datePickerInput {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: left;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.datePickerInput > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.datePickerInput :global(svg) {
+  flex: none;
+  color: var(--text-subtle);
+}
+.datePickerInput:hover {
+  background: var(--surface-hover);
+}
 
 /* Per-cell buttons (note, category tag, calendar) share one row so they can never sit on
    top of each other — the calendar used to land under the note button (#4). */

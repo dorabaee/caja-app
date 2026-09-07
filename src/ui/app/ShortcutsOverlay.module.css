@@ -66,6 +66,13 @@
   line-height: 1.55;
   color: var(--text-muted);
 }
+.viewSwitch { display:flex; align-items:center; justify-content:center; gap:var(--space-3); padding:var(--space-2) 0; }
+.tabs { display:inline-flex; gap:2px; padding:2px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2); }
+.tabs button { min-width:145px; height:32px; padding:0 var(--space-3); border-radius:var(--radius-xs); color:var(--text-muted); font-size:var(--text-sm); font-weight:600; }
+.tabs button:hover { color:var(--text); }
+.tabs .tabOn { background:var(--surface); color:var(--accent-strong); box-shadow:var(--shadow-sm); }
+.viewArrow { display:grid; place-items:center; width:30px; height:30px; border-radius:var(--radius-full); color:var(--text-muted); }
+.viewArrow:hover { background:var(--surface-hover); color:var(--text); }
 
 .groups {
   display: grid;
@@ -279,6 +286,11 @@
 .demoPop {
   animation: popIn 2.6s ease-in-out infinite;
 }
+.demoFillSource { border-color:var(--accent); background:var(--accent-weak); }
+.demoFill { animation:fillDown 2.6s ease-in-out infinite; }
+.demoFillRight { animation:fillRight 2.6s ease-in-out infinite; }
+@keyframes fillDown { 0%,20%,100%{opacity:.25;transform:translateY(-4px)}50%,80%{opacity:1;transform:translateY(0);border-color:var(--accent);background:var(--accent-weak)} }
+@keyframes fillRight { 0%,20%,100%{opacity:.25;transform:translateX(-4px)}50%,80%{opacity:1;transform:translateX(0);border-color:var(--accent);background:var(--accent-weak)} }
 @keyframes popIn {
   0%,
   20% {
@@ -313,6 +325,10 @@
   .demoPan,
   .demoZoom,
   .demoPop {
+    animation: none;
+  }
+  .demoFill,
+  .demoFillRight {
     animation: none;
   }
   .demoMarquee {

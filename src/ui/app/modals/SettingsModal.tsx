@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Sun, Moon, Check, Droplet, Palette, DatabaseBackup, RotateCcw, AlertTriangle,
-  ChevronDown, Info, ChevronLeft, GripVertical, Trash2, Plus,
+  ChevronDown, Info, ChevronLeft, GripVertical, Trash2, Plus, Search, Tags, Zap,
+  Table2, CalendarDays, Keyboard,
 } from "lucide-react";
 import type { AccentName, ChartPalette, Locale, QuickAddRequirements, Table, ThemeMode } from "@core/model/types";
 import { useStore, useUI } from "@core/store";
@@ -61,6 +62,8 @@ export function SettingsModal() {
     timeZone: "UTC",
   }).format(new Date(`${appPackage.releaseDate}T00:00:00Z`));
   const [advanced, setAdvanced] = useState(false);
+  const [advancedTab, setAdvancedTab] = useState<"categories" | "quickAdd">("categories");
+  const [categoryQuery, setCategoryQuery] = useState("");
   const [categoryDraft, setCategoryDraft] = useState("");
   const [categoryGroup, setCategoryGroup] = useState<"fiscal" | "noFiscal">("fiscal");
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
@@ -70,6 +73,9 @@ export function SettingsModal() {
 
   const categoryKey = (name: string, group?: string) => `${group ?? "other"}:${name}`;
   const categories = project?.categories ?? [];
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLocaleLowerCase().includes(categoryQuery.trim().toLocaleLowerCase()),
+  );
   const quickAddTables = useMemo(() => {
     const byTitle = new Map<string, Table>();
     for (const month of project?.months ?? []) {
@@ -124,68 +130,98 @@ export function SettingsModal() {
 
   if (advanced) {
     return (
-      <Modal open={modal === "settings"} onClose={() => { setAdvanced(false); closeModal(); }} title={t("modals.advancedSettingsTitle")} description={t("modals.advancedSettingsDescription")}>
-        <section className={styles.section}>
+      <Modal open={modal === "settings"} size="lg" onClose={() => { setAdvanced(false); closeModal(); }} title={t("modals.advancedSettingsTitle")} description={t("modals.advancedSettingsDescription")}>
+        <div className={styles.advancedTop}>
           <button type="button" className={styles.backButton} onClick={() => setAdvanced(false)}><ChevronLeft size={16} /> {t("modals.backToSettings")}</button>
-          <div className={styles.headingRow}><h3 className={styles.heading}>{t("modals.categories")}</h3><span className={styles.muted}>{t("modals.globalCategories")}</span></div>
-          <div className={styles.categoryGroups}>
-            {(["fiscal", "noFiscal"] as const).map((group) => (
-              <div key={group} className={styles.categoryGroup}>
-                <p className={styles.groupLabel}>{t(`widgets.group_${group}`)}</p>
-                {categories.filter((c) => c.group === group).map((cat) => (
-                  <div key={categoryKey(cat.name, cat.group)} className={cn(styles.manageCategory, removingCategory === categoryKey(cat.name, cat.group) && styles.categoryRemoving)} draggable
-                    onDragStart={() => setDraggedCategory(categoryKey(cat.name, cat.group))}
-                    onDragOver={(e) => e.preventDefault()} onDrop={() => moveCategory(cat.name, cat.group)}>
-                    <GripVertical size={15} className={styles.dragIcon} />
-                    {editingCategory === categoryKey(cat.name, cat.group) ? (
-                      <input autoFocus className={styles.editInput} defaultValue={cat.name} onBlur={(e) => renameCategory(cat.name, group, e.currentTarget.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
-                    ) : <button type="button" className={styles.categoryName} onDoubleClick={() => setEditingCategory(categoryKey(cat.name, cat.group))}>{cat.name}</button>}
-                    <button type="button" className={styles.iconDanger} aria-label={t("modals.removeCategory", { name: cat.name })} onClick={() => removeCategory(cat.name, group)}><Trash2 size={14} /></button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <form className={styles.addRow} onSubmit={(e) => { e.preventDefault(); addCategory(); }}>
-            <TextInput value={categoryDraft} placeholder={t("modals.newCategory")} onChange={(e) => setCategoryDraft(e.target.value)} />
-            <select className={styles.select} value={categoryGroup} onChange={(e) => setCategoryGroup(e.target.value as "fiscal" | "noFiscal")}><option value="fiscal">{t("widgets.group_fiscal")}</option><option value="noFiscal">{t("widgets.group_noFiscal")}</option></select>
-            <Button type="submit" variant="secondary" icon={<Plus />}>{t("common.add")}</Button>
-          </form>
-          <p className={styles.muted}>{t("modals.editCategoriesHint")}</p>
-        </section>
-        <section className={styles.requirementsSection}>
-          <div className={styles.headingRow}>
-            <h3 className={styles.heading}>{t("modals.quickAddRequirements")}</h3>
-            <span className={styles.muted}>{t("modals.quickAddBusinessWide")}</span>
-          </div>
-          <p className={styles.muted}>{t("modals.quickAddRequirementsHint")}</p>
-          {quickAddTables.length ? (
-            <div className={styles.requirementTables}>
-              {quickAddTables.map((table) => {
-                const rules = project?.quickAddRequirements?.[table.title] ?? {};
-                return (
-                  <div key={table.title} className={styles.requirementTable}>
-                    <strong className={styles.requirementTitle}>{table.title}</strong>
-                    <div className={styles.requirementFields}>
-                      {quickAddFieldsFor(table).map((field) => (
-                        <label key={field.key} className={styles.requirementField}>
-                          <span>{t(field.labelKey)}</span>
-                          <Switch
-                            checked={!!rules[field.key]}
-                            aria-label={t("modals.quickAddRequirementFor", { field: t(field.labelKey), table: table.title })}
-                            onChange={(enabled) => setQuickAddRequirement(table.title, field.key, enabled)}
-                          />
-                        </label>
+          <SegmentedControl<"categories" | "quickAdd">
+            className={styles.advancedTabs}
+            aria-label={t("modals.advancedSettingsTitle")}
+            value={advancedTab}
+            options={[
+              { value: "categories", label: t("modals.categories"), icon: <Tags /> },
+              { value: "quickAdd", label: t("modals.quickAddRequirements"), icon: <Zap /> },
+            ]}
+            onChange={setAdvancedTab}
+          />
+        </div>
+
+        {advancedTab === "categories" ? (
+          <section className={styles.advancedPanel}>
+            <div className={styles.headingRow}><h3 className={styles.heading}>{t("modals.categories")}</h3><span className={styles.muted}>{t("modals.globalCategories")}</span></div>
+            <label className={styles.searchField}>
+              <Search size={15} aria-hidden />
+              <input value={categoryQuery} placeholder={t("modals.searchCategories")} onChange={(e) => setCategoryQuery(e.target.value)} />
+            </label>
+            <div className={styles.categoryGroups}>
+              {(["fiscal", "noFiscal"] as const).map((group) => (
+                <div key={group} className={styles.categoryGroup}>
+                  <p className={styles.groupLabel}>{t(`widgets.group_${group}`)}</p>
+                  {filteredCategories.filter((c) => c.group === group).map((cat) => (
+                    <div key={categoryKey(cat.name, cat.group)} className={cn(styles.manageCategory, removingCategory === categoryKey(cat.name, cat.group) && styles.categoryRemoving)} draggable
+                      onDragStart={() => setDraggedCategory(categoryKey(cat.name, cat.group))}
+                      onDragOver={(e) => e.preventDefault()} onDrop={() => moveCategory(cat.name, cat.group)}>
+                      <GripVertical size={15} className={styles.dragIcon} />
+                      {editingCategory === categoryKey(cat.name, cat.group) ? (
+                        <input autoFocus className={styles.editInput} defaultValue={cat.name} onBlur={(e) => renameCategory(cat.name, group, e.currentTarget.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
+                      ) : <button type="button" className={styles.categoryName} onDoubleClick={() => setEditingCategory(categoryKey(cat.name, cat.group))}>{cat.name}</button>}
+                      <button type="button" className={styles.iconDanger} aria-label={t("modals.removeCategory", { name: cat.name })} onClick={() => removeCategory(cat.name, group)}><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <form className={styles.addRow} onSubmit={(e) => { e.preventDefault(); addCategory(); }}>
+              <TextInput value={categoryDraft} placeholder={t("modals.newCategory")} onChange={(e) => setCategoryDraft(e.target.value)} />
+              <SegmentedControl<"fiscal" | "noFiscal"> className={styles.categoryGroupPicker} aria-label={t("modals.categoryGroup")} value={categoryGroup}
+                options={[{ value: "fiscal", label: t("widgets.group_fiscal") }, { value: "noFiscal", label: t("widgets.group_noFiscal") }]}
+                onChange={setCategoryGroup} />
+              <Button type="submit" variant="secondary" icon={<Plus />}>{t("common.add")}</Button>
+            </form>
+            <p className={styles.muted}>{t("modals.editCategoriesHint")}</p>
+          </section>
+        ) : (
+          <section className={styles.advancedPanel}>
+            <div className={styles.headingRow}>
+              <h3 className={styles.heading}>{t("modals.quickAddRequirements")}</h3>
+              <span className={styles.muted}>{t("modals.quickAddBusinessWide")}</span>
+            </div>
+            <p className={styles.muted}>{t("modals.quickAddRequirementsHint")}</p>
+            {quickAddTables.length ? (
+              <div className={styles.requirementMatrix} role="group" aria-label={t("modals.quickAddRequirements")}>
+                <div className={cn(styles.requirementRow, styles.requirementHeader)} aria-hidden="true">
+                  <span>{t("month.table")}</span>
+                  <span>{t("month.amount")}</span>
+                  <span>{t("month.concept")}</span>
+                  <span>{t("month.date")}</span>
+                </div>
+                {quickAddTables.map((table) => {
+                  const rules = project?.quickAddRequirements?.[table.title] ?? {};
+                  const supported = new Set(quickAddFieldsFor(table).map((field) => field.key));
+                  return (
+                    <div key={table.title} className={styles.requirementRow}>
+                      <strong className={styles.requirementTitle}>{table.title}</strong>
+                      {QUICK_ADD_FIELDS.map((field) => (
+                        <div key={field.key} className={styles.requirementCell}>
+                          <span className={styles.requirementMobileLabel}>{
+                            field.key === "amount" ? t("month.amount") : field.key === "concept" ? t("month.concept") : t("month.date")
+                          }</span>
+                          {supported.has(field.key) ? (
+                            <Switch checked={!!rules[field.key]} aria-label={t("modals.quickAddRequirementFor", { field: t(field.labelKey), table: table.title })}
+                              onChange={(enabled) => setQuickAddRequirement(table.title, field.key, enabled)} />
+                          ) : <span className={styles.requirementUnavailable} aria-hidden="true">—</span>}
+                        </div>
                       ))}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className={styles.muted}>{t("modals.quickAddNoTables")}</p>
-          )}
-        </section>
+                  );
+                })}
+              </div>
+            ) : <p className={styles.muted}>{t("modals.quickAddNoTables")}</p>}
+          </section>
+        )}
+
+        <div className={styles.advancedBottom}>
+          <Button variant="secondary" icon={<ChevronLeft />} onClick={() => setAdvanced(false)}>{t("modals.backToSettings")}</Button>
+        </div>
       </Modal>
     );
   }
@@ -193,6 +229,7 @@ export function SettingsModal() {
   return (
     <Modal
       open={modal === "settings"}
+      size="lg"
       onClose={() => {
         setConfirmRestore(false);
         closeModal();
@@ -271,15 +308,19 @@ export function SettingsModal() {
             ))}
           </div>
         </div>
-        <div className={styles.row}>
-          <span className={styles.label}>{t("modals.quickAddDateMode")}</span>
-          <div className={styles.segmented} role="group" aria-label={t("modals.quickAddDateMode")}>
-            {(["calendar", "typing"] as const).map((mode) => (
-              <button key={mode} type="button" className={cn(styles.seg, settings.quickAddDateMode === mode && styles.segOn)} aria-pressed={settings.quickAddDateMode === mode} onClick={() => update({ quickAddDateMode: mode })}>
-                {t(`modals.quickAddDate_${mode}`)}
-              </button>
-            ))}
-          </div>
+        <div className={styles.dateSettings}>
+          <article className={cn(styles.dateCard, styles.tableDateCard)}>
+            <div className={styles.dateCardHead}><span className={styles.dateIcon}><Table2 size={17} /></span><div><strong>{t("modals.tableDateMode")}</strong><p>{t("modals.tableDateModeHint")}</p></div></div>
+            <SegmentedControl<"calendar" | "typing"> className={styles.dateModeSegments} aria-label={t("modals.tableDateMode")} value={settings.tableDateMode}
+              options={[{ value: "calendar", label: t("modals.dateMode_calendar"), icon: <CalendarDays /> }, { value: "typing", label: t("modals.dateMode_typing"), icon: <Keyboard /> }]}
+              onChange={(tableDateMode) => update({ tableDateMode })} />
+          </article>
+          <article className={cn(styles.dateCard, styles.quickDateCard)}>
+            <div className={styles.dateCardHead}><span className={styles.dateIcon}><Zap size={17} /></span><div><strong>{t("modals.quickAddDateMode")}</strong><p>{t("modals.quickAddDateModeHint")}</p></div></div>
+            <SegmentedControl<"calendar" | "typing"> className={styles.dateModeSegments} aria-label={t("modals.quickAddDateMode")} value={settings.quickAddDateMode}
+              options={[{ value: "calendar", label: t("modals.dateMode_calendar"), icon: <CalendarDays /> }, { value: "typing", label: t("modals.dateMode_typing"), icon: <Keyboard /> }]}
+              onChange={(quickAddDateMode) => update({ quickAddDateMode })} />
+          </article>
         </div>
 
         <div className={styles.row}>

@@ -75,6 +75,7 @@ export function defaultSettings(): Settings {
     onboarded: false,
     runTour: false,
     hiddenWidgetsLayout: "preserve",
+    tableDateMode: "calendar",
     quickAddDateMode: "calendar",
   };
 }

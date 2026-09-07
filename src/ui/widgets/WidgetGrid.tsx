@@ -296,6 +296,7 @@ export function WidgetGrid({
                   note={row.notes?.[col.id] ?? ""}
                   r={ri}
                   c={ci}
+                  monthIndex={monthIndex}
                   disabled={editing}
                   tag={picker ? <CategoryTag {...picker} /> : undefined}
                   tagCount={picker ? 1 : 0}
@@ -304,6 +305,11 @@ export function WidgetGrid({
                   onCommit={(v) => s().setCell(monthIndex, table.id, row.id, col.id, v)}
                   onNote={(n) => s().setNote(monthIndex, table.id, row.id, col.id, n)}
                   onEnter={() => onEnter(ri, ci)}
+                  onShortcut={(action) => {
+                    if (action === "fillDown") s().fillColumnDown(monthIndex, table.id, row.id, col.id);
+                    else if (action === "fillRight") s().fillRowRight(monthIndex, table.id, row.id, col.id);
+                    else s().duplicateRow(monthIndex, table.id, row.id);
+                  }}
                   sendable={sendable}
                   onSend={() => useUI.getState().startSendValue(cellVal, sendKey)}
                   receiving={receiving}
@@ -427,11 +433,13 @@ function RecurringRow({
             note=""
             r={r}
             c={ci}
+            monthIndex={monthIndex}
             recurring
             disabled={disabled}
             onCommit={(v) => override(col, v)}
             onNote={() => {}}
             onEnter={() => {}}
+            onShortcut={() => {}}
           />
         ),
       )}

@@ -46,6 +46,8 @@ export interface StoreState {
 
   // projects
   createProject(name: string, template?: TemplateKey | "empty"): string;
+  /** Duplicate one complete business (data, layout and settings) with fresh ids. */
+  duplicateProject(projectId: string): string;
   renameProject(projectId: string, name: string): void;
   deleteProject(projectId: string): void;
   selectProject(projectId: string): void;
@@ -121,6 +123,10 @@ export interface StoreState {
   sortRows(monthIndex: number, tableId: string, columnId: string, direction: "asc" | "desc"): void;
   removeRow(monthIndex: number, tableId: string, rowId: string): void;
   duplicateRow(monthIndex: number, tableId: string, rowId: string): void;
+  /** Fill the active cell's value into every saved row below it. */
+  fillColumnDown(monthIndex: number, tableId: string, rowId: string, columnId: string): void;
+  /** Fill the active cell's value into compatible columns to its right. */
+  fillRowRight(monthIndex: number, tableId: string, rowId: string, columnId: string): void;
   /** Reorder a table's rows to match the given id order (row-reorder mode's ✓). */
   setRowOrder(monthIndex: number, tableId: string, orderedIds: string[]): void;
   setCell(monthIndex: number, tableId: string, rowId: string, columnId: string, value: string): void;
@@ -184,6 +190,25 @@ export const useStore = create<StoreState>()((set, get) => {
         if (first) d.settings.runTour = true; // guided tour on the very first business
       });
       return project.id;
+    },
+
+    duplicateProject: (projectId) => {
+      let newId = "";
+      commit((d) => {
+        const sourceIndex = d.projects.findIndex((p) => p.id === projectId);
+        const source = d.projects[sourceIndex];
+        if (!source) return;
+        const duplicate = JSON.parse(JSON.stringify(source)) as Project;
+        duplicate.id = id();
+        duplicate.name = `${source.name} (copia)`;
+        duplicate.createdAt = Date.now();
+        duplicate.months = source.months.map((month) => cloneMonth(month, true));
+        duplicate.recurring = source.recurring?.map((entry) => ({ ...entry, id: id() }));
+        newId = duplicate.id;
+        d.projects.splice(sourceIndex + 1, 0, duplicate);
+        d.currentProjectId = duplicate.id;
+      });
+      return newId;
     },
 
     renameProject: (projectId, name) =>
@@ -642,9 +667,35 @@ export const useStore = create<StoreState>()((set, get) => {
           id: id(),
           cells: { ...src.cells },
           ...(src.category ? { category: src.category } : {}),
+          ...(src.categoryGroup ? { categoryGroup: src.categoryGroup } : {}),
           notes: { ...(src.notes ?? {}) },
           links: { ...(src.links ?? {}) },
         });
+      }),
+
+    fillColumnDown: (monthIndex, tableId, rowId, columnId) =>
+      commit((d) => {
+        const table = findTable(d, monthIndex, tableId);
+        if (!table) return;
+        const sourceIndex = table.rows.findIndex((row) => row.id === rowId);
+        if (sourceIndex < 0) return;
+        const value = table.rows[sourceIndex].cells[columnId] ?? "";
+        for (let i = sourceIndex + 1; i < table.rows.length; i += 1) {
+          table.rows[i].cells[columnId] = value;
+        }
+      }),
+
+    fillRowRight: (monthIndex, tableId, rowId, columnId) =>
+      commit((d) => {
+        const table = findTable(d, monthIndex, tableId);
+        const row = table?.rows.find((item) => item.id === rowId);
+        const sourceIndex = table?.columns.findIndex((column) => column.id === columnId) ?? -1;
+        const source = sourceIndex >= 0 ? table?.columns[sourceIndex] : undefined;
+        if (!table || !row || !source || source.type === "category") return;
+        const value = row.cells[columnId] ?? "";
+        for (const column of table.columns.slice(sourceIndex + 1)) {
+          if (column.type === source.type) row.cells[column.id] = value;
+        }
       }),
 
     setRowOrder: (monthIndex, tableId, orderedIds) =>

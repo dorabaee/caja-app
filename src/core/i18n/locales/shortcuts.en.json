@@ -1,7 +1,17 @@
 {
   "shortcuts": {
     "title": "Shortcuts and gestures",
-    "intro": "Everything you can do on the board with the mouse and keyboard.",
+    "intro": "Everything you can do on the board and while entering data.",
+    "boardTab": "Board",
+    "inputTab": "Data entry",
+    "previousSection": "Previous section",
+    "nextSection": "Next section",
+    "filling": "Filling",
+    "rows": "Rows",
+    "fillDown": "Repeat the active cell's value through every row below.",
+    "fillRight": "Repeat the value through compatible columns to the right.",
+    "duplicateCurrentRow": "Duplicate the entire current row.",
+    "nextCell": "Confirm the value and move to the cell below.",
     "selecting": "Selecting",
     "moving": "Moving",
     "canvas": "Canvas",

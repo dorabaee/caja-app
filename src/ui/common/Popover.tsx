@@ -27,6 +27,8 @@ export interface PopoverProps {
   role?: string;
   children: ReactNode | ((api: PopoverApi) => ReactNode);
   onOpenChange?: (open: boolean) => void;
+  /** Keep this surface open while a child menu, rendered through a portal, is used. */
+  persistOnNestedPopover?: boolean;
 }
 
 export function Popover({
@@ -37,6 +39,7 @@ export function Popover({
   role,
   children,
   onOpenChange,
+  persistOnNestedPopover = false,
 }: PopoverProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -76,6 +79,10 @@ export function Popover({
     const onDown = (e: globalThis.MouseEvent) => {
       const target = e.target as Node;
       if (popRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      // A menu opened from inside this popover is portalled to <body>. Treat any
+      // floating popover surface as an in-popover interaction so choosing a nested
+      // table/column option does not dismiss the Quick Add composer underneath it.
+      if (persistOnNestedPopover && target instanceof Element && target.closest("[data-popover-root]")) return;
       setOpenN(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -91,7 +98,7 @@ export function Popover({
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
-  }, [open, place, setOpenN]);
+  }, [open, persistOnNestedPopover, place, setOpenN]);
 
   const triggerEl = isValidElement(trigger)
     ? cloneElement(trigger as ReactElement<Record<string, unknown>>, {
@@ -113,6 +120,7 @@ export function Popover({
           <div
             ref={popRef}
             className={className}
+            data-popover-root
             role={role}
             style={{
               position: "fixed",

@@ -148,6 +148,7 @@ export function TopBar() {
             align="start"
             minWidth={320}
             className={styles.quickAddPop}
+            persistOnNestedPopover
             trigger={<IconButton label={t("shell.quickAdd")} icon={<Zap />} />}
           >
             <QuickAddBar monthIndex={monthIndex} />

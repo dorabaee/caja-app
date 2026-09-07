@@ -10,10 +10,12 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   active?: boolean;
   /** "info" paints the classic blue help affordance (outline + tint + blue glyph). */
   tone?: "default" | "info";
+  /** Keep long edge tooltips inside narrow containers such as the sidebar. */
+  tooltipAlign?: "center" | "start" | "end";
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, icon, size = "md", active, tone = "default", className, type = "button", ...rest },
+  { label, icon, size = "md", active, tone = "default", tooltipAlign = "center", className, type = "button", ...rest },
   ref,
 ) {
   return (
@@ -22,6 +24,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       type={type}
       aria-label={label}
       data-tooltip={label}
+      data-tooltip-align={tooltipAlign}
       aria-pressed={active || undefined}
       className={cn(
         styles.btn,

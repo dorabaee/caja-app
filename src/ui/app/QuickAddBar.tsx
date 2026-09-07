@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Zap, Plus, ChevronDown, CalendarDays } from "lucide-react";
+import { Zap, Plus, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
 import { useStore, useUI } from "@core/store";
 import { uniqueTableLabels } from "@core/compute";
-import type { Column, LedgerRole, Table } from "@core/model/types";
+import type { Column, Table } from "@core/model/types";
 import { Button, Menu, MenuItem, MenuLabel, TextInput, cn } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import { DatePicker } from "@ui/widgets/cells/DatePicker";
@@ -15,6 +15,8 @@ import styles from "./quickAddBar.module.css";
 const firstOfType = (cols: Column[], type: Column["type"]): Column | undefined =>
   cols.find((c) => c.type === type);
 
+type QuickTargets = { amount: string | null; concept: string | null; date: string | null };
+
 /** Income tables reserve their first text column for Día; an added text column is the concept. */
 const conceptColumn = (cols: Column[], kind: Table["kind"]): Column | undefined => {
   const texts = cols.filter((column) => column.type === "text");
@@ -22,6 +24,25 @@ const conceptColumn = (cols: Column[], kind: Table["kind"]): Column | undefined 
     ? texts.find((column) => !/^d[ií]a$/i.test(column.name.trim()))
     : texts[0];
 };
+
+/** Income tables use their Día text column as Quick Add's date destination. */
+const incomeDayColumn = (table: Table): Column | undefined =>
+  table.kind === "income"
+    ? table.columns.find((column) => column.type === "text" && /^d[ií]a$/i.test(column.name.trim()))
+      ?? firstOfType(table.columns, "text")
+    : undefined;
+
+const defaultTargets = (table: Table | null): QuickTargets => ({
+  amount: table
+    ? (table.kind === "ledger"
+        ? table.columns.find((column) => column.type === "money" && column.role === "withdrawal")
+        : firstOfType(table.columns, "money"))?.id ?? null
+    : null,
+  concept: table ? conceptColumn(table.columns, table.kind)?.id ?? null : null,
+  date: table
+    ? (firstOfType(table.columns, "date") ?? incomeDayColumn(table))?.id ?? null
+    : null,
+});
 
 /** Accept typed or pasted digits while keeping the visible DD/MM/YYYY structure. */
 const maskDate = (value: string): string => {
@@ -47,8 +68,7 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   const [concepto, setConcepto] = useState("");
   const [monto, setMonto] = useState("");
   const [fecha, setFecha] = useState("");
-  // Ledgers only: which column the amount lands in. Gasto is the common entry.
-  const [role, setRole] = useState<LedgerRole>("withdrawal");
+  const [targets, setTargets] = useState<QuickTargets>(() => defaultTargets(null));
   const conceptoRef = useRef<HTMLInputElement>(null);
 
   // Keep selection valid as tables come and go.
@@ -58,6 +78,9 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   useEffect(() => {
     if (selected && selected.id !== selectedTableId) setSelectedTableId(selected.id);
   }, [selected, selectedTableId, setSelectedTableId]);
+  useEffect(() => {
+    setTargets(defaultTargets(selected));
+  }, [selected?.id]);
 
   if (candidates.length === 0) return null;
 
@@ -90,35 +113,29 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
       return;
     }
 
-    const firstText = firstOfType(table.columns, "text");
-    const conceptCell = conceptColumn(table.columns, table.kind);
-    let firstDate = firstOfType(table.columns, "date");
-    // Tables created before the date-aware quick add may not have a date column. Add one
-    // only when the user actually supplies a date, so the shortcut remains useful for
-    // legacy/custom tables without changing their structure on render.
-    if (!firstDate && fecha.trim() && table.kind !== "income") {
-      useStore.getState().addColumn(monthIndex, table.id, "date");
-      firstDate = firstOfType(
-        useStore.getState().doc.projects.find((p) => p.id === project?.id)?.months[monthIndex]?.tables.find((t) => t.id === table.id)?.columns ?? [],
-        "date",
-      );
+    const dayColumn = incomeDayColumn(table);
+    const conceptCell = table.columns.find((column) => column.id === targets.concept);
+    const dateCell = table.columns.find((column) => column.id === targets.date);
+    const firstMoney = table.columns.find((column) => column.id === targets.amount);
+
+    if ((amount && !firstMoney) || (concept && !conceptCell) || (fecha.trim() && !dateCell)) {
+      useUI.getState().toast(t("month.chooseDestination"), "error");
+      return;
     }
-    // In a ledger the amount is routed by column role, not by position: putting an
-    // expense in "Depósito" would silently invert the saldo.
-    const firstMoney =
-      table.kind === "ledger"
-        ? (table.columns.find((c) => c.type === "money" && c.role === role) ??
-          firstOfType(table.columns, "money"))
-        : firstOfType(table.columns, "money");
 
     const values: Record<string, string> = {};
+    const dateValue = dateCell && parsedQuickDate
+      ? table.kind === "income" && dateCell.id === dayColumn?.id
+        ? String(parsedQuickDate.getDate())
+        : format(parsedQuickDate, "yyyy-MM-dd")
+      : null;
 
     // An income table is a one-row-per-day tracker, not a transaction list. Its days
     // are pre-created for the selected month, so selecting the 7th updates the existing
     // "7" row and accumulates another receipt into that day's total.
-    if (table.kind === "income" && firstText && parsedQuickDate) {
+    if (table.kind === "income" && dayColumn && parsedQuickDate) {
       const day = String(parsedQuickDate.getDate());
-      const existingDay = table.rows.find((row) => row.cells[firstText.id] === day);
+      const existingDay = table.rows.find((row) => row.cells[dayColumn.id] === day);
       if (existingDay) {
         if (firstMoney && amount) {
           const total = parseMoney(existingDay.cells[firstMoney.id]) + parseMoney(amount);
@@ -126,6 +143,9 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         }
         if (conceptCell && concept) {
           useStore.getState().setCell(monthIndex, table.id, existingDay.id, conceptCell.id, concept);
+        }
+        if (dateCell && dateValue !== null) {
+          useStore.getState().setCell(monthIndex, table.id, existingDay.id, dateCell.id, dateValue);
         }
         useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
         setConcepto("");
@@ -136,17 +156,17 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
       }
       // Legacy income tables may only contain 28 rows. Keep the selected day visible
       // as a day number and restore chronological order after adding the missing row.
-      values[firstText.id] = day;
+      values[dayColumn.id] = day;
     }
     if (conceptCell && concept) values[conceptCell.id] = concept;
     if (firstMoney && amount) values[firstMoney.id] = amount;
-    if (firstDate && fecha.trim()) {
-      values[firstDate.id] = format(parsedQuickDate!, "yyyy-MM-dd");
+    if (dateCell && dateValue !== null) {
+      values[dateCell.id] = dateValue;
     }
 
     useStore.getState().addRowWithValues(monthIndex, table.id, values);
-    if (table.kind === "income" && firstText && parsedQuickDate) {
-      useStore.getState().sortRows(monthIndex, table.id, firstText.id, "asc");
+    if (table.kind === "income" && dayColumn && parsedQuickDate) {
+      useStore.getState().sortRows(monthIndex, table.id, dayColumn.id, "asc");
     }
     useUI.getState().toast(t("month.added", { name: labels[table.id] ?? table.title }), "success");
     setConcepto("");
@@ -197,24 +217,31 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         ))}
       </Menu>
 
-      {selected?.kind === "ledger" && (
-        <div className={styles.roles} role="group" aria-label={t("month.ledgerTarget")}>
-          <button
-            type="button"
-            className={cn(styles.roleBtn, role === "deposit" && styles.roleOn)}
-            aria-pressed={role === "deposit"}
-            onClick={() => setRole("deposit")}
-          >
-            {t("widgets.deposits")}
-          </button>
-          <button
-            type="button"
-            className={cn(styles.roleBtn, role === "withdrawal" && styles.roleOn)}
-            aria-pressed={role === "withdrawal"}
-            onClick={() => setRole("withdrawal")}
-          >
-            {t("widgets.expenses")}
-          </button>
+      {selected && (
+        <div className={styles.targets} aria-label={t("month.destinationColumns")}>
+          <TargetPicker
+            label={t("month.amount")}
+            table={selected}
+            value={targets.amount}
+            accepts={(column) => column.type === "money"}
+            onChange={(amount) => setTargets((current) => ({ ...current, amount }))}
+          />
+          {selectedHasConcept && (
+            <TargetPicker
+              label={t("month.concept")}
+              table={selected}
+              value={targets.concept}
+              accepts={(column) => column.type === "text" && !/^d[ií]a$/i.test(column.name.trim())}
+              onChange={(concept) => setTargets((current) => ({ ...current, concept }))}
+            />
+          )}
+          <TargetPicker
+            label={t("month.date")}
+            table={selected}
+            value={targets.date}
+            accepts={(column) => column.type === "date" || column.id === incomeDayColumn(selected)?.id}
+            onChange={(date) => setTargets((current) => ({ ...current, date }))}
+          />
         </div>
       )}
 
@@ -262,5 +289,53 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
         {compact ? null : t("common.add")}
       </Button>
     </div>
+  );
+}
+
+function TargetPicker({
+  label,
+  table,
+  value,
+  accepts,
+  onChange,
+}: {
+  label: string;
+  table: Table;
+  value: string | null;
+  accepts: (column: Column) => boolean;
+  onChange: (columnId: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const selected = table.columns.find((column) => column.id === value);
+  return (
+    <Menu
+      align="start"
+      minWidth={220}
+      trigger={
+        <button type="button" className={styles.targetTrigger}>
+          <span className={styles.targetField}>{label}</span>
+          <ArrowRight size={12} aria-hidden />
+          <span className={cn(styles.targetName, !selected && styles.targetMissing)}>
+            {selected?.name ?? t("month.noDestination")}
+          </span>
+          <ChevronDown size={13} aria-hidden />
+        </button>
+      }
+    >
+      <MenuLabel>{t("month.destinationFor", { field: label })}</MenuLabel>
+      {table.columns.map((column) => (
+        <MenuItem
+          key={column.id}
+          checked={column.id === value}
+          disabled={!accepts(column)}
+          onClick={() => onChange(column.id)}
+        >
+          <span className={styles.columnOption}>
+            <span>{column.name}</span>
+            <span>{t(`widgets.type${column.type[0].toUpperCase()}${column.type.slice(1)}`)}</span>
+          </span>
+        </MenuItem>
+      ))}
+    </Menu>
   );
 }

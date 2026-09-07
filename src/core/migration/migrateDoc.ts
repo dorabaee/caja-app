@@ -161,6 +161,7 @@ function backfillCategoryColumn(table: Table): void {
 export function migrateDoc(doc: AppDoc): AppDoc {
   const from = Number(doc.schemaVersion) || 1;
   if (!doc.settings.hiddenWidgetsLayout) doc.settings.hiddenWidgetsLayout = "preserve";
+  if (!doc.settings.tableDateMode) doc.settings.tableDateMode = "calendar";
   if (!doc.settings.quickAddDateMode) doc.settings.quickAddDateMode = "calendar";
   if (from < 2) migrateV2(doc);
   if (from < 4) migrateV4(doc);

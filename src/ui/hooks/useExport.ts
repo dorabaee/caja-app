@@ -114,6 +114,28 @@ export function useExport() {
     }
   }
 
+  /** Export one business as a portable JSON document from its sidebar action. */
+  async function exportBusiness(project: Project): Promise<void> {
+    try {
+      const text = JSON.stringify(
+        {
+          app: "caja",
+          kind: "business",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          project,
+        },
+        null,
+        2,
+      );
+      const name = `${slugify(project.name)}-${stamp()}.json`;
+      if (await runSave(name, text, BACKUP)) toast(t("modals.toastBusinessExported"), "success");
+    } catch (e) {
+      console.error("export business", e);
+      toast(t("modals.toastBusinessExportError"), "error");
+    }
+  }
+
   /** Restore replaces ALL current data — callers should confirm first. */
   async function restoreBackup(): Promise<void> {
     try {
@@ -135,6 +157,7 @@ export function useExport() {
     exportResumenExcel,
     exportAllBusinessesCsv,
     exportAllBusinessesExcel,
+    exportBusiness,
     exportBackup,
     restoreBackup,
   };

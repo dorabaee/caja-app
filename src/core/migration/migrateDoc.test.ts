@@ -28,6 +28,17 @@ describe("migrateDoc — chart linkedTableId → linkedTableIds (#9)", () => {
   });
 });
 
+describe("migrateDoc — table date preference", () => {
+  it("defaults older documents to the calendar mode without changing Quick Add", () => {
+    const doc = newAppDoc();
+    delete (doc.settings as Partial<typeof doc.settings>).tableDateMode;
+    doc.settings.quickAddDateMode = "typing";
+    const migrated = migrateDoc(doc);
+    expect(migrated.settings.tableDateMode).toBe("calendar");
+    expect(migrated.settings.quickAddDateMode).toBe("typing");
+  });
+});
+
 describe("migrateDoc — v1 → v2 (fiscal tables + grouped categories)", () => {
   function legacyDoc(): AppDoc {
     const project = newProject("P");
@@ -72,14 +83,17 @@ describe("migrateDoc — v1 → v2 (fiscal tables + grouped categories)", () => 
     expect(again.projects[0].months[0].tables[0].title).toBe("Banco de la tienda");
   });
 
-  it("converts string categories and tops up the defaults without duplicating them", () => {
+  it("converts string categories and tops up defaults uniquely within each fiscal group", () => {
     const doc = migrateDoc(legacyDoc());
     const categories = doc.projects[0].categories ?? [];
     expect(categories[0]).toEqual({ name: "Mi categoría" });
     expect(categories).toContainEqual({ name: "Gasolina", group: "fiscal" });
     expect(categories).toContainEqual({ name: "Nóminas", group: "noFiscal" });
-    const names = categories.map((c) => c.name);
-    expect(new Set(names).size).toBe(names.length);
+    const groupedNames = categories.map((c) => `${c.group ?? "other"}:${c.name.toLowerCase()}`);
+    expect(new Set(groupedNames).size).toBe(groupedNames.length);
+    // The same label is valid in both groups: they classify different kinds of expense.
+    expect(categories).toContainEqual({ name: "Mantenimiento", group: "fiscal" });
+    expect(categories).toContainEqual({ name: "Mantenimiento", group: "noFiscal" });
 
     const again = migrateDoc(doc);
     expect(again.projects[0].categories).toHaveLength(categories.length);

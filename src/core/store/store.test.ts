@@ -100,6 +100,62 @@ describe("setProjectOrder", () => {
   });
 });
 
+describe("business duplication", () => {
+  beforeEach(() => {
+    const { doc } = seedDoc();
+    useStore.getState().load(doc);
+  });
+
+  it("copies the complete business with fresh nested ids and selects the copy", () => {
+    const duplicateId = useStore.getState().duplicateProject("p1");
+    const state = useStore.getState().doc;
+    expect(state.projects).toHaveLength(2);
+    expect(state.currentProjectId).toBe(duplicateId);
+    const source = state.projects[0];
+    const duplicate = state.projects[1];
+    expect(duplicate.name).toBe("Negocio (copia)");
+    expect(duplicate.months[0].tables[0].rows[0].cells[duplicate.months[0].tables[0].columns[1].id]).toBe("100");
+    expect(duplicate.months[0].tables[0].id).not.toBe(source.months[0].tables[0].id);
+    expect(duplicate.months[0].tables[0].columns[0].id).not.toBe(source.months[0].tables[0].columns[0].id);
+  });
+});
+
+describe("spreadsheet fill shortcuts", () => {
+  beforeEach(() => {
+    const { doc, table } = seedDoc();
+    const [day, amount] = table.columns;
+    table.columns.push(makeColumn("Otro monto", "money"));
+    table.rows.push(makeRow(table.columns, { [day.id]: "2", [amount.id]: "" }));
+    table.rows.push(makeRow(table.columns, { [day.id]: "3", [amount.id]: "" }));
+    useStore.getState().load(doc);
+  });
+
+  it("fills the source value through every row below in one operation", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    const amount = table.columns[1];
+    useStore.getState().fillColumnDown(0, table.id, table.rows[0].id, amount.id);
+    expect(useStore.getState().doc.projects[0].months[0].tables[0].rows.map((row) => row.cells[amount.id])).toEqual(["100", "100", "100"]);
+  });
+
+  it("fills only compatible columns to the right", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    const source = table.columns[1];
+    const target = table.columns[2];
+    useStore.getState().fillRowRight(0, table.id, table.rows[0].id, source.id);
+    expect(useStore.getState().doc.projects[0].months[0].tables[0].rows[0].cells[target.id]).toBe("100");
+  });
+
+  it("keeps a row's fiscal category identity when duplicating it", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    table.rows[0].category = "Gasolina";
+    table.rows[0].categoryGroup = "noFiscal";
+    useStore.getState().duplicateRow(0, table.id, table.rows[0].id);
+    const copy = useStore.getState().doc.projects[0].months[0].tables[0].rows[1];
+    expect(copy.category).toBe("Gasolina");
+    expect(copy.categoryGroup).toBe("noFiscal");
+  });
+});
+
 describe("quick-add insertion and sorting", () => {
   beforeEach(() => {
     const { doc } = seedDoc();
