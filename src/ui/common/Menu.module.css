@@ -35,6 +35,20 @@
   color: var(--text);
   text-align: left;
 }
+.itemGroup {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: var(--radius-xs);
+}
+.itemGroup .item {
+  flex: 1;
+  min-width: 0;
+}
+.trailing {
+  display: inline-flex;
+  padding-right: var(--space-2);
+}
 .item:hover {
   background: var(--surface-hover);
 }

@@ -118,13 +118,32 @@ export function WidgetGrid({
   const categories = project?.categories ?? [];
   const categoryColumn = categoryColumnOf(table); // #14 row tag target
   const gridRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<{ r: number; c: number } | null>(null);
   // Column the pointer is over in "columns" mode — tints the whole column, which CSS
   // can't express on its own (a flat grid has no "nth cell of every row" selector).
   const [dangerIndex, setDangerIndex] = useState<number | null>(null);
+  const [fillDrag, setFillDrag] = useState<{
+    sourceRowId: string;
+    endRowId: string;
+    columnId: string;
+    moved: boolean;
+  } | null>(null);
+  const fillDragRef = useRef(fillDrag);
+  const suppressContextMenu = useRef(false);
+  const autoScrollFrame = useRef<number | null>(null);
+  const lastPointer = useRef<{ x: number; y: number } | null>(null);
 
   const editing = mode !== "idle";
   const reordering = mode === "reorder";
+
+  useEffect(() => {
+    fillDragRef.current = fillDrag;
+  }, [fillDrag]);
+
+  useEffect(() => () => {
+    if (autoScrollFrame.current != null) cancelAnimationFrame(autoScrollFrame.current);
+  }, []);
 
   const rows = useMemo(() => {
     if (!rowOrder) return table.rows;
@@ -180,6 +199,113 @@ export function WidgetGrid({
     }
   };
 
+  const rowAtPoint = (x: number, y: number, columnId: string): string | null => {
+    const cell = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-fill-row]");
+    if (!cell || !gridRef.current?.contains(cell) || cell.dataset.fillCol !== columnId) return null;
+    return cell.dataset.fillRow || null;
+  };
+
+  /** Right-drag a normal cell to preview a bounded fill. Release commits the whole
+   *  range once; a stationary right-click is left for the existing widget menu. */
+  const startFillDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const fromHandle = !!(e.target as HTMLElement).closest("[data-fill-handle]");
+    if ((e.button !== 2 && !(e.button === 0 && fromHandle)) || editing) return;
+    const cell = (e.target as HTMLElement).closest<HTMLElement>("[data-fill-row][data-fill-col]");
+    const sourceRowId = cell?.dataset.fillRow;
+    const columnId = cell?.dataset.fillCol;
+    if (!cell || !sourceRowId || !columnId || !gridRef.current?.contains(cell)) return;
+    const column = table.columns.find((item) => item.id === columnId);
+    if (!column || column.type === "category") return;
+
+    (e.target as HTMLElement).closest<HTMLInputElement>("input")?.blur();
+    const pointerId = e.pointerId;
+    const rightButton = e.button === 2;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    lastPointer.current = { x: startX, y: startY };
+    const initial = { sourceRowId, endRowId: sourceRowId, columnId, moved: false };
+    fillDragRef.current = initial;
+    setFillDrag(initial);
+
+    const updateEndpoint = () => {
+      const point = lastPointer.current;
+      const active = fillDragRef.current;
+      if (!point || !active) return;
+      const endRowId = rowAtPoint(point.x, point.y, active.columnId);
+      if (endRowId && endRowId !== active.endRowId) {
+        const next = { ...active, endRowId, moved: true };
+        fillDragRef.current = next;
+        setFillDrag(next);
+      }
+    };
+
+    const autoScroll = () => {
+      const point = lastPointer.current;
+      const scroller = scrollRef.current;
+      const active = fillDragRef.current;
+      if (!point || !scroller || !active?.moved) {
+        autoScrollFrame.current = requestAnimationFrame(autoScroll);
+        return;
+      }
+      const rect = scroller.getBoundingClientRect();
+      const edge = 42;
+      let delta = 0;
+      if (point.y < rect.top + edge) delta = -Math.ceil((rect.top + edge - point.y) / 5);
+      else if (point.y > rect.bottom - edge) delta = Math.ceil((point.y - (rect.bottom - edge)) / 5);
+      if (delta) {
+        scroller.scrollTop += Math.max(-16, Math.min(16, delta));
+        updateEndpoint();
+      }
+      autoScrollFrame.current = requestAnimationFrame(autoScroll);
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      lastPointer.current = { x: ev.clientX, y: ev.clientY };
+      const active = fillDragRef.current;
+      if (!active) return;
+      const moved = active.moved || Math.hypot(ev.clientX - startX, ev.clientY - startY) >= 5;
+      if (moved && !active.moved) {
+        const next = { ...active, moved: true };
+        fillDragRef.current = next;
+        setFillDrag(next);
+      }
+      updateEndpoint();
+    };
+    const finish = (ev: PointerEvent, cancel = false) => {
+      if (ev.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      if (autoScrollFrame.current != null) cancelAnimationFrame(autoScrollFrame.current);
+      autoScrollFrame.current = null;
+      const active = fillDragRef.current;
+      if (!cancel && active?.moved && active.endRowId !== active.sourceRowId) {
+        suppressContextMenu.current = rightButton;
+        s().fillColumnRange(monthIndex, table.id, active.sourceRowId, active.endRowId, active.columnId);
+      }
+      fillDragRef.current = null;
+      setFillDrag(null);
+      lastPointer.current = null;
+    };
+    const onUp = (ev: PointerEvent) => finish(ev);
+    const onCancel = (ev: PointerEvent) => finish(ev, true);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    autoScrollFrame.current = requestAnimationFrame(autoScroll);
+  };
+
+  const fillToneFor = (rowId: string, columnId: string): "source" | "range" | "end" | undefined => {
+    if (!fillDrag || fillDrag.columnId !== columnId) return undefined;
+    if (rowId === fillDrag.sourceRowId) return "source";
+    const sourceIndex = rows.findIndex((row) => row.id === fillDrag.sourceRowId);
+    const endIndex = rows.findIndex((row) => row.id === fillDrag.endRowId);
+    const rowIndex = rows.findIndex((row) => row.id === rowId);
+    if (sourceIndex < 0 || endIndex < 0 || rowIndex < Math.min(sourceIndex, endIndex) || rowIndex > Math.max(sourceIndex, endIndex)) return undefined;
+    return rowId === fillDrag.endRowId ? "end" : "range";
+  };
+
   // Drag-resize a column. We mutate the grid's `--cols` variable directly during the
   // drag (no React re-render per pointermove — smooth even on long tables) and commit
   // the final width to the store on release, which re-renders from `col.width`.
@@ -207,8 +333,19 @@ export function WidgetGrid({
   };
 
   return (
-    <div className={styles.scroll}>
-      <div className={styles.grid} ref={gridRef} style={gridStyleFor(columns)}>
+    <div className={styles.scroll} ref={scrollRef}>
+      <div
+        className={styles.grid}
+        ref={gridRef}
+        style={gridStyleFor(columns)}
+        onPointerDownCapture={startFillDrag}
+        onContextMenuCapture={(e) => {
+          if (!suppressContextMenu.current) return;
+          e.preventDefault();
+          e.stopPropagation();
+          suppressContextMenu.current = false;
+        }}
+      >
         <div className={styles.headRow}>
           {columns.map((col, ci) => (
             <ColumnHeader
@@ -255,9 +392,10 @@ export function WidgetGrid({
               const staged = !!pendingDeletes?.has(col.id);
               const isCategoryCol = categoryColumn?.id === col.id;
               const picker = isCategoryCol
-                ? {
-                    value: row.category ?? "",
-                    categories,
+                  ? {
+                      value: row.category ?? "",
+                      valueGroup: row.categoryGroup,
+                      categories,
                     preferredGroup: (table.fiscal ? "fiscal" : "noFiscal") as CategoryGroup,
                     onSelect: (name: string, group: CategoryGroup) =>
                       s().setRowCategory(monthIndex, table.id, row.id, name, group),
@@ -296,12 +434,15 @@ export function WidgetGrid({
                   note={row.notes?.[col.id] ?? ""}
                   r={ri}
                   c={ci}
+                  rowId={row.id}
+                  columnId={col.id}
                   monthIndex={monthIndex}
                   disabled={editing}
                   tag={picker ? <CategoryTag {...picker} /> : undefined}
                   tagCount={picker ? 1 : 0}
                   danger={mode === "columns" && dangerIndex === ci && !staged}
                   staged={mode === "columns" && staged}
+                  fillTone={fillToneFor(row.id, col.id)}
                   onCommit={(v) => s().setCell(monthIndex, table.id, row.id, col.id, v)}
                   onNote={(n) => s().setNote(monthIndex, table.id, row.id, col.id, n)}
                   onEnter={() => onEnter(ri, ci)}

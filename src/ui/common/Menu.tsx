@@ -30,11 +30,13 @@ export interface MenuItemProps {
   danger?: boolean;
   disabled?: boolean;
   checked?: boolean;
+  /** Optional sibling action (never nested inside the menu-item button). */
+  trailingAction?: ReactNode;
 }
 
-export function MenuItem({ icon, children, onClick, danger, disabled, checked }: MenuItemProps) {
+export function MenuItem({ icon, children, onClick, danger, disabled, checked, trailingAction }: MenuItemProps) {
   const { close } = useContext(MenuContext);
-  return (
+  const button = (
     <button
       type="button"
       role="menuitem"
@@ -50,6 +52,12 @@ export function MenuItem({ icon, children, onClick, danger, disabled, checked }:
       {checked && <Check className={styles.check} size={15} aria-hidden />}
     </button>
   );
+  return trailingAction ? (
+    <div className={styles.itemGroup} role="none">
+      {button}
+      <span className={styles.trailing}>{trailingAction}</span>
+    </div>
+  ) : button;
 }
 
 export function MenuSeparator() {

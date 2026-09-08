@@ -1,7 +1,7 @@
 {
   "name": "caja-app",
   "private": true,
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": "Dorabae",
   "releaseDate": "2026-09-07",
   "type": "module",

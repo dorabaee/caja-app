@@ -212,6 +212,14 @@ export function TopBar() {
 
           <span className={styles.divider} aria-hidden />
 
+          {/* History is a first-class control: it never disappears into the overflow. */}
+          <div className={styles.history} role="group" aria-label={t("shell.history")}>
+            <IconButton label={t("shell.undo")} icon={<Undo2 />} onClick={undo} disabled={!canUndo} />
+            <IconButton label={t("shell.redo")} icon={<Redo2 />} onClick={redo} disabled={!canRedo} />
+          </div>
+
+          <span className={styles.divider} aria-hidden />
+
           {inlineTools ? (
             <>
               {/* Clipboard: lit when a table is copied; click to paste here (then it clears). */}
@@ -222,11 +230,6 @@ export function TopBar() {
                 icon={<CalendarPlus />}
                 onClick={() => openModal("copyMonth")}
               />
-
-              <span className={styles.divider} aria-hidden />
-
-              <IconButton label={t("shell.undo")} icon={<Undo2 />} onClick={undo} disabled={!canUndo} />
-              <IconButton label={t("shell.redo")} icon={<Redo2 />} onClick={redo} disabled={!canRedo} />
 
               {showCanvasTools && (
                 <>
@@ -243,13 +246,6 @@ export function TopBar() {
             </>
           ) : (
             <Menu align="end" trigger={<IconButton label={t("shell.moreTools")} icon={<MoreHorizontal />} />}>
-              <MenuItem icon={<Undo2 />} disabled={!canUndo} onClick={undo}>
-                {t("shell.undo")}
-              </MenuItem>
-              <MenuItem icon={<Redo2 />} disabled={!canRedo} onClick={redo}>
-                {t("shell.redo")}
-              </MenuItem>
-              <MenuSeparator />
               {clipboardTable && (
                 <>
                   <MenuItem icon={<ClipboardPaste />} onClick={() => pasteClip(true)}>

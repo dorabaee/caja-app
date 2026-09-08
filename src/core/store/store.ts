@@ -125,12 +125,16 @@ export interface StoreState {
   duplicateRow(monthIndex: number, tableId: string, rowId: string): void;
   /** Fill the active cell's value into every saved row below it. */
   fillColumnDown(monthIndex: number, tableId: string, rowId: string, columnId: string): void;
+  /** Fill a bounded, contiguous range in one history entry (mouse drag-fill). */
+  fillColumnRange(monthIndex: number, tableId: string, sourceRowId: string, endRowId: string, columnId: string): void;
   /** Fill the active cell's value into compatible columns to its right. */
   fillRowRight(monthIndex: number, tableId: string, rowId: string, columnId: string): void;
   /** Reorder a table's rows to match the given id order (row-reorder mode's ✓). */
   setRowOrder(monthIndex: number, tableId: string, orderedIds: string[]): void;
   setCell(monthIndex: number, tableId: string, rowId: string, columnId: string, value: string): void;
   setNote(monthIndex: number, tableId: string, rowId: string, columnId: string, note: string): void;
+  /** Remove deterministic teaching values while keeping the starter table structure. */
+  clearStarterExamples(projectId: string): void;
 
   // charts
   addChart(monthIndex: number, linkedTableIds?: string[]): string;
@@ -182,12 +186,16 @@ export const useStore = create<StoreState>()((set, get) => {
           : template === "income" || template === "expense" || template === "ledger"
             ? newTemplateProject(name || "Negocio sin nombre")
             : newTemplateProject(name || "Negocio sin nombre");
+      if (!project.onboarding) {
+        project.onboarding = { starterMode: "blank", tourCompleted: false, sampleDataPresent: false };
+      }
       commit((d) => {
-        const first = d.projects.length === 0;
         d.projects.push(project);
         d.currentProjectId = project.id;
         d.settings.onboarded = true;
-        if (first) d.settings.runTour = true; // guided tour on the very first business
+        // Every newly-created business deserves the relevant first-use explanation,
+        // not only the very first business installed on this device.
+        d.settings.runTour = true;
       });
       return project.id;
     },
@@ -685,6 +693,19 @@ export const useStore = create<StoreState>()((set, get) => {
         }
       }),
 
+    fillColumnRange: (monthIndex, tableId, sourceRowId, endRowId, columnId) =>
+      commit((d) => {
+        const table = findTable(d, monthIndex, tableId);
+        if (!table || !table.columns.some((column) => column.id === columnId)) return;
+        const sourceIndex = table.rows.findIndex((row) => row.id === sourceRowId);
+        const endIndex = table.rows.findIndex((row) => row.id === endRowId);
+        if (sourceIndex < 0 || endIndex < 0 || sourceIndex === endIndex) return;
+        const value = table.rows[sourceIndex].cells[columnId] ?? "";
+        const from = Math.min(sourceIndex, endIndex);
+        const to = Math.max(sourceIndex, endIndex);
+        for (let i = from; i <= to; i += 1) table.rows[i].cells[columnId] = value;
+      }),
+
     fillRowRight: (monthIndex, tableId, rowId, columnId) =>
       commit((d) => {
         const table = findTable(d, monthIndex, tableId);
@@ -723,6 +744,28 @@ export const useStore = create<StoreState>()((set, get) => {
         if (!r.notes) r.notes = {};
         if (note) r.notes[columnId] = note;
         else delete r.notes[columnId];
+      }),
+
+    clearStarterExamples: (projectId) =>
+      commit((d) => {
+        const project = d.projects.find((item) => item.id === projectId);
+        if (!project?.onboarding?.sampleDataPresent) return;
+        for (const table of project.months[0]?.tables ?? []) {
+          const dayColumn = table.kind === "income"
+            ? table.columns.find((column) => column.type === "text" && /^d[ií]a$/i.test(column.name))
+            : undefined;
+          for (const row of table.rows) {
+            for (const column of table.columns) {
+              if (column.id !== dayColumn?.id) row.cells[column.id] = "";
+            }
+            row.notes = {};
+            row.links = {};
+            delete row.category;
+            delete row.categoryGroup;
+          }
+          if (table.kind === "ledger") table.initialBalance = 0;
+        }
+        project.onboarding.sampleDataPresent = false;
       }),
 
     addChart: (monthIndex, linkedTableIds = []) => {

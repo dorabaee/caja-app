@@ -7,7 +7,6 @@
   min-width: 0;
 }
 .help {
-  margin-left: auto;
   display: grid;
   place-items: center;
   width: 22px;
@@ -17,13 +16,12 @@
   color: var(--info);
   background: var(--info-weak);
   border: 1px solid var(--info);
-  opacity: 0;
+  opacity: 0.68;
   cursor: pointer;
   transition:
     opacity 120ms ease,
     background-color 120ms ease;
 }
-.row:hover .help,
 .help:focus-visible {
   opacity: 1;
 }

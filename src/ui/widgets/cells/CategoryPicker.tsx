@@ -8,6 +8,8 @@ import styles from "../widget.module.css";
 export interface CategoryPickerProps {
   /** The row's current category name ("" when it has none). */
   value: string;
+  /** The row's saved group. This can differ from the host table's preferred group. */
+  valueGroup?: CategoryGroup;
   categories: Category[];
   /** The host table's own half of the books — orders the list and seeds new entries. */
   preferredGroup: CategoryGroup;
@@ -16,6 +18,16 @@ export interface CategoryPickerProps {
   onClear: () => void;
   /** The clickable element the popover hangs off (an icon, a chip, a whole cell). */
   trigger: ReactElement;
+}
+
+export function categoryIsSelected(
+  category: Category,
+  value: string,
+  valueGroup: CategoryGroup | undefined,
+  preferredGroup: CategoryGroup,
+): boolean {
+  return category.name === value
+    && (category.group ?? preferredGroup) === (valueGroup ?? preferredGroup);
 }
 
 /**
@@ -29,6 +41,7 @@ export interface CategoryPickerProps {
  */
 export function CategoryPicker({
   value,
+  valueGroup,
   categories,
   preferredGroup,
   onSelect,
@@ -38,6 +51,7 @@ export function CategoryPicker({
 }: CategoryPickerProps) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState("");
+  const selectedGroup = valueGroup ?? preferredGroup;
 
   const sections = useMemo(() => {
     const other: CategoryGroup = preferredGroup === "fiscal" ? "noFiscal" : "fiscal";
@@ -45,7 +59,9 @@ export function CategoryPicker({
     // keeps its original relative order below it.
     const pick = (g: CategoryGroup | null) => {
       const items = categories.filter((c) => (g === null ? !c.group : c.group === g));
-      const idx = value ? items.findIndex((c) => c.name === value) : -1;
+      const idx = value && (g === selectedGroup || (g === null && !valueGroup))
+        ? items.findIndex((c) => c.name === value)
+        : -1;
       if (idx <= 0) return items;
       return [items[idx], ...items.slice(0, idx), ...items.slice(idx + 1)];
     };
@@ -55,7 +71,7 @@ export function CategoryPicker({
       // Categories carried over from before the grouped model keep working, unlabelled.
       { group: null, label: t("widgets.groupOther"), items: pick(null) },
     ].filter((s) => s.items.length > 0);
-  }, [categories, preferredGroup, t]);
+  }, [categories, preferredGroup, selectedGroup, t, value, valueGroup]);
 
   return (
     <Popover
@@ -80,7 +96,8 @@ export function CategoryPicker({
                       type="button"
                       className={cn(
                         styles.tagOption,
-                        cat.name === value && (cat.group ?? preferredGroup) === preferredGroup && styles.tagOptionOn,
+                        categoryIsSelected(cat, value, valueGroup, preferredGroup)
+                          && styles.tagOptionOn,
                       )}
                       onClick={() => {
                         onSelect(cat.name, cat.group ?? preferredGroup);

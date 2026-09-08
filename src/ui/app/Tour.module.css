@@ -33,11 +33,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  max-height: calc(100vh - 28px);
+  overflow: auto;
   /* Glide between spotlight targets, in step with the spotlight (180ms). */
   transition:
     left 200ms ease-out,
     top 200ms ease-out;
 }
+.caret {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border: solid var(--border);
+  transform: rotate(45deg);
+}
+.caret_above { left: 50%; bottom: -6px; border-width: 0 1px 1px 0; }
+.caret_below { left: 50%; top: -6px; border-width: 1px 0 0 1px; }
+.caret_left { right: -6px; top: 50%; border-width: 1px 1px 0 0; }
+.caret_right { left: -6px; top: 50%; border-width: 0 0 1px 1px; }
 
 /* Per-step message content: fades + slides up on each step change (keyed remount). */
 .step {

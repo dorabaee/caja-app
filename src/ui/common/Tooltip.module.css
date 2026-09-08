@@ -1,0 +1,27 @@
+.anchor {
+  display: inline-flex;
+  flex: none;
+}
+.tip {
+  position: fixed;
+  z-index: calc(var(--z-modal) + 1);
+  max-width: 260px;
+  padding: 6px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipIn 120ms ease-out;
+}
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateY(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tip { animation: none; }
+}

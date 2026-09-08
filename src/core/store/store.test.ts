@@ -145,6 +145,29 @@ describe("spreadsheet fill shortcuts", () => {
     expect(useStore.getState().doc.projects[0].months[0].tables[0].rows[0].cells[target.id]).toBe("100");
   });
 
+  it("fills only the bounded row range and undoes it in one step", () => {
+    const before = useStore.getState().doc.projects[0].months[0].tables[0];
+    const amount = before.columns[1];
+    useStore.getState().fillColumnRange(0, before.id, before.rows[0].id, before.rows[1].id, amount.id);
+    let values = useStore.getState().doc.projects[0].months[0].tables[0].rows.map((row) => row.cells[amount.id]);
+    expect(values).toEqual(["100", "100", ""]);
+    useStore.getState().undo();
+    values = useStore.getState().doc.projects[0].months[0].tables[0].rows.map((row) => row.cells[amount.id]);
+    expect(values).toEqual(["100", "", ""]);
+    useStore.getState().redo();
+    values = useStore.getState().doc.projects[0].months[0].tables[0].rows.map((row) => row.cells[amount.id]);
+    expect(values).toEqual(["100", "100", ""]);
+  });
+
+  it("supports dragging a fill upward", () => {
+    const table = useStore.getState().doc.projects[0].months[0].tables[0];
+    const amount = table.columns[1];
+    useStore.getState().setCell(0, table.id, table.rows[2].id, amount.id, "75");
+    useStore.getState().fillColumnRange(0, table.id, table.rows[2].id, table.rows[1].id, amount.id);
+    const values = useStore.getState().doc.projects[0].months[0].tables[0].rows.map((row) => row.cells[amount.id]);
+    expect(values).toEqual(["100", "75", "75"]);
+  });
+
   it("keeps a row's fiscal category identity when duplicating it", () => {
     const table = useStore.getState().doc.projects[0].months[0].tables[0];
     table.rows[0].category = "Gasolina";
@@ -153,6 +176,33 @@ describe("spreadsheet fill shortcuts", () => {
     const copy = useStore.getState().doc.projects[0].months[0].tables[0].rows[1];
     expect(copy.category).toBe("Gasolina");
     expect(copy.categoryGroup).toBe("noFiscal");
+  });
+});
+
+describe("starter examples", () => {
+  beforeEach(() => {
+    const doc = newAppDoc();
+    useStore.getState().load(doc);
+    useStore.getState().createProject("Guiado", "income");
+  });
+
+  it("runs the tour for every newly-created business", () => {
+    expect(useStore.getState().doc.settings.runTour).toBe(true);
+    useStore.getState().updateSettings({ runTour: false });
+    useStore.getState().createProject("Segundo", "empty");
+    expect(useStore.getState().doc.settings.runTour).toBe(true);
+  });
+
+  it("clears teaching values but preserves all four table structures", () => {
+    const project = useStore.getState().doc.projects[0];
+    useStore.getState().clearStarterExamples(project.id);
+    const cleared = useStore.getState().doc.projects[0];
+    expect(cleared.months[0].tables).toHaveLength(4);
+    expect(cleared.onboarding?.sampleDataPresent).toBe(false);
+    const income = cleared.months[0].tables[0];
+    expect(income.rows[0].cells[income.columns[0].id]).toBe("1");
+    expect(income.rows.every((row) => row.cells[income.columns[1].id] === "")).toBe(true);
+    expect(cleared.months[0].tables[2].initialBalance).toBe(0);
   });
 });
 

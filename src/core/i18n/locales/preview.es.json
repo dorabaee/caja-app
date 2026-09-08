@@ -17,9 +17,9 @@
       "step3": "Anota el monto: se resta en «Salió»."
     },
     "ledger": {
-      "purpose": "Tu cuenta de banco, movimiento por movimiento. Empieza con el saldo del mes y lleva depósitos y gastos por separado.",
+      "purpose": "Tu cuenta bancaria, movimiento por movimiento. Registra el saldo inicial, las entradas como depósitos y las salidas como gastos para comparar el saldo final con tu banco, sin duplicar Entró o Salió.",
       "step1": "Captura el saldo inicial del mes.",
-      "step2": "Anota cada depósito y cada gasto.",
+      "step2": "Usa Depósito o Gasto en cada fila, nunca ambos.",
       "step3": "El saldo final se recalcula solo."
     },
     "blank": {

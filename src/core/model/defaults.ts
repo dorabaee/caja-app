@@ -376,8 +376,61 @@ export function newTemplateProject(name = "Negocio sin nombre"): Project {
   const project = newProject(name);
   const seed = (m: Month) => {
     const placed: Table[] = [];
-    for (const make of [makeIncomeTable, makeExpenseTable, makeLedgerTable]) {
-      const t = make();
+    const income = makeIncomeTable();
+    const expense = makeExpenseTable();
+    const ledger = makeLedgerTable();
+    const blank = makeBlankTable();
+
+    // A small, coherent example is easier to learn from than a wall of identical
+    // generated numbers. Values are fixed deliberately: totals remain explainable and
+    // tests can prove the four tables agree with the figures shown in the tour.
+    const incomeMoney = income.columns.find((c) => c.type === "money")!;
+    ["1250", "980", "1435", "760", "1640", "1290", "1115"].forEach((value, i) => {
+      income.rows[i].cells[incomeMoney.id] = value;
+    });
+
+    const [expenseDate, expenseDescription, expenseMoney] = expense.columns;
+    const expenseSamples = [
+      ["2026-01-03", "Compra de insumos", "980", "Material e insumos"],
+      ["2026-01-05", "Internet del negocio", "650", "Luz, agua, internet"],
+      ["2026-01-06", "Papelería", "220", "Papelería y oficina"],
+      ["2026-01-07", "Servicio de reparto", "350", "Servicio"],
+    ];
+    expenseSamples.forEach(([date, description, amount, category], i) => {
+      Object.assign(expense.rows[i].cells, {
+        [expenseDate.id]: date,
+        [expenseDescription.id]: description,
+        [expenseMoney.id]: amount,
+      });
+      expense.rows[i].category = category;
+      expense.rows[i].categoryGroup = "fiscal";
+    });
+
+    ledger.initialBalance = 5000;
+    const [ledgerDate, ledgerDeposit, ledgerExpense, ledgerDescription] = ledger.columns;
+    const ledgerSamples = [
+      ["2026-01-03", "3000", "", "Depósito de ventas"],
+      ["2026-01-05", "", "650", "Pago de internet"],
+      ["2026-01-06", "", "980", "Compra de insumos"],
+    ];
+    ledgerSamples.forEach(([date, deposit, withdrawal, description], i) => {
+      Object.assign(ledger.rows[i].cells, {
+        [ledgerDate.id]: date,
+        [ledgerDeposit.id]: deposit,
+        [ledgerExpense.id]: withdrawal,
+        [ledgerDescription.id]: description,
+      });
+    });
+
+    blank.title = "Metas y apartados";
+    const [blankConcept, blankAmount] = blank.columns;
+    [["Fondo para imprevistos", "1500"], ["Próximo mantenimiento", "800"], ["Compra de equipo", "2500"]]
+      .forEach(([concept, amount], i) => {
+        blank.rows[i].cells[blankConcept.id] = concept;
+        blank.rows[i].cells[blankAmount.id] = amount;
+      });
+
+    for (const t of [income, expense, ledger, blank]) {
       const slot = nextWidgetSlot(placed, t.layout);
       t.layout.x = slot.x;
       t.layout.y = slot.y;
@@ -387,6 +440,7 @@ export function newTemplateProject(name = "Negocio sin nombre"): Project {
   };
   // Seed January by default (the natural start of the year); other months start empty.
   seed(project.months[0]);
+  project.onboarding = { starterMode: "sample", tourCompleted: false, sampleDataPresent: true };
   return project;
 }
 

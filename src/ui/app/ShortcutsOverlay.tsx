@@ -174,6 +174,8 @@ export function ShortcutsOverlay({ open, onClose }: { open: boolean; onClose: ()
             <h3 className={styles.groupTitle}>{t("shortcuts.filling")}</h3>
             <ul className={styles.list}>
               {row(DEMOS.fill, <><K>Ctrl</K> + <K>D</K></>, "shortcuts.fillDown")}
+              {row(DEMOS.fill, <>{t("shortcuts.dragHandle")}</>, "shortcuts.fillRange")}
+              {row(null, <>{t("shortcuts.rightClick")} + {t("shortcuts.drag")}</>, "shortcuts.fillRangeRight")}
               {row(DEMOS.fillRight, <><K>Ctrl</K> + <K>R</K></>, "shortcuts.fillRight")}
             </ul>
           </section>

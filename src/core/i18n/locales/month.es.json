@@ -1,5 +1,8 @@
 {
   "month": {
+    "sampleTitle": "Datos de ejemplo.",
+    "sampleText": "Explóralos con el recorrido o limpia los importes cuando estés listo.",
+    "clearSamples": "Limpiar ejemplos y comenzar",
     "emptyTitle": "{{month}} todavía está vacío",
     "emptyText": "Agrega una tabla de ingresos diarios o de gastos para empezar a registrar este mes.",
     "addTable": "Agregar tabla",

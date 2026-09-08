@@ -70,6 +70,7 @@ export const LedgerWidget = memo(function LedgerWidget({
         selected && styles.selected,
         mode.mode !== "idle" && styles.cardEditing,
       )}
+      data-tour-table="ledger"
       onPointerDownCapture={(e) => {
         // Modifier clicks and clicks inside an existing multi-selection belong to the
         // canvas (toggle / group drag); a plain click on an unselected widget selects it.

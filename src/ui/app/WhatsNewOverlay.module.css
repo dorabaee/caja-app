@@ -4,7 +4,17 @@
 .copy h3 { margin:var(--space-3) 0 var(--space-2); color:var(--text); font-size:var(--text-xl); }
 .copy p { margin:0; color:var(--text-muted); line-height:1.6; }
 .visual { display:grid; place-items:center; min-width:0; animation:visualIn 420ms cubic-bezier(.05,.7,.1,1); }
-.dateDemo,.quickDemo,.fillDemo { width:min(340px,100%); min-height:210px; padding:var(--space-5); border:1px solid var(--border-strong); border-radius:var(--radius-md); background:var(--surface); box-shadow:var(--shadow-md); }
+.guidedDemo,.polishDemo,.fillDemo { width:min(340px,100%); min-height:210px; padding:var(--space-5); border:1px solid var(--border-strong); border-radius:var(--radius-md); background:var(--surface); box-shadow:var(--shadow-md); }
+.guidedDemo,.polishDemo { display:flex; flex-direction:column; justify-content:center; gap:var(--space-3); }
+.guidedTitle,.tourLine,.helpDemo,.categoryDemo { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3); border-radius:var(--radius-sm); font-weight:650; }
+.guidedTitle { color:var(--accent-strong); background:var(--accent-weak); }
+.tableTiles { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2); }
+.tableTiles i { display:flex; align-items:center; justify-content:center; gap:var(--space-1); min-height:42px; border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-muted); font-size:var(--text-sm); font-style:normal; animation:tileReveal 3.2s ease-in-out infinite; }
+.tableTiles i:nth-child(2){animation-delay:.18s}.tableTiles i:nth-child(3){animation-delay:.36s}.tableTiles i:nth-child(4){animation-delay:.54s}
+.tourLine { color:var(--text-muted); border:1px dashed var(--accent); }
+.historyDemo { display:flex; align-self:flex-end; gap:var(--space-2); padding:var(--space-2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-muted); }
+.helpDemo { color:var(--text); background:var(--surface-2); }
+.categoryDemo { color:var(--accent-strong); background:var(--accent-weak); border:1px solid var(--accent); animation:categoryPulse 3s ease-in-out infinite; }
 .mockLabel { display:block; margin-bottom:var(--space-2); color:var(--text-subtle); font-size:var(--text-xs); font-weight:700; letter-spacing:.06em; }
 .mockDate { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3); border:1px solid var(--accent); border-radius:var(--radius-sm); color:var(--text); font-family:var(--font-num); animation:dateFocus 3s ease-in-out infinite; }
 .calendar { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-2); margin-top:var(--space-4); }
@@ -34,5 +44,7 @@
 @keyframes dayPick{0%,25%,100%{transform:scale(.88);opacity:.55}50%,80%{transform:scale(1);opacity:1}}
 @keyframes routePulse{0%,20%,100%{transform:translateX(0);border-color:var(--border)}55%,80%{transform:translateX(5px);border-color:var(--accent)}}
 @keyframes fillCell{0%,20%,100%{background:transparent;color:var(--text-subtle)}50%,80%{background:var(--accent-weak);color:var(--accent-strong)}}
+@keyframes tileReveal{0%,15%,100%{border-color:var(--border);color:var(--text-muted)}45%,75%{border-color:var(--accent);color:var(--accent-strong)}}
+@keyframes categoryPulse{0%,100%{box-shadow:none}45%,75%{box-shadow:0 0 0 4px var(--accent-weak)}}
 @media(max-width:640px){.stage{grid-template-columns:1fr}.visual{min-height:220px}}
-@media(prefers-reduced-motion:reduce){.copy,.visual,.mockDate,.calendar .dayOn,.route,.fillGrid i{animation:none}}
+@media(prefers-reduced-motion:reduce){.copy,.visual,.tableTiles i,.categoryDemo,.fillGrid i{animation:none}}

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { TableProperties, Plus, ArrowRightLeft, Send, X, ChevronRight } from "lucide-react";
-import { useUI } from "@core/store";
+import { TableProperties, Plus, ArrowRightLeft, Send, X, ChevronRight, GraduationCap } from "lucide-react";
+import { useStore, useUI } from "@core/store";
 import { carryOverStart, fiscalTotal, hasFiscalTable, kpiBreakdown, materializeMonth } from "@core/compute";
 import { Button } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
@@ -29,6 +29,7 @@ export function MonthView() {
   const fmt = useFormat();
   const { t } = useTranslation();
   const months = useMonths();
+  const clearStarterExamples = useStore((s) => s.clearStarterExamples);
 
   // Esc cancels an in-progress "send a value" flow (#7).
   useEffect(() => {
@@ -61,6 +62,15 @@ export function MonthView() {
 
   return (
     <div className={styles.wrap}>
+      {monthIndex === 0 && project.onboarding?.sampleDataPresent && (
+        <div className={styles.sampleBanner} role="status">
+          <GraduationCap size={16} aria-hidden />
+          <span><b>{t("month.sampleTitle")}</b> {t("month.sampleText")}</span>
+          <Button variant="ghost" size="sm" onClick={() => clearStarterExamples(project.id)}>
+            {t("month.clearSamples")}
+          </Button>
+        </div>
+      )}
       {!hiddenWidgets.has("kpi") && <div className={styles.heroBand} data-tour="kpi">
         <KpiHero
           totals={totals}
@@ -116,7 +126,7 @@ export function MonthView() {
 
       {!hasWidgets ? (
         <div className={styles.region}>
-          <div className={styles.empty}>
+          <div className={styles.empty} data-tour="empty-board">
             <span className={styles.emptyIcon} aria-hidden>
               <TableProperties size={26} />
             </span>

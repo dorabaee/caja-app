@@ -11,6 +11,7 @@ import {
   makeIncomeTable,
   makeLedgerTable,
   makeRow,
+  newTemplateProject,
   nextWidgetSlot,
 } from "@core/model/defaults";
 import type { Table } from "@core/model/types";
@@ -61,6 +62,26 @@ describe("makeIncomeTable", () => {
     const t = makeIncomeTable();
     const cash = t.columns[1];
     expect(t.rows.every((r) => r.cells[cash.id] === "")).toBe(true);
+  });
+});
+
+describe("newTemplateProject", () => {
+  it("seeds four deterministic teaching tables with coherent values", () => {
+    const project = newTemplateProject("Ejemplo");
+    const tables = project.months[0].tables;
+    expect(tables.map((table) => table.kind)).toEqual(["income", "expense", "ledger", "none"]);
+    expect(project.onboarding).toEqual({ starterMode: "sample", tourCompleted: false, sampleDataPresent: true });
+    const income = tables[0];
+    const incomeMoney = income.columns.find((column) => column.type === "money")!;
+    expect(income.rows.reduce((sum, row) => sum + Number(row.cells[incomeMoney.id] || 0), 0)).toBe(8470);
+    const ledger = tables[2];
+    expect(ledger.initialBalance).toBe(5000);
+    expect(tables[3].title).toBe("Metas y apartados");
+  });
+
+  it("leaves every month after January empty", () => {
+    const project = newTemplateProject();
+    expect(project.months.slice(1).every((month) => !month.tables.length && !month.charts.length)).toBe(true);
   });
 });
 

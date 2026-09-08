@@ -1,5 +1,8 @@
 {
   "month": {
+    "sampleTitle": "Sample data.",
+    "sampleText": "Explore it with the tour or clear the amounts when you're ready.",
+    "clearSamples": "Clear samples and start",
     "emptyTitle": "{{month}} is still empty",
     "emptyText": "Add a daily income or expense table to start tracking this month.",
     "addTable": "Add table",

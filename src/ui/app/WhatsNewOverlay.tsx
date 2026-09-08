@@ -1,38 +1,40 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, CalendarDays, Share2, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, HelpCircle, Redo2, Share2, Sparkles, Tags, Undo2 } from "lucide-react";
 import { Modal, cn } from "@ui/common";
 import appPackage from "../../../package.json";
 import styles from "./WhatsNewOverlay.module.css";
 
 const SLIDES = [
-  { title: "shell.whatsNewDates", desc: "shell.whatsNewDatesDesc", demo: "dates" },
-  { title: "shell.whatsNewQuick", desc: "shell.whatsNewQuickDesc", demo: "quick" },
+  { title: "shell.whatsNewGuided", desc: "shell.whatsNewGuidedDesc", demo: "guided" },
   { title: "shell.whatsNewFill", desc: "shell.whatsNewFillDesc", demo: "fill" },
+  { title: "shell.whatsNewPolish", desc: "shell.whatsNewPolishDesc", demo: "polish" },
 ] as const;
 
 function Demo({ kind }: { kind: (typeof SLIDES)[number]["demo"] }) {
-  if (kind === "dates") {
+  if (kind === "guided") {
     return (
-      <div className={styles.dateDemo} aria-hidden>
-        <span className={styles.mockLabel}>FECHA</span>
-        <span className={styles.mockDate}><CalendarDays size={18} /> 18 / agosto</span>
-        <span className={styles.calendar}><i>17</i><i className={styles.dayOn}>18</i><i>19</i></span>
+      <div className={styles.guidedDemo} aria-hidden>
+        <span className={styles.guidedTitle}><GraduationCap size={17} /> Ejemplo guiado</span>
+        <span className={styles.tableTiles}>
+          <i>Ingresos</i><i>Gastos</i><i><BookOpen size={13} /> Banco</i><i>Metas</i>
+        </span>
+        <span className={styles.tourLine}><Sparkles size={14} /> Recorrido contextual</span>
       </div>
     );
   }
-  if (kind === "quick") {
+  if (kind === "polish") {
     return (
-      <div className={styles.quickDemo} aria-hidden>
-        <span className={styles.quickTable}><Zap size={16} /> Banco Fiscal</span>
-        <span className={styles.route}><b>Monto</b><ArrowRight size={14} /><em>Depósito</em></span>
-        <span className={styles.route}><b>Fecha</b><ArrowRight size={14} /><em>Fecha de depósito</em></span>
+      <div className={styles.polishDemo} aria-hidden>
+        <span className={styles.historyDemo}><Undo2 size={17} /><Redo2 size={17} /></span>
+        <span className={styles.helpDemo}><HelpCircle size={16} /> Ayuda de plantillas</span>
+        <span className={styles.categoryDemo}><Tags size={15} /> Material e insumos</span>
       </div>
     );
   }
   return (
     <div className={styles.fillDemo} aria-hidden>
-      <span className={styles.fillKey}>Ctrl + D</span>
+      <span className={styles.fillKey}>↕</span>
       <span className={styles.fillGrid}>
         {["$420", "$420", "$420", "$420"].map((value, index) => <i key={index} className={index === 0 ? styles.fillSource : undefined}>{value}</i>)}
       </span>

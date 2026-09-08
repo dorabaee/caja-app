@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useStore, useUI } from "@core/store";
 import type { TemplateKey } from "@core/model/defaults";
-import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@ui/common";
+import { Menu, MenuItem, MenuLabel, MenuSeparator, Tooltip } from "@ui/common";
 import { TemplatePreview } from "./TemplatePreview";
 import styles from "./AddTableMenu.module.css";
 
@@ -30,19 +30,20 @@ export function AddTableMenu({ trigger }: { trigger: ReactElement }) {
 
   /** The "?" on a template row: opens its demo instead of creating the table. */
   const help = (tpl: TemplateKey, label: string) => (
-    <button
-      type="button"
-      className={styles.help}
-      aria-label={t("preview.explain", { name: label })}
-      title={t("preview.explain", { name: label })}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setPreview(tpl);
-      }}
-    >
-      <HelpCircle size={14} aria-hidden />
-    </button>
+    <Tooltip label={t("preview.explain", { name: label })} side="right">
+      <button
+        type="button"
+        className={styles.help}
+        aria-label={t("preview.explain", { name: label })}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setPreview(tpl);
+        }}
+      >
+        <HelpCircle size={14} aria-hidden />
+      </button>
+    </Tooltip>
   );
   const paste = (withData: boolean) => {
     if (!clipboardTable) return;
@@ -54,29 +55,17 @@ export function AddTableMenu({ trigger }: { trigger: ReactElement }) {
   const menu = (
     <Menu trigger={trigger}>
       <MenuLabel>{t("shell.templates")}</MenuLabel>
-      <MenuItem icon={<TrendingUp />} onClick={() => add("income")}>
-        <span className={styles.row}>
-          {t("shell.tplIncome")}
-          {help("income", t("shell.tplIncome"))}
-        </span>
+      <MenuItem icon={<TrendingUp />} onClick={() => add("income")} trailingAction={help("income", t("shell.tplIncome"))}>
+        {t("shell.tplIncome")}
       </MenuItem>
-      <MenuItem icon={<TrendingDown />} onClick={() => add("expense")}>
-        <span className={styles.row}>
-          {t("shell.tplExpense")}
-          {help("expense", t("shell.tplExpense"))}
-        </span>
+      <MenuItem icon={<TrendingDown />} onClick={() => add("expense")} trailingAction={help("expense", t("shell.tplExpense"))}>
+        {t("shell.tplExpense")}
       </MenuItem>
-      <MenuItem icon={<Landmark />} onClick={() => add("ledger")}>
-        <span className={styles.row}>
-          {t("shell.tplLedger")}
-          {help("ledger", t("shell.tplLedger"))}
-        </span>
+      <MenuItem icon={<Landmark />} onClick={() => add("ledger")} trailingAction={help("ledger", t("shell.tplLedger"))}>
+        {t("shell.tplLedger")}
       </MenuItem>
-      <MenuItem icon={<Table2 />} onClick={() => add("blank")}>
-        <span className={styles.row}>
-          {t("shell.tplBlank")}
-          {help("blank", t("shell.tplBlank"))}
-        </span>
+      <MenuItem icon={<Table2 />} onClick={() => add("blank")} trailingAction={help("blank", t("shell.tplBlank"))}>
+        {t("shell.tplBlank")}
       </MenuItem>
       {clipboardTable && (
         <>

@@ -14,4 +14,5 @@ export type { SwitchProps } from "./Switch";
 export { SegmentedControl } from "./SegmentedControl";
 export type { SegmentOption, SegmentedControlProps } from "./SegmentedControl";
 export { ToastHost } from "./ToastHost";
+export { Tooltip } from "./Tooltip";
 export { cn } from "./cn";

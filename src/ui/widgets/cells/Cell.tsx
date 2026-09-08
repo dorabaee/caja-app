@@ -43,6 +43,8 @@ export interface CellProps {
   note: string;
   r: number;
   c: number;
+  rowId?: string;
+  columnId?: string;
   monthIndex: number;
   onCommit: (value: string) => void;
   onNote: (note: string) => void;
@@ -67,6 +69,8 @@ export interface CellProps {
   /** #7: a "send a value" flow is active and this cell is an eligible destination. */
   receiving?: boolean;
   onReceive?: () => void;
+  /** Live bounded-fill preview drawn by the parent grid. */
+  fillTone?: "source" | "range" | "end";
 }
 
 export function Cell({
@@ -75,6 +79,8 @@ export function Cell({
   note,
   r,
   c,
+  rowId,
+  columnId,
   monthIndex,
   onCommit,
   onNote,
@@ -90,6 +96,7 @@ export function Cell({
   onSend,
   receiving,
   onReceive,
+  fillTone,
 }: CellProps) {
   const { t } = useTranslation();
   const isDate = type === "date";
@@ -155,6 +162,9 @@ export function Cell({
 
   const cellClass = cn(
     styles.cell,
+    fillTone === "source" && styles.cellFillSource,
+    fillTone === "range" && styles.cellFillRange,
+    fillTone === "end" && styles.cellFillEnd,
     receiving && styles.cellReceiving,
     danger && styles.cellDanger,
     staged && styles.cellStaged,
@@ -177,7 +187,12 @@ export function Cell({
   );
 
   return (
-    <div className={cellClass} style={{ "--cell-actions": actionCount } as CSSProperties}>
+    <div
+      className={cellClass}
+      style={{ "--cell-actions": actionCount } as CSSProperties}
+      data-fill-row={rowId}
+      data-fill-col={columnId}
+    >
       {isDate && tableDateMode === "calendar" && !disabled ? (
         <DatePicker
           value={value}
@@ -232,6 +247,9 @@ export function Cell({
       )}
       {actions}
       {receiveOverlay}
+      {!disabled && !recurring && rowId && columnId && (
+        <span className={styles.fillHandle} data-fill-handle aria-hidden />
+      )}
     </div>
   );
 }

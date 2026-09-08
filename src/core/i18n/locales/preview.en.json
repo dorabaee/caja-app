@@ -17,9 +17,9 @@
       "step3": "Enter the amount: it counts against “Out”."
     },
     "ledger": {
-      "purpose": "Your bank account, movement by movement. Starts from the month's balance and keeps deposits and expenses apart.",
+      "purpose": "Your bank account, movement by movement. Record the opening balance, money in as deposits, and money out as expenses to compare the final balance with your bank without double-counting In or Out.",
       "step1": "Enter the month's opening balance.",
-      "step2": "Record each deposit and each expense.",
+      "step2": "Use Deposit or Expense in each row, never both.",
       "step3": "The final balance recalculates itself."
     },
     "blank": {

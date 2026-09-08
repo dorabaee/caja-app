@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useStore, useUI } from "@core/store";
 import { parseMoney } from "@core/format/money";
-import { Button, Field, Modal, Switch, TextInput } from "@ui/common";
+import { Button, Field, Modal, Switch, TextInput, cn } from "@ui/common";
 import { useFormat } from "@ui/hooks/useFormat";
+import choiceStyles from "../Onboarding.module.css";
 
 export function NewProjectModal() {
   const { t } = useTranslation();
@@ -15,12 +16,14 @@ export function NewProjectModal() {
   const renameProject = useStore((s) => s.renameProject);
   const updateProject = useStore((s) => s.updateProject);
   const fmt = useFormat();
+  const setMonth = useUI((s) => s.setMonth);
 
   const open = modal === "newProject";
   const editing = editProjectId ? (projects.find((p) => p.id === editProjectId) ?? null) : null;
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
   const [carryOver, setCarryOver] = useState(false);
+  const [choice, setChoice] = useState<"sample" | "blank">("sample");
 
   useEffect(() => {
     if (open) {
@@ -28,6 +31,7 @@ export function NewProjectModal() {
       const t = editing?.goal?.monthlyProfitTarget;
       setGoal(t ? String(t) : "");
       setCarryOver(editing?.carryOver ?? false);
+      setChoice("sample");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editProjectId]);
@@ -43,8 +47,9 @@ export function NewProjectModal() {
       if (n) renameProject(editing.id, n);
       updateProject(editing.id, patch);
     } else {
-      const id = createProject(n || t("modals.defaultBusinessName"), "empty");
+      const id = createProject(n || t("modals.defaultBusinessName"), choice === "sample" ? "income" : "empty");
       updateProject(id, patch);
+      setMonth(0);
     }
     closeModal();
   };
@@ -99,6 +104,28 @@ export function NewProjectModal() {
             />
           )}
         </Field>
+        {!editing && (
+          <div className={choiceStyles.choices} aria-label={t("modals.startingPoint")}>
+            <button
+              type="button"
+              className={cn(choiceStyles.choice, choice === "sample" && choiceStyles.choiceOn)}
+              aria-pressed={choice === "sample"}
+              onClick={() => setChoice("sample")}
+            >
+              <span className={choiceStyles.choiceTitle}>{t("shell.templateChoiceTitle")}</span>
+              <span className={choiceStyles.choiceDesc}>{t("shell.templateChoiceDesc")}</span>
+            </button>
+            <button
+              type="button"
+              className={cn(choiceStyles.choice, choice === "blank" && choiceStyles.choiceOn)}
+              aria-pressed={choice === "blank"}
+              onClick={() => setChoice("blank")}
+            >
+              <span className={choiceStyles.choiceTitle}>{t("shell.emptyChoiceTitle")}</span>
+              <span className={choiceStyles.choiceDesc}>{t("shell.emptyChoiceDesc")}</span>
+            </button>
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
           <div
             style={{

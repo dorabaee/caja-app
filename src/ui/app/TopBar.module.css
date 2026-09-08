@@ -84,6 +84,13 @@
   margin-left: auto;
 }
 
+.history {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
 .divider {
   width: 1px;
   height: 24px;

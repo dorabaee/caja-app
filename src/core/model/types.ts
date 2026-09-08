@@ -151,6 +151,14 @@ export interface Project {
   banks?: CustomBank[];
   /** Rules are keyed by table title, so they apply to the same copied table every month. */
   quickAddRequirements?: Record<string, QuickAddRequirements>;
+  /** New-business teaching state. Optional so existing documents remain established
+   *  businesses and never receive an unexpected automatic starter tour. */
+  onboarding?: {
+    starterMode: "sample" | "blank";
+    tourCompleted: boolean;
+    /** True while the deterministic teaching transactions are still in the business. */
+    sampleDataPresent?: boolean;
+  };
   months: Month[]; // always length 12
 }
 

@@ -96,6 +96,7 @@ export const TableWidget = memo(function TableWidget({
         selected && styles.selected,
         mode.mode !== "idle" && styles.cardEditing,
       )}
+      data-tour-table={table.kind === "none" ? "blank" : table.kind}
       onPointerDownCapture={(e) => {
         // Modifier clicks and clicks inside an existing multi-selection belong to the
         // canvas (toggle / group drag); a plain click on an unselected widget selects it.
