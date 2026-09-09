@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   INCOME_TABLE_DAYS,
+  GUIDED_TEMPLATE_LAYOUT,
   cloneMonth,
   cloneTable,
   daysInMonth,
@@ -79,9 +80,44 @@ describe("newTemplateProject", () => {
     expect(tables[3].title).toBe("Metas y apartados");
   });
 
+  it("uppercases generated text-cell values when the preference is enabled", () => {
+    const project = newTemplateProject("Ejemplo", { uppercaseTextCells: true, locale: "es" });
+    const expense = project.months[0].tables.find((table) => table.kind === "expense")!;
+    const description = expense.columns.find((column) => column.name === "Descripción")!;
+    expect(expense.rows[0].cells[description.id]).toBe("COMPRA DE INSUMOS");
+
+    const blank = project.months[0].tables.find((table) => table.title === "Metas y apartados")!;
+    const concept = blank.columns.find((column) => column.name === "Concepto")!;
+    expect(blank.rows[0].cells[concept.id]).toBe("FONDO PARA IMPREVISTOS");
+  });
+
+  it("keeps the current mixed casing when the preference is disabled", () => {
+    const project = newTemplateProject("Ejemplo", { uppercaseTextCells: false, locale: "es" });
+    const expense = project.months[0].tables.find((table) => table.kind === "expense")!;
+    const description = expense.columns.find((column) => column.name === "Descripción")!;
+    expect(expense.rows[0].cells[description.id]).toBe("Compra de insumos");
+  });
+
   it("leaves every month after January empty", () => {
     const project = newTemplateProject();
     expect(project.months.slice(1).every((month) => !month.tables.length && !month.charts.length)).toBe(true);
+  });
+
+  it("uses the dedicated welcome-board layout without changing standalone defaults", () => {
+    const project = newTemplateProject("Ejemplo");
+    const tables = project.months[0].tables;
+    expect(tables.map((table) => table.layout)).toEqual([
+      expect.objectContaining({ x: 24, y: 24, w: 708, h: 890 }),
+      expect.objectContaining({ x: 780, y: 496, w: 648, h: 392 }),
+      expect.objectContaining({ x: 780, y: 24, w: 1216, h: 448 }),
+      expect.objectContaining({ x: 24, y: 938, w: 664, h: 376 }),
+    ]);
+    expect(tables.map((table) => table.columns.map((column) => column.width))).toEqual([
+      GUIDED_TEMPLATE_LAYOUT.income.columnWidths,
+      GUIDED_TEMPLATE_LAYOUT.expense.columnWidths,
+      GUIDED_TEMPLATE_LAYOUT.ledger.columnWidths,
+      GUIDED_TEMPLATE_LAYOUT.blank.columnWidths,
+    ]);
   });
 });
 
@@ -94,18 +130,18 @@ describe("makeExpenseTable", () => {
 
 describe("table default sizes", () => {
   it("gives each kind its own default dimensions", () => {
-    expect(makeIncomeTable().layout).toMatchObject({ w: 400, h: 500 });
-    expect(makeExpenseTable().layout).toMatchObject({ w: 520, h: 392 });
-    expect(makeLedgerTable().layout).toMatchObject({ w: 640, h: 400 });
-    expect(makeBlankTable().layout).toMatchObject({ w: 400, h: 340 });
+    expect(makeIncomeTable().layout).toMatchObject({ w: 708, h: 890 });
+    expect(makeExpenseTable().layout).toMatchObject({ w: 648, h: 392 });
+    expect(makeLedgerTable().layout).toMatchObject({ w: 1216, h: 448 });
+    expect(makeBlankTable().layout).toMatchObject({ w: 664, h: 376 });
   });
 
   it("lets the caller override position while keeping the kind's size", () => {
     expect(makeIncomeTable({ x: 100, y: 200 }).layout).toMatchObject({
       x: 100,
       y: 200,
-      w: 400,
-      h: 500,
+      w: 708,
+      h: 890,
     });
     // ...and an explicit size still wins (spread comes last in the makers).
     expect(makeLedgerTable({ w: 700 }).layout.w).toBe(700);

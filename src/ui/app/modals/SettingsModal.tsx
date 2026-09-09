@@ -308,6 +308,11 @@ export function SettingsModal() {
             ))}
           </div>
         </div>
+        <div className={styles.row}>
+          <span className={styles.label}>{t("modals.uppercaseTextCells")}</span>
+          <Switch checked={settings.uppercaseTextCells} onChange={(uppercaseTextCells) => update({ uppercaseTextCells })}
+            aria-label={t("modals.uppercaseTextCells")} />
+        </div>
         <div className={styles.dateSettings}>
           <article className={cn(styles.dateCard, styles.tableDateCard)}>
             <div className={styles.dateCardHead}><span className={styles.dateIcon}><Table2 size={17} /></span><div><strong>{t("modals.tableDateMode")}</strong><p>{t("modals.tableDateModeHint")}</p></div></div>

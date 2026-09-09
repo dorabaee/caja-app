@@ -37,6 +37,7 @@
     "hiddenWidgetsLayout": "Al ocultar elementos",
     "hiddenWidgets_preserve": "Conservar espacios",
     "hiddenWidgets_arrange": "Reacomodar",
+    "uppercaseTextCells": "Mayúsculas en columnas de texto",
     "tableDateMode": "Fechas en las tablas",
     "tableDateModeHint": "Cómo capturas fechas directamente dentro de las filas.",
     "quickAddDateMode": "Fecha de Agregar rápido",

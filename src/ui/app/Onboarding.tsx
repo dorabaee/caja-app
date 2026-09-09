@@ -9,11 +9,13 @@ export function Onboarding() {
   const { t } = useTranslation();
   const createProject = useStore((s) => s.createProject);
   const setMonth = useUI((s) => s.setMonth);
+  const setZoom = useUI((s) => s.setZoom);
   const [name, setName] = useState("");
   const [choice, setChoice] = useState<"empty" | "template">("template");
 
   const submit = () => {
     createProject(name.trim() || t("shell.defaultBusinessName"), choice === "template" ? "income" : "empty");
+    if (choice === "template") setZoom(0.8);
     // Land the brand-new business on its board (not the Home launcher) so the
     // first-run guided tour can spotlight the KPI hero + Add-table controls. Open on
     // January — the start of the year and where the template seeds its tables.

@@ -17,6 +17,7 @@ export function NewProjectModal() {
   const updateProject = useStore((s) => s.updateProject);
   const fmt = useFormat();
   const setMonth = useUI((s) => s.setMonth);
+  const setZoom = useUI((s) => s.setZoom);
 
   const open = modal === "newProject";
   const editing = editProjectId ? (projects.find((p) => p.id === editProjectId) ?? null) : null;
@@ -50,6 +51,7 @@ export function NewProjectModal() {
       const id = createProject(n || t("modals.defaultBusinessName"), choice === "sample" ? "income" : "empty");
       updateProject(id, patch);
       setMonth(0);
+      if (choice === "sample") setZoom(0.8);
     }
     closeModal();
   };

@@ -184,10 +184,16 @@ export const useStore = create<StoreState>()((set, get) => {
         template === "empty" || template === "blank"
           ? newProject(name || "Negocio sin nombre")
           : template === "income" || template === "expense" || template === "ledger"
-            ? newTemplateProject(name || "Negocio sin nombre")
-            : newTemplateProject(name || "Negocio sin nombre");
+            ? newTemplateProject(name || "Negocio sin nombre", {
+              uppercaseTextCells: get().doc.settings.uppercaseTextCells,
+              locale: get().doc.settings.locale,
+            })
+            : newTemplateProject(name || "Negocio sin nombre", {
+              uppercaseTextCells: get().doc.settings.uppercaseTextCells,
+              locale: get().doc.settings.locale,
+            });
       if (!project.onboarding) {
-        project.onboarding = { starterMode: "blank", tourCompleted: false, sampleDataPresent: false };
+        project.onboarding = { starterMode: "blank", tourCompleted: false, introCompleted: false, sampleDataPresent: false };
       }
       commit((d) => {
         d.projects.push(project);
@@ -341,7 +347,9 @@ export const useStore = create<StoreState>()((set, get) => {
     addTable: (monthIndex, template) => {
       const newId = id();
       commit((d) => {
-        const month = currentProject(d)?.months[monthIndex];
+        const project = currentProject(d);
+        const wasEmpty = !!project && project.months.every((item) => item.tables.length === 0);
+        const month = project?.months[monthIndex];
         if (!month) return;
         const t = makeTableFromTemplate(template, undefined, monthIndex);
         const slot = nextWidgetSlot([...month.tables, ...month.charts], t.layout);
@@ -349,6 +357,9 @@ export const useStore = create<StoreState>()((set, get) => {
         t.layout.y = slot.y;
         t.id = newId;
         month.tables.push(t);
+        if (wasEmpty && project?.onboarding?.starterMode === "blank" && project.onboarding.introCompleted && !project.onboarding.tourCompleted) {
+          d.settings.runTour = true;
+        }
       });
       return newId;
     },
@@ -381,7 +392,9 @@ export const useStore = create<StoreState>()((set, get) => {
     pasteTable: (dstMonthIndex, table, withData) => {
       let newId = "";
       commit((d) => {
-        const month = currentProject(d)?.months[dstMonthIndex];
+        const project = currentProject(d);
+        const wasEmpty = !!project && project.months.every((item) => item.tables.length === 0);
+        const month = project?.months[dstMonthIndex];
         if (!month) return;
         const clone = cloneTable(table, { withData });
         newId = clone.id;
@@ -389,6 +402,9 @@ export const useStore = create<StoreState>()((set, get) => {
         const slot = nextWidgetSlot([...month.tables, ...month.charts], clone.layout);
         clone.layout = { ...clone.layout, x: slot.x, y: slot.y };
         month.tables.push(clone);
+        if (wasEmpty && project?.onboarding?.starterMode === "blank" && project.onboarding.introCompleted && !project.onboarding.tourCompleted) {
+          d.settings.runTour = true;
+        }
       });
       return newId;
     },

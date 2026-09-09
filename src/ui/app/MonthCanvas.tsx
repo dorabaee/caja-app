@@ -238,7 +238,12 @@ export function MonthCanvas({ monthIndex, month }: { monthIndex: number; month: 
       minWidth={min.w}
       minHeight={min.h}
       style={{ zIndex: zIndexFor(id, layout) }}
+      data-tour-widget={id}
       resizeHandleStyles={RESIZE_HANDLE_STYLES}
+      resizeHandleComponent={{
+        right: <span data-tour-resize-x aria-hidden />,
+        bottom: <span data-tour-resize-y aria-hidden />,
+      }}
       resizeHandleWrapperClass={styles.rndHandles}
       onMouseEnter={() => setHoveredId(id)}
       onMouseLeave={() => setHoveredId((prev) => (prev === id ? null : prev))}

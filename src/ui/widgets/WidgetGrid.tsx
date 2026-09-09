@@ -782,6 +782,7 @@ function ColumnHeader({
       {onResize && (
         <span
           className={styles.colResize}
+          data-tour-column-resize
           role="separator"
           aria-orientation="vertical"
           title={t("widgets.resizeColumn")}

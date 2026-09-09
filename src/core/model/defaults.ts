@@ -7,6 +7,7 @@ import {
   type Column,
   type ColumnType,
   type LedgerRole,
+  type Locale,
   type Month,
   type Project,
   type Row,
@@ -17,6 +18,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   MONTHS_PER_YEAR,
 } from "./types";
+import { normalizeTextCell } from "@core/format/text";
 
 export const MONTH_KEYS = [
   "ene",
@@ -77,6 +79,7 @@ export function defaultSettings(): Settings {
     hiddenWidgetsLayout: "preserve",
     tableDateMode: "calendar",
     quickAddDateMode: "calendar",
+    uppercaseTextCells: true,
   };
 }
 
@@ -129,6 +132,25 @@ export function daysInMonth(monthIndex: number): number {
 /** Number of rows in the default January income table (kept for API compatibility). */
 export const INCOME_TABLE_DAYS = daysInMonth(0);
 
+/** The welcome-board arrangement used only by guided template businesses. These are
+ * canvas units at 100% zoom; the UI opens guided businesses at 80% so the whole welcome
+ * composition fits in the first view. Column widths include the table's fixed row-actions
+ * track separately (the grid adds that track automatically). */
+export const GUIDED_TEMPLATE_LAYOUT = {
+  income: { x: 24, y: 24, w: 708, h: 890, columnWidths: [225, 419] },
+  ledger: { x: 780, y: 24, w: 1216, h: 448, columnWidths: [207, 184, 253, 508] },
+  expense: { x: 780, y: 496, w: 648, h: 392, columnWidths: [150, 286, 148] },
+  blank: { x: 24, y: 938, w: 664, h: 376, columnWidths: [462, 138] },
+} as const;
+
+function applyGuidedTableLayout(table: Table, layout: (typeof GUIDED_TEMPLATE_LAYOUT)[keyof typeof GUIDED_TEMPLATE_LAYOUT]): void {
+  table.layout = { x: layout.x, y: layout.y, w: layout.w, h: layout.h };
+  layout.columnWidths.forEach((width, index) => {
+    const column = table.columns[index];
+    if (column) column.width = width;
+  });
+}
+
 /** Table templates (titles/columns mirror the original app). */
 export function makeIncomeTable(layout?: Partial<WidgetLayout>, monthIndex = 0): Table {
   const cols = [makeColumn("Día", "text"), makeColumn("Efectivo recibido", "money")];
@@ -143,7 +165,7 @@ export function makeIncomeTable(layout?: Partial<WidgetLayout>, monthIndex = 0):
     rows,
     // Narrow: 2 slim columns. 28 day rows can't all fit, so it stays scrollable —
     // sized to show ~7 rows (wide enough that the title + accounting pill aren't clipped).
-    layout: withLayout({ w: 400, h: 500, ...layout }),
+    layout: withLayout({ w: 708, h: 890, ...layout }),
   };
 }
 
@@ -160,9 +182,9 @@ export function makeExpenseTable(layout?: Partial<WidgetLayout>): Table {
     kind: "expense",
     columns: cols,
     rows,
-    // Wider: 3 columns, gives Descripción room. Height fits the 4 seeded rows +
-    // total + footer with no excess / no scroll.
-    layout: withLayout({ w: 520, h: 392, ...layout }),
+    // Three readable columns, with just enough height for the 4 seeded rows,
+    // total, scrollbar and footer shown in the compact reference.
+    layout: withLayout({ w: 648, h: 392, ...layout }),
   };
 }
 
@@ -182,10 +204,9 @@ export function makeLedgerTable(layout?: Partial<WidgetLayout>): Table {
     rows,
     initialBalance: 0,
     fiscal: true,
-    // Widest: 4 columns (wide enough that "Importe del gasto" + the columns don't
-    // side-scroll). Height fits the saldo row + 3 rows + the SALDO FINAL footer with
-    // no empty gap.
-    layout: withLayout({ w: 640, h: 400, ...layout }),
+    // The widest template, but compact enough to avoid the large empty body below
+    // its 3 starter rows while retaining the balance controls and summary footer.
+    layout: withLayout({ w: 1216, h: 448, ...layout }),
   };
 }
 
@@ -198,8 +219,8 @@ export function makeBlankTable(layout?: Partial<WidgetLayout>): Table {
     kind: "none",
     columns: cols,
     rows,
-    // Medium: fits the 3 seeded rows + total + footer with no excess.
-    layout: withLayout({ w: 400, h: 340, ...layout }),
+    // Compact: fits the 3 seeded rows, total, scrollbar and footer without a blank gap.
+    layout: withLayout({ w: 664, h: 376, ...layout }),
   };
 }
 
@@ -372,7 +393,10 @@ export function newProject(name = "Negocio sin nombre"): Project {
 }
 
 /** A project pre-filled with the starter tables (used by "Empezar con plantilla"). */
-export function newTemplateProject(name = "Negocio sin nombre"): Project {
+export function newTemplateProject(
+  name = "Negocio sin nombre",
+  options: { uppercaseTextCells?: boolean; locale?: Locale } = {},
+): Project {
   const project = newProject(name);
   const seed = (m: Month) => {
     const placed: Table[] = [];
@@ -430,16 +454,26 @@ export function newTemplateProject(name = "Negocio sin nombre"): Project {
         blank.rows[i].cells[blankAmount.id] = amount;
       });
 
-    for (const t of [income, expense, ledger, blank]) {
-      const slot = nextWidgetSlot(placed, t.layout);
-      t.layout.x = slot.x;
-      t.layout.y = slot.y;
-      placed.push(t);
-    }
+    applyGuidedTableLayout(income, GUIDED_TEMPLATE_LAYOUT.income);
+    applyGuidedTableLayout(ledger, GUIDED_TEMPLATE_LAYOUT.ledger);
+    applyGuidedTableLayout(expense, GUIDED_TEMPLATE_LAYOUT.expense);
+    applyGuidedTableLayout(blank, GUIDED_TEMPLATE_LAYOUT.blank);
+    placed.push(income, expense, ledger, blank);
     m.tables = placed;
   };
   // Seed January by default (the natural start of the year); other months start empty.
   seed(project.months[0]);
+  if (options.uppercaseTextCells) {
+    const locale = options.locale ?? "es";
+    for (const table of project.months[0].tables) {
+      const textColumnIds = new Set(table.columns.filter((column) => column.type === "text").map((column) => column.id));
+      for (const row of table.rows) {
+        for (const columnId of textColumnIds) {
+          row.cells[columnId] = normalizeTextCell(row.cells[columnId] ?? "", true, locale);
+        }
+      }
+    }
+  }
   project.onboarding = { starterMode: "sample", tourCompleted: false, sampleDataPresent: true };
   return project;
 }

@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import type { ColumnType } from "@core/model/types";
 import { parseDateCell } from "@core/format/date";
+import { normalizeTextCell } from "@core/format/text";
 import { cn } from "@ui/common";
 import { useStore } from "@core/store";
 import { CellNote } from "./CellNote";
@@ -102,7 +103,10 @@ export function Cell({
   const isDate = type === "date";
   const isMoney = type === "money";
   const tableDateMode = useStore((s) => s.doc.settings.tableDateMode);
+  const uppercaseTextCells = useStore((s) => s.doc.settings.uppercaseTextCells);
+  const locale = useStore((s) => s.doc.settings.locale);
   const display = isDate ? toDisplayDate(value) : value;
+  const normalize = (next: string) => normalizeTextCell(next, type === "text" && uppercaseTextCells, locale);
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
 
@@ -143,19 +147,19 @@ export function Cell({
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
       e.preventDefault();
-      if (!isDate || tableDateMode === "typing") onCommit(isDate ? toCellDate(draft) : draft);
+      if (!isDate || tableDateMode === "typing") onCommit(isDate ? toCellDate(draft) : normalize(draft));
       onShortcut?.(e.shiftKey ? "duplicateRow" : "fillDown");
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r") {
       e.preventDefault();
-      if (!isDate || tableDateMode === "typing") onCommit(isDate ? toCellDate(draft) : draft);
+      if (!isDate || tableDateMode === "typing") onCommit(isDate ? toCellDate(draft) : normalize(draft));
       onShortcut?.("fillRight");
       return;
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onCommit(isDate ? toCellDate(draft) : draft);
+      onCommit(isDate ? toCellDate(draft) : normalize(draft));
       onEnter();
     }
   };
@@ -231,7 +235,7 @@ export function Cell({
             focused.current = true;
             if (isDate) setDraft(toEditableDate(value));
           }}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => setDraft(isMoney || isDate ? e.target.value : normalize(e.target.value))}
           onBlur={() => {
             focused.current = false;
             if (isDate) {
@@ -239,7 +243,7 @@ export function Cell({
               setDraft(toDisplayDate(next));
               onCommit(next);
             } else {
-              onCommit(draft);
+              onCommit(normalize(draft));
             }
           }}
           onKeyDown={onKeyDown}

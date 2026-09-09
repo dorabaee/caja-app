@@ -15,6 +15,9 @@ const V2_TITLE_RENAMES: Record<string, string> = {
  */
 function migrateV2(doc: AppDoc): void {
   for (const project of doc.projects ?? []) {
+    if (project.onboarding?.tourCompleted && project.onboarding.introCompleted === undefined) {
+      project.onboarding.introCompleted = true;
+    }
     // Categories: string[] → Category[], then top up with any missing defaults.
     const legacy = (project.categories ?? []) as unknown as (string | Category)[];
     const categories: Category[] = legacy.map((c) => (typeof c === "string" ? { name: c } : c));
@@ -163,6 +166,7 @@ export function migrateDoc(doc: AppDoc): AppDoc {
   if (!doc.settings.hiddenWidgetsLayout) doc.settings.hiddenWidgetsLayout = "preserve";
   if (!doc.settings.tableDateMode) doc.settings.tableDateMode = "calendar";
   if (!doc.settings.quickAddDateMode) doc.settings.quickAddDateMode = "calendar";
+  if (doc.settings.uppercaseTextCells === undefined) doc.settings.uppercaseTextCells = true;
   if (from < 2) migrateV2(doc);
   if (from < 4) migrateV4(doc);
   if (from < 5) migrateV5(doc);

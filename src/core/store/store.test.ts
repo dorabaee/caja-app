@@ -193,6 +193,20 @@ describe("starter examples", () => {
     expect(useStore.getState().doc.settings.runTour).toBe(true);
   });
 
+  it("uses the global uppercase preference when generating a guided example", () => {
+    const first = useStore.getState().doc.projects[0];
+    const firstExpense = first.months[0].tables.find((table) => table.kind === "expense")!;
+    const firstDescription = firstExpense.columns.find((column) => column.name === "Descripción")!;
+    expect(firstExpense.rows[0].cells[firstDescription.id]).toBe("COMPRA DE INSUMOS");
+
+    useStore.getState().updateSettings({ uppercaseTextCells: false });
+    useStore.getState().createProject("Natural", "income");
+    const second = useStore.getState().doc.projects[1];
+    const secondExpense = second.months[0].tables.find((table) => table.kind === "expense")!;
+    const secondDescription = secondExpense.columns.find((column) => column.name === "Descripción")!;
+    expect(secondExpense.rows[0].cells[secondDescription.id]).toBe("Compra de insumos");
+  });
+
   it("clears teaching values but preserves all four table structures", () => {
     const project = useStore.getState().doc.projects[0];
     useStore.getState().clearStarterExamples(project.id);

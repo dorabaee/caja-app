@@ -37,6 +37,7 @@
     "hiddenWidgetsLayout": "When hiding elements",
     "hiddenWidgets_preserve": "Preserve spaces",
     "hiddenWidgets_arrange": "Rearrange",
+    "uppercaseTextCells": "Uppercase text columns",
     "tableDateMode": "Dates in tables",
     "tableDateModeHint": "How dates are entered directly inside table rows.",
     "quickAddDateMode": "Quick Add date",

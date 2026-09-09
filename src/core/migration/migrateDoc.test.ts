@@ -39,6 +39,14 @@ describe("migrateDoc — table date preference", () => {
   });
 });
 
+describe("migrateDoc — uppercase text-cell preference", () => {
+  it("defaults older documents to enabled", () => {
+    const doc = newAppDoc();
+    delete (doc.settings as Partial<typeof doc.settings>).uppercaseTextCells;
+    expect(migrateDoc(doc).settings.uppercaseTextCells).toBe(true);
+  });
+});
+
 describe("migrateDoc — v1 → v2 (fiscal tables + grouped categories)", () => {
   function legacyDoc(): AppDoc {
     const project = newProject("P");

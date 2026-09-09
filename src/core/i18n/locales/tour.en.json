@@ -41,6 +41,14 @@
     "moveBody": "Drag tables wherever you like. They line up with their neighbours on their own; hold Alt if you'd rather they didn't.",
     "multiTitle": "Several at once",
     "multiBody": "Ctrl + drag draws a box to pick several tables and move them together.",
+    "moveTableTitle": "Move a table",
+    "moveTableBody": "Drag from these six dots to move the table around the board.",
+    "resizeWidthTitle": "Make it wider or narrower",
+    "resizeWidthBody": "Drag the right edge to change the table's width.",
+    "resizeHeightTitle": "Show more or fewer rows",
+    "resizeHeightBody": "Drag the bottom edge to change the table's height.",
+    "resizeColumnTitle": "Adjust a column",
+    "resizeColumnBody": "Drag the header divider to change a column's width.",
     "shortcutsTitle": "Everything else",
     "shortcutsBody": "The tour and the full list of shortcuts and gestures live here, whenever you need them."
   }

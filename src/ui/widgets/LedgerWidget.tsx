@@ -79,7 +79,7 @@ export const LedgerWidget = memo(function LedgerWidget({
       }}
     >
       <div className={styles.whead}>
-        <span className={cn(styles.handle, DRAG_HANDLE)} title={t("widgets.move")} aria-hidden>
+        <span className={cn(styles.handle, DRAG_HANDLE)} title={t("widgets.move")} data-tour-drag-handle aria-hidden>
           <GripVertical size={16} />
         </span>
         <input
@@ -104,7 +104,7 @@ export const LedgerWidget = memo(function LedgerWidget({
         <ModeActions mode={mode} />
         {mode.mode === "idle" && <TableSortMenu monthIndex={monthIndex} table={table} />}
         {mode.mode === "idle" && (
-        <Menu align="end" trigger={<IconButton label={t("widgets.ledgerOptions")} icon={<MoreHorizontal />} size="sm" />}>
+        <Menu align="end" trigger={<IconButton label={t("widgets.ledgerOptions")} icon={<MoreHorizontal />} size="sm" portalTooltip />}>
           <MenuLabel>{t("widgets.addColumn")}</MenuLabel>
           <MenuItem icon={<Type />} onClick={() => s().addColumn(monthIndex, table.id, "text")}>
             {t("widgets.typeText")}

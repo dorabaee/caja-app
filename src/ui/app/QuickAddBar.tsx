@@ -9,6 +9,7 @@ import { useCurrentProject } from "@ui/hooks/useProject";
 import { DatePicker } from "@ui/widgets/cells/DatePicker";
 import { parseDateCell } from "@core/format/date";
 import { parseMoney } from "@core/format/money";
+import { normalizeTextCell } from "@core/format/text";
 import { format } from "date-fns";
 import styles from "./quickAddBar.module.css";
 
@@ -57,6 +58,8 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   const { t } = useTranslation();
   const project = useCurrentProject();
   const dateMode = useStore((s) => s.doc.settings.quickAddDateMode);
+  const uppercaseTextCells = useStore((s) => s.doc.settings.uppercaseTextCells);
+  const locale = useStore((s) => s.doc.settings.locale);
   const month = project?.months[monthIndex];
   // Every table in the month, ledgers included — a ledger just needs to be told which of
   // its two money columns the amount belongs in (see `role` below).
@@ -87,15 +90,15 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
   const submit = () => {
     const table = candidates.find((t) => t.id === selected?.id) ?? null;
     if (!table) return;
-    const concept = concepto.trim();
+    const conceptRaw = concepto.trim();
     const amount = monto.trim();
     const requirements = project?.quickAddRequirements?.[table.title] ?? {};
-    if (!concept && !amount && !fecha.trim()) return;
+    if (!conceptRaw && !amount && !fecha.trim()) return;
     if (requirements.amount && !amount) {
       useUI.getState().toast(t("month.amountRequired"), "error");
       return;
     }
-    if (requirements.concept && !concept) {
+    if (requirements.concept && !conceptRaw) {
       useUI.getState().toast(t("month.conceptRequired"), "error");
       return;
     }
@@ -118,12 +121,13 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
     const dateCell = table.columns.find((column) => column.id === targets.date);
     const firstMoney = table.columns.find((column) => column.id === targets.amount);
 
-    if ((amount && !firstMoney) || (concept && !conceptCell) || (fecha.trim() && !dateCell)) {
+    if ((amount && !firstMoney) || (conceptRaw && !conceptCell) || (fecha.trim() && !dateCell)) {
       useUI.getState().toast(t("month.chooseDestination"), "error");
       return;
     }
 
     const values: Record<string, string> = {};
+    const concept = normalizeTextCell(conceptRaw, uppercaseTextCells && !!conceptCell, locale);
     const dateValue = dateCell && parsedQuickDate
       ? table.kind === "income" && dateCell.id === dayColumn?.id
         ? String(parsedQuickDate.getDate())
@@ -262,7 +266,7 @@ export function QuickAddBar(props: { monthIndex: number; compact?: boolean }) {
           value={concepto}
           placeholder={t("month.conceptPlaceholder")}
           aria-label={t("month.concept")}
-          onChange={(e) => setConcepto(e.target.value)}
+          onChange={(e) => setConcepto(normalizeTextCell(e.target.value, uppercaseTextCells, locale))}
           onKeyDown={onKeyDown}
         />
       )}

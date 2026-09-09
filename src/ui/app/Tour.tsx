@@ -22,12 +22,40 @@ export function tableHasMeaningfulData(table: Table): boolean {
   }));
 }
 
-/** Build the tour from what is actually on the board. Empty businesses receive setup
- * help; present table types receive a purpose step; only empty tables receive the extra
- * first-entry explanation. */
-export function buildTourSteps(project: Project | null, monthIndex: number): Step[] {
+function tableTarget(table: Table, suffix = "") {
+  return `[data-tour-widget='${table.id.replace(/'/g, "\\'")}']${suffix}`;
+}
+
+function tableControlSteps(table: Table): Step[] {
+  const target = tableTarget(table);
+  return [
+    { target: `${target} [data-tour-drag-handle]`, titleKey: "tour.moveTableTitle", bodyKey: "tour.moveTableBody" },
+    { target: `${target} [data-tour-resize-x]`, titleKey: "tour.resizeWidthTitle", bodyKey: "tour.resizeWidthBody" },
+    { target: `${target} [data-tour-resize-y]`, titleKey: "tour.resizeHeightTitle", bodyKey: "tour.resizeHeightBody" },
+    { target: `${target} [data-tour-column-resize]`, titleKey: "tour.resizeColumnTitle", bodyKey: "tour.resizeColumnBody" },
+  ];
+}
+
+/** Build the tour from what is actually on the board. Blank businesses get a deferred
+ * table-controls continuation after their first table is created. */
+export function buildTourSteps(project: Project | null, monthIndex: number, selectedTableId?: string | null): Step[] {
   const month = project?.months[monthIndex];
   const tables = month?.tables ?? [];
+  const continuation = project?.onboarding?.starterMode === "blank"
+    && !!project.onboarding.introCompleted
+    && !project.onboarding.tourCompleted
+    && tables.length > 0;
+  if (continuation) {
+    const table = tables.find((item) => item.id === selectedTableId) ?? tables[0];
+    const kind = table.kind === "none" ? "blank" : table.kind;
+    const steps: Step[] = [{ target: `[data-tour-table='${kind}']`, titleKey: `tour.${kind}Title`, bodyKey: `tour.${kind}Body` }];
+    if (!tableHasMeaningfulData(table)) {
+      steps.push({ target: `[data-tour-table='${kind}']`, titleKey: `tour.${kind}EmptyTitle`, bodyKey: `tour.${kind}EmptyBody` });
+    }
+    steps.push(...tableControlSteps(table));
+    steps.push({ target: "[data-tour='canvas']", titleKey: "tour.multiTitle", bodyKey: "tour.multiBody" });
+    return steps;
+  }
   const steps: Step[] = [
     { target: null, titleKey: "tour.welcomeTitle", bodyKey: "tour.welcomeBody" },
     { target: "[data-tour='businesses']", titleKey: "tour.businessesTitle", bodyKey: "tour.businessesBody" },
@@ -61,13 +89,12 @@ export function buildTourSteps(project: Project | null, monthIndex: number): Ste
         });
       }
     }
+    const controlTable = tables.find((table) => table.id === selectedTableId) ?? tables[0];
+    if (controlTable) steps.push(...tableControlSteps(controlTable));
   }
   steps.push({ target: "[data-tour='months']", titleKey: "tour.monthsTitle", bodyKey: "tour.monthsBody" });
   if (tables.length || (month?.charts.length ?? 0) > 0) {
-    steps.push(
-      { target: "[data-tour='canvas']", titleKey: "tour.moveTitle", bodyKey: "tour.moveBody" },
-      { target: "[data-tour='canvas']", titleKey: "tour.multiTitle", bodyKey: "tour.multiBody" },
-    );
+    steps.push({ target: "[data-tour='canvas']", titleKey: "tour.multiTitle", bodyKey: "tour.multiBody" });
   }
   steps.push(
     { target: "[data-tour='help']", titleKey: "tour.shortcutsTitle", bodyKey: "tour.shortcutsBody" },
@@ -126,6 +153,7 @@ export function Tour() {
   const project = useStore((s) => s.doc.projects.find((p) => p.id === s.doc.currentProjectId) ?? null);
   const updateProject = useStore((s) => s.updateProject);
   const monthIndex = useUI((s) => s.monthIndex);
+  const selectedTableId = useUI((s) => s.selectedWidgetId);
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [cardSize, setCardSize] = useState({ width: CARD_W, height: 0 });
@@ -133,7 +161,7 @@ export function Tour() {
   const titleId = useId();
   const bodyId = useId();
 
-  const steps = useMemo(() => buildTourSteps(project, monthIndex), [project, monthIndex]);
+  const steps = useMemo(() => buildTourSteps(project, monthIndex, selectedTableId), [project, monthIndex, selectedTableId]);
   const step = steps[Math.min(i, steps.length - 1)];
 
   useLayoutEffect(() => {
@@ -157,8 +185,7 @@ export function Tour() {
     const target = step?.target ? document.querySelector<HTMLElement>(step.target) : null;
     if (target) {
       const box = target.getBoundingClientRect();
-      const isTableStep = target.hasAttribute("data-tour-table");
-      const canvas = isTableStep ? target.closest<HTMLElement>("[data-tour='canvas']") : null;
+      const canvas = target.closest<HTMLElement>("[data-tour='canvas']");
       if (canvas) {
         const destination = scrollPositionToReveal(
           canvas.getBoundingClientRect(),
@@ -219,7 +246,16 @@ export function Tour() {
   const finish = () => {
     updateSettings({ runTour: false });
     if (project?.onboarding && !project.onboarding.tourCompleted) {
-      updateProject(project.id, { onboarding: { ...project.onboarding, tourCompleted: true } });
+      const introOnly = project.onboarding.starterMode === "blank"
+        && !project.onboarding.introCompleted
+        && project.months.every((item) => item.tables.length === 0);
+      updateProject(project.id, {
+        onboarding: {
+          ...project.onboarding,
+          introCompleted: true,
+          tourCompleted: !introOnly,
+        },
+      });
     }
     setI(0);
   };

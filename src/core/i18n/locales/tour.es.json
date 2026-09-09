@@ -41,6 +41,14 @@
     "moveBody": "Arrastra las tablas donde quieras. Se alinean solas con las de al lado; mantén Alt si prefieres que no.",
     "multiTitle": "Varias a la vez",
     "multiBody": "Ctrl + arrastrar dibuja un recuadro para elegir varias tablas y moverlas juntas.",
+    "moveTableTitle": "Mueve una tabla",
+    "moveTableBody": "Arrastra desde estos seis puntos para mover la tabla por el tablero.",
+    "resizeWidthTitle": "Hazla más ancha o estrecha",
+    "resizeWidthBody": "Arrastra el borde derecho para cambiar el ancho de la tabla.",
+    "resizeHeightTitle": "Muestra más o menos filas",
+    "resizeHeightBody": "Arrastra el borde inferior para cambiar la altura de la tabla.",
+    "resizeColumnTitle": "Ajusta una columna",
+    "resizeColumnBody": "Arrastra el divisor del encabezado para ajustar el ancho de cada columna.",
     "shortcutsTitle": "Todo lo demás",
     "shortcutsBody": "Aquí encuentras el recorrido y la lista completa de atajos y gestos cuando la necesites."
   }

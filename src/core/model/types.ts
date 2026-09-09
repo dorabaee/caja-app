@@ -156,6 +156,8 @@ export interface Project {
   onboarding?: {
     starterMode: "sample" | "blank";
     tourCompleted: boolean;
+    /** Blank businesses complete the general tour before their first table exists. */
+    introCompleted?: boolean;
     /** True while the deterministic teaching transactions are still in the business. */
     sampleDataPresent?: boolean;
   };
@@ -181,6 +183,8 @@ export interface Settings {
   tableDateMode: "calendar" | "typing";
   /** How the separate Quick Add composer captures its optional date. */
   quickAddDateMode: "calendar" | "typing";
+  /** Whether newly typed values in text columns are normalized to uppercase. */
+  uppercaseTextCells: boolean;
 }
 
 export interface AppDoc {

@@ -16,6 +16,24 @@ describe("contextual tour", () => {
       expect(keys).toContain(`tour.${kind}Title`);
       expect(keys).not.toContain(`tour.${kind}EmptyTitle`);
     }
+    expect(keys).toContain("tour.moveTableTitle");
+    expect(keys).toContain("tour.resizeWidthTitle");
+    expect(keys).toContain("tour.resizeHeightTitle");
+    expect(keys).toContain("tour.resizeColumnTitle");
+  });
+
+  it("defers table controls until a blank business has its first table", () => {
+    const blank = newProject("Vacío");
+    blank.onboarding = { starterMode: "blank", tourCompleted: false, introCompleted: true };
+    const before = buildTourSteps(blank, 0).map((step) => step.titleKey);
+    expect(before).not.toContain("tour.moveTableTitle");
+
+    blank.months[0].tables = [makeIncomeTable()];
+    const after = buildTourSteps(blank, 0).map((step) => step.titleKey);
+    expect(after).toContain("tour.incomeTitle");
+    expect(after).toContain("tour.moveTableTitle");
+    expect(after).toContain("tour.resizeColumnTitle");
+    expect(after).not.toContain("tour.welcomeTitle");
   });
 
   it("does not treat the income day numbers as real activity", () => {
