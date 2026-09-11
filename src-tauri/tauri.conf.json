@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Caja",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "identifier": "com.caja.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "publisher": "Dorabae",
     "icon": [
@@ -35,5 +36,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ5MDQ4MjU5QzMwNzY0QjEKUldTeFpBZkRXWUlFMmJhcDBBN083NUFNNHhPQUkwN1FIbmlKUjdOdG9jOVIzOTVGMDFFZW0vODUK",
+      "endpoints": [
+        "https://github.com/dorabaee/caja-app/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

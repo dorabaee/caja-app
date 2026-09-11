@@ -12,6 +12,7 @@ import { useExport } from "@ui/hooks/useExport";
 import appPackage from "../../../../package.json";
 import { useCurrentProject } from "@ui/hooks/useProject";
 import styles from "./SettingsModal.module.css";
+import { UpdateButton } from "../UpdateButton";
 
 const ACCENTS: { name: AccentName; labelKey: string; color: string }[] = [
   { name: "emerald", labelKey: "modals.accentEmerald", color: "#10b981" },
@@ -426,6 +427,7 @@ export function SettingsModal() {
             })}
           </span>
         </div>
+        <UpdateButton collapsed={false} settings />
       </section>
     </Modal>
   );

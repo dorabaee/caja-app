@@ -83,6 +83,17 @@
     "showKpi": "Mostrar indicadores",
     "visibility": "Elementos visibles",
     "kpi": "Indicadores",
-    "help": "Ayuda"
+    "help": "Ayuda",
+    "update": {
+      "idle": "Buscar actualizaciones",
+      "checking": "Consultando GitHub…",
+      "current": "Estás al día · Buscar de nuevo",
+      "available": "Actualizar a v{{version}}",
+      "downloading": "Descargando {{progress}}",
+      "installing": "Guardando e instalando… Caja se reiniciará.",
+      "restart": "Actualización instalada · Reiniciar Caja",
+      "error": "No se pudo actualizar · Reintentar",
+      "description": "Busca la última versión en GitHub. Al actualizar, Caja guardará tus cambios y se reiniciará."
+    }
   }
 }

@@ -83,6 +83,17 @@
     "showKpi": "Show indicators",
     "visibility": "Visible elements",
     "kpi": "Indicators",
-    "help": "Help"
+    "help": "Help",
+    "update": {
+      "idle": "Check for updates",
+      "checking": "Checking GitHub…",
+      "current": "Up to date · Check again",
+      "available": "Auto-update to v{{version}}",
+      "downloading": "Downloading {{progress}}",
+      "installing": "Saving and installing… Caja will restart.",
+      "restart": "Update installed · Restart Caja",
+      "error": "Could not update · Retry check",
+      "description": "Check GitHub for the latest version. Updating will restart Caja after saving your changes."
+    }
   }
 }

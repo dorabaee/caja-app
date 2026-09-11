@@ -33,6 +33,7 @@ import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { WhatsNewOverlay } from "./WhatsNewOverlay";
 import styles from "./Sidebar.module.css";
 import appPackage from "../../../package.json";
+import { UpdateButton } from "./UpdateButton";
 
 const APP_VERSION = appPackage.version;
 
@@ -207,6 +208,7 @@ export function Sidebar() {
       </div>
 
       <div className={styles.footer}>
+        <UpdateButton collapsed={collapsed} />
         <button
           type="button"
           className={cn(styles.navItem, styles.gear)}

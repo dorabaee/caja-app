@@ -3,17 +3,24 @@ import { useStore } from "./store";
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 let pending: string | null = null;
+let writes: Promise<void> = Promise.resolve();
 
-async function flush(): Promise<void> {
+export async function flushPersistence(): Promise<void> {
+  if (timer) clearTimeout(timer);
   timer = null;
-  if (pending == null) return;
-  const data = pending;
-  pending = null;
-  try {
-    await getStorage().writeDoc(DOC_KEY, data);
-  } catch (e) {
-    console.error("Caja: failed to persist document", e);
-  }
+  const write = writes.catch(() => {}).then(async () => {
+    while (pending != null) {
+      const data = pending;
+      await getStorage().writeDoc(DOC_KEY, data);
+      if (pending === data) pending = null;
+    }
+  });
+  writes = write;
+  return write;
+}
+
+function flush(): void {
+  void flushPersistence().catch((e) => console.error("Caja: failed to persist document", e));
 }
 
 /** Subscribe to doc changes and write them (debounced) through the StorageAdapter. */
@@ -26,10 +33,11 @@ export function startPersistence(delayMs = 500): () => void {
   });
 
   // Best-effort flush when the window is going away.
-  if (typeof window !== "undefined") {
-    window.addEventListener("beforeunload", () => {
-      if (pending != null) void flush();
-    });
-  }
-  return unsub;
+  const onUnload = () => flush();
+  if (typeof window !== "undefined") window.addEventListener("beforeunload", onUnload);
+  return () => {
+    unsub();
+    if (typeof window !== "undefined") window.removeEventListener("beforeunload", onUnload);
+    flush();
+  };
 }
