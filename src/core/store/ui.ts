@@ -7,6 +7,7 @@ export type ModalKind =
   | "settings"
   | "newProject"
   | "share"
+  | "pdf"
   | "addTable"
   | "backup"
   | "categories"

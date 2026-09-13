@@ -1,12 +1,22 @@
-.button { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 38px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; overflow: hidden; font: inherit; font-size: 12px; }
-.button:hover { background: var(--surface-hover); }
-.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.button { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; padding: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); cursor: pointer; overflow: hidden; font: inherit; font-size: 12px; transition: background .2s, box-shadow .2s, transform .2s; animation: arrive .25s ease-out; }
+.button:hover:not(:disabled) { background: var(--surface-hover); transform: translateY(-1px); box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 15%, transparent); }
+.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .button:disabled { cursor: wait; }
-.button[data-highlight="true"] { color: var(--accent); border-color: var(--accent); }
+.button[data-collapsed="true"] { width: 42px; min-height: 42px; padding: 10px; }
+.button[data-highlight="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 .button svg { flex-shrink: 0; position: relative; }
-.label { position: relative; text-align: left; }
-.fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: .15; transition: width 200ms ease; }
+.button:hover .downloadIcon { animation: download-bounce .7s ease-in-out infinite; }
+.label { position: relative; text-align: left; line-height: 1.4; }
+.button[data-highlight="true"] .label { color: var(--text); }
+.dot { position: absolute; right: 5px; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: .12; transition: width .25s ease; }
+.track { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.track > span { display: block; height: 100%; background: var(--accent); transition: width .25s ease; box-shadow: 0 0 10px var(--accent); }
+[data-indeterminate="true"] { animation: sweep 1.4s ease-in-out infinite alternate; }
 .spinner { animation: update-spin 1s linear infinite; }
-.blocker { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: var(--surface); color: var(--text); }
+.blocker { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; gap: 24px; align-items: center; justify-content: center; background: var(--surface); color: var(--text); }
 @keyframes update-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .fill { transition: none; } }
+@keyframes download-bounce { 50% { transform: translateY(3px); } }
+@keyframes sweep { to { transform: translateX(185%); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(5px); } }
+@media (prefers-reduced-motion: reduce) { .button, .button:hover .downloadIcon, .spinner, [data-indeterminate="true"] { animation: none; } .button, .fill, .track > span { transition: none; } .button:hover:not(:disabled) { transform: none; } }

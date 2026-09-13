@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, FileText, Mail, MessageCircle } from "lucide-react";
 import { getShare } from "@core/platform";
-import { useUI } from "@core/store";
+import { useStore, useUI } from "@core/store";
+import { STATEMENT_FORMATS } from "@core/export/statementFormats";
+import { statementCopy } from "@ui/pdf/statementCopy";
 import { buildStatement } from "@core/export";
 import { Button, Modal } from "@ui/common";
 import { useCurrentProject } from "@ui/hooks/useProject";
@@ -14,6 +16,10 @@ export function ShareModal() {
   const { t } = useTranslation();
   const modal = useUI((s) => s.modal);
   const closeModal = useUI((s) => s.closeModal);
+  const openModal = useUI((s) => s.openModal);
+  const month = useUI((s) => s.monthIndex);
+  const locale = useStore((s) => s.doc.settings.locale);
+  const c = statementCopy[locale];
   const project = useCurrentProject();
   const fmt = useFormat();
   const { exportStatementPdf } = useExport();
@@ -41,7 +47,7 @@ export function ShareModal() {
   const downloadPdf = async () => {
     setBusy(true);
     try {
-      await exportStatementPdf(project);
+      await exportStatementPdf(project, { formats: [...STATEMENT_FORMATS], charts: true, throughMonth: month });
     } finally {
       setBusy(false);
     }
@@ -76,9 +82,11 @@ export function ShareModal() {
           Gmail
         </Button>
         <Button variant="primary" icon={<Download />} onClick={downloadPdf} disabled={busy} style={{ flex: 1 }}>
-          {busy ? t("modals.generating") : t("modals.downloadPdf")}
+          {busy ? t("modals.generating") : c.all}
         </Button>
       </div>
+      <p className={styles.infoText}>{c.ready}</p>
+      <Button variant="ghost" disabled={busy} onClick={() => openModal("pdf")}>{c.select}</Button>
     </Modal>
   );
 }

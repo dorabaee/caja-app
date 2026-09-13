@@ -178,11 +178,13 @@ export function TemplatePreview({
   template,
   onClose,
   onUse,
+  context,
 }: {
   open: boolean;
   template: TemplateKey;
   onClose: () => void;
-  onUse: (template: TemplateKey) => void;
+  onUse?: (template: TemplateKey) => void;
+  context?: string;
 }) {
   const { t } = useTranslation();
   const [current, setCurrent] = useState<TemplateKey>(template);
@@ -190,7 +192,7 @@ export function TemplatePreview({
   const cardRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  useEffect(() => setCurrent(template), [template]);
+  useEffect(() => { if (open) setCurrent(template); }, [template, open]);
   useEffect(() => setFrame(0), [current]);
 
   // Drive the loop. Reduced motion pins it to the last frame — the finished table — so
@@ -257,6 +259,7 @@ export function TemplatePreview({
         </div>
 
         <p className={styles.purpose}>{t(`preview.${current}.purpose`)}</p>
+        {context && current === template && <p className={styles.purpose}>{context}</p>}
 
         <div className={styles.stage}>
           <button
@@ -297,9 +300,9 @@ export function TemplatePreview({
             <Button variant="ghost" size="sm" onClick={onClose}>
               {t("common.close")}
             </Button>
-            <Button variant="primary" size="sm" onClick={() => onUse(current)}>
+            {onUse && <Button variant="primary" size="sm" onClick={() => onUse(current)}>
               {t("preview.use")}
-            </Button>
+            </Button>}
           </div>
         </div>
       </div>

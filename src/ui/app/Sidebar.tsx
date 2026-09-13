@@ -110,7 +110,7 @@ export function Sidebar() {
       <div className={styles.section} data-tour="businesses">
         <div className={styles.sectionHead}>
           <span className={styles.sectionTitle}>{t("shell.businesses")}</span>
-          <IconButton
+          <IconButton portalTooltip
             label={t("shell.newBusiness")}
             icon={<Plus />}
             size="sm"
@@ -154,7 +154,7 @@ export function Sidebar() {
                 <Menu
                   align="end"
                   trigger={
-                    <IconButton
+                    <IconButton portalTooltip
                       label={t("shell.optionsFor", { name: p.name })}
                       icon={<MoreHorizontal />}
                       size="sm"
@@ -220,7 +220,7 @@ export function Sidebar() {
           <span>{t("shell.settings")}</span>
         </button>
         <div className={styles.footerRow}>
-          <IconButton
+          <IconButton portalTooltip
             label={theme === "dark" ? t("shell.lightMode") : t("shell.darkMode")}
             icon={theme === "dark" ? <Sun /> : <Moon />}
             size="sm"
@@ -230,7 +230,7 @@ export function Sidebar() {
           <Menu
             align="end"
             trigger={
-              <IconButton
+              <IconButton portalTooltip
                 label={t("shell.help")}
                 icon={<HelpCircle />}
                 size="sm"

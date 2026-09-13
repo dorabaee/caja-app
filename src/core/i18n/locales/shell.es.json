@@ -93,7 +93,34 @@
       "installing": "Guardando e instalando… Caja se reiniciará.",
       "restart": "Actualización instalada · Reiniciar Caja",
       "error": "No se pudo actualizar · Reintentar",
-      "description": "Busca la última versión en GitHub. Al actualizar, Caja guardará tus cambios y se reiniciará."
+      "description": "Busca la última versión en GitHub. Al actualizar, Caja guardará tus cambios y se reiniciará.",
+      "offline": "Sin conexión · Reintentar",
+      "downloadError": "Descarga interrumpida · Reintentar"
+    },
+    "tableHelp": {
+      "label": "Cómo funciona {{name}}",
+      "income": "Esta tabla, «{{name}}», cuenta como ingreso en el resumen.",
+      "expense": "Esta tabla, «{{name}}», cuenta como gasto en el resumen.",
+      "none": "Esta tabla, «{{name}}», no afecta los ingresos ni los gastos del resumen.",
+      "ledger": "Esta tabla, «{{name}}», controla depósitos, retiros y saldo bancario. No suma ingresos ni gastos al estado de resultados.",
+      "fiscal": "Está marcada como fiscal y participa en el cálculo del saldo fiscal."
+    },
+    "release027": {
+      "intro": "Tres mejoras para trabajar y compartir con más claridad.",
+      "updatesTitle": "Actualiza desde el menú lateral",
+      "updatesDesc": "Caja busca una nueva versión al abrir con conexión. Cuando hay una, aparece el botón: descarga, guarda y reinicia con un progreso visible.",
+      "helpTitle": "Cada tabla tiene su explicación",
+      "helpDesc": "El botón ? abre la guía animada de esa tabla y explica cómo participa en tus totales, incluida su configuración fiscal.",
+      "pdfTitle": "Seis vistas. Un solo PDF.",
+      "pdfDesc": "Elige los formatos, agrega gráficas y define el mes del acumulado. “Todos en un PDF” reúne los seis reportes del negocio para compartirlos.",
+      "available": "Nueva versión disponible",
+      "downloading": "Descargando…",
+      "restart": "Guardar e iniciar la nueva versión",
+      "table": "Ingresos diarios",
+      "explainer": "Esta tabla suma a tus ingresos.",
+      "onePdf": "Todos en un PDF",
+      "pause": "Pausar animaciones",
+      "play": "Reproducir animaciones"
     }
   }
 }

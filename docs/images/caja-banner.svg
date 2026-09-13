@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+<title id="title">Caja — Your business, month by month</title><desc id="desc">A local-first income and expense workspace. Available for Windows. Spanish and English.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#151b22"/><stop offset="1" stop-color="#102e27"/></linearGradient><linearGradient id="green" x2="1" y2="1"><stop stop-color="#15c493"/><stop offset="1" stop-color="#05956e"/></linearGradient></defs>
+<rect width="1200" height="320" rx="24" fill="url(#bg)"/>
+<circle cx="1090" cy="70" r="190" fill="#34d399" opacity=".045"/><circle cx="1040" cy="260" r="240" fill="none" stroke="#34d399" stroke-opacity=".09"/>
+<rect x="56" y="57" width="84" height="84" rx="22" fill="url(#green)"/>
+<g fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M79 88h37v37H79a4 4 0 0 1-4-4V81a5 5 0 0 1 5-5h29v12"/><path d="M116 100h-9a7 7 0 0 0 0 14h9"/></g>
+<text x="164" y="116" fill="#f5f8f7" font-family="Segoe UI,Arial,sans-serif" font-size="56" font-weight="700">Caja</text>
+<text x="58" y="190" fill="#f5f8f7" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="600">Your business, month by month.</text>
+<text x="58" y="230" fill="#b6c9c3" font-family="Segoe UI,Arial,sans-serif" font-size="20">Income. Expenses. A clearer picture.</text>
+<text x="58" y="279" fill="#6ee7b7" font-family="Segoe UI,Arial,sans-serif" font-size="15" letter-spacing="2">WINDOWS · LOCAL-FIRST · ESPAÑOL / ENGLISH</text>
+<g transform="translate(905 107)"><rect x="0" y="64" width="28" height="66" rx="6" fill="#10b981" opacity=".45"/><rect x="44" y="40" width="28" height="90" rx="6" fill="#10b981" opacity=".65"/><rect x="88" y="15" width="28" height="115" rx="6" fill="#34d399" opacity=".8"/><rect x="132" y="-15" width="28" height="145" rx="6" fill="#6ee7b7"/><path d="M-12 142h185" stroke="#71a795" stroke-opacity=".4"/></g>
+</svg>

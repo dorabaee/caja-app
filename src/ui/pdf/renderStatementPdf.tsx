@@ -2,6 +2,7 @@ import { pdf } from "@react-pdf/renderer";
 import type { Project, Settings } from "@core/model/types";
 import { buildStatement, statementYear } from "@core/export";
 import { StatementDocument } from "./StatementDocument";
+import type { StatementOptions } from "@core/export/statementFormats";
 
 function todayLabel(): string {
   const d = new Date();
@@ -9,14 +10,14 @@ function todayLabel(): string {
 }
 
 /**
- * Render the "Estado de resultados" (all 3 formats, one file) to a PDF Blob.
+ * Render the selected statement formats in one PDF Blob.
  * @react-pdf is pulled in only through this module, which callers import
  * dynamically — so the renderer never lands in the initial bundle.
  */
-export async function renderStatementPdf(project: Project, settings: Settings): Promise<Blob> {
+export async function renderStatementPdf(project: Project, settings: Settings, options?: StatementOptions): Promise<Blob> {
   const statement = buildStatement(project);
   return pdf(
-    <StatementDocument statement={statement} settings={settings} generatedAt={todayLabel()} />,
+    <StatementDocument statement={statement} settings={settings} generatedAt={todayLabel()} options={options} />,
   ).toBlob();
 }
 

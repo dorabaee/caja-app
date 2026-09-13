@@ -48,3 +48,26 @@
 @keyframes categoryPulse{0%,100%{box-shadow:none}45%,75%{box-shadow:0 0 0 4px var(--accent-weak)}}
 @media(max-width:640px){.stage{grid-template-columns:1fr}.visual{min-height:220px}}
 @media(prefers-reduced-motion:reduce){.copy,.visual,.tableTiles i,.categoryDemo,.fillGrid i{animation:none}}
+.demo027 { position: relative; width: 100%; min-height: 220px; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 26px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-md); }
+.demoHeading { display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 14px; font-weight: 600; }
+.download027 { position: relative; overflow: hidden; display: flex; padding: 16px; border: 1px solid var(--accent); border-radius: 12px; font-size: 13px; color: var(--accent); }
+.download027 > i { position: absolute; inset: 0; background: color-mix(in srgb, var(--accent) 17%, transparent); transform-origin: left; animation: progress027 4s ease-in-out infinite; border-bottom: 3px solid var(--accent); }
+.done027 { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); animation: done027 4s ease-in-out infinite; }
+.helpPulse027 { color: var(--accent); animation: pulse027 2.5s ease-in-out infinite; }
+.table027 { display: grid; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.table027 > span { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.table027 i { height: 5px; width: 45%; background: var(--border-strong); border-radius: 4px; }
+.explain027 { padding: 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, var(--surface)); font-size: 12px; line-height: 1.5; animation: tip027 3.5s ease-in-out infinite; }
+.pages027 { display: flex; gap: 6px; justify-content: center; }
+.pages027 > span { display: grid; gap: 6px; justify-items: center; padding: 10px 6px; border: 1px solid var(--border); border-radius: 7px; color: var(--accent); animation: page027 3s ease-in-out infinite; }
+.pages027 small { font-size: 9px; color: var(--text-muted); }
+.chart027 { height: 45px; display: flex; align-items: flex-end; gap: 12px; color: var(--text-muted); }
+.chart027 > i { width: 24px; background: var(--accent); opacity: .6; border-radius: 4px 4px 0 0; transform-origin: bottom; animation: page027 3s ease-in-out infinite; }
+@keyframes tip027 { 0%,15%,100% { opacity: .25; transform: translateY(4px); } 30%,85% { opacity: 1; transform: translateY(0); } }
+@keyframes progress027 { 0%,10% { transform: scaleX(.05); } 80%,100% { transform: scaleX(1); } }
+@keyframes done027 { 0%,65% { opacity: .2; } 85%,100% { opacity: 1; } }
+@keyframes pulse027 { 50% { transform: scale(1.15); filter: drop-shadow(0 0 6px var(--accent)); } }
+@keyframes page027 { 0%,100% { transform: translateY(3px); opacity: .55; } 45%,80% { transform: translateY(0); opacity: 1; } }
+.stage[data-paused="true"] * { animation-play-state: paused; }
+.stage[data-paused="true"] .copy, .stage[data-paused="true"] .visual { animation: none; }
+@media (prefers-reduced-motion: reduce) { .demo027 * { animation: none !important; } }

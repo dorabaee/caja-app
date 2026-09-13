@@ -13,6 +13,7 @@ import {
   statementYear,
 } from "@core/export";
 import type { FileFilter } from "@core/platform";
+import type { StatementOptions } from "@core/export/statementFormats";
 
 /** UTF-8 BOM so Excel renders accented text (Doña, según) correctly from CSV. */
 const BOM = "﻿";
@@ -51,14 +52,17 @@ export function useExport() {
     return getDialog().saveFile({ suggestedName: name, data, filters });
   }
 
-  async function exportStatementPdf(project: Project): Promise<void> {
+  async function exportStatementPdf(project: Project, options?: StatementOptions): Promise<boolean> {
     try {
       const { renderStatementPdf, statementFileName } = await import("@ui/pdf");
-      const blob = await renderStatementPdf(project, settings);
-      if (await runSave(statementFileName(project), blob, PDF)) toast(t("modals.toastPdfSaved"), "success");
+      const blob = await renderStatementPdf(project, settings, options);
+      const saved = await runSave(statementFileName(project), blob, PDF);
+      if (saved) toast(t("modals.toastPdfSaved"), "success");
+      return saved;
     } catch (e) {
       console.error("export pdf", e);
       toast(t("modals.toastPdfError"), "error");
+      return false;
     }
   }
 

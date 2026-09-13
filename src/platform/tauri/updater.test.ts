@@ -8,6 +8,8 @@ vi.mock("@core/store/persist", () => ({ flushPersistence: mocks.flush }));
 beforeEach(() => {
   vi.resetModules(); vi.resetAllMocks(); vi.stubEnv("DEV", false);
   mocks.isTauri.mockReturnValue(true);
+  vi.stubGlobal("navigator", { onLine: true });
+  vi.stubGlobal("window", { addEventListener: vi.fn() });
 });
 
 describe("desktop updater", () => {
@@ -57,7 +59,7 @@ describe("desktop updater", () => {
     await api.checkForUpdates(); await api.installUpdate();
     expect(update.install).not.toHaveBeenCalled();
     expect(mocks.relaunch).not.toHaveBeenCalled();
-    expect(api.useUpdater.getState().phase).toBe("error");
+    expect(api.useUpdater.getState().phase).toBe("downloadError");
   });
   it("does not install an unverified or failed download", async () => {
     const api = await import("./updater");
@@ -65,6 +67,29 @@ describe("desktop updater", () => {
     mocks.check.mockResolvedValue(update);
     await api.checkForUpdates(); await api.installUpdate();
     expect(update.install).not.toHaveBeenCalled();
-    expect(api.useUpdater.getState().phase).toBe("error");
+    expect(api.useUpdater.getState().phase).toBe("downloadError");
+  });
+  it("waits for a connection on startup and checks when it returns", async () => {
+    vi.stubGlobal("navigator", { onLine: false });
+    const api = await import("./updater");
+    mocks.check.mockResolvedValue(null);
+    api.startUpdateCheck();
+    expect(mocks.check).not.toHaveBeenCalled();
+    expect(api.useUpdater.getState().phase).toBe("offline");
+    const online = vi.mocked(window.addEventListener).mock.calls[0][1] as () => void;
+    vi.stubGlobal("navigator", { onLine: true });
+    online();
+    await vi.waitFor(() => expect(api.useUpdater.getState().phase).toBe("current"));
+    expect(mocks.check).toHaveBeenCalledTimes(1);
+  });
+  it("keeps a failed download available for retry without another check", async () => {
+    const api = await import("./updater");
+    const update = { version: "0.3.0", download: vi.fn().mockRejectedValueOnce(new Error("connection lost")).mockResolvedValue(undefined), install: vi.fn() };
+    mocks.check.mockResolvedValue(update);
+    await api.checkForUpdates(); await api.installUpdate();
+    expect(api.useUpdater.getState().phase).toBe("downloadError");
+    await api.installUpdate();
+    expect(update.install).toHaveBeenCalledTimes(1);
+    expect(mocks.check).toHaveBeenCalledTimes(1);
   });
 });

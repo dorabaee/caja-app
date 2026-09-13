@@ -1,7 +1,11 @@
 name: Release Caja
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag (for example v0.2.7)'
+        required: true
+        type: string
 permissions:
   contents: write
 concurrency:
@@ -12,6 +16,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -20,6 +26,7 @@ jobs:
       - name: Validate tag and signing setup
         shell: pwsh
         env:
+          GITHUB_REF_NAME: ${{ inputs.tag }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           node scripts/check-release.mjs
@@ -32,7 +39,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
+          tagName: ${{ inputs.tag }}
           releaseName: Caja v__VERSION__
           releaseBody: 'Windows installer and signed in-app update. See the release notes before publishing.'
           releaseDraft: true

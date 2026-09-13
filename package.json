@@ -1,9 +1,9 @@
 {
   "name": "caja-app",
   "private": true,
-  "version": "0.2.6",
+  "version": "0.2.7",
   "author": "Dorabae",
-  "releaseDate": "2026-09-11",
+  "releaseDate": "2026-09-12",
   "type": "module",
   "scripts": {
     "dev": "vite",

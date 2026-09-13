@@ -93,7 +93,34 @@
       "installing": "Saving and installing… Caja will restart.",
       "restart": "Update installed · Restart Caja",
       "error": "Could not update · Retry check",
-      "description": "Check GitHub for the latest version. Updating will restart Caja after saving your changes."
+      "description": "Check GitHub for the latest version. Updating will restart Caja after saving your changes.",
+      "offline": "Offline · Try again",
+      "downloadError": "Download interrupted · Retry"
+    },
+    "tableHelp": {
+      "label": "How {{name}} works",
+      "income": "This table, “{{name}}”, counts as income in the summary.",
+      "expense": "This table, “{{name}}”, counts as expenses in the summary.",
+      "none": "This table, “{{name}}”, does not affect income or expenses in the summary.",
+      "ledger": "This table, “{{name}}”, tracks deposits, withdrawals, and bank balance. It does not add income or expenses to the profit and loss statement.",
+      "fiscal": "It is marked as fiscal and contributes to the fiscal balance."
+    },
+    "release027": {
+      "intro": "Three improvements for clearer work and sharing.",
+      "updatesTitle": "Update from the sidebar",
+      "updatesDesc": "Caja checks for a new version when it opens online. When available, the button appears: download, save, and restart with visible progress.",
+      "helpTitle": "Every table has a guide",
+      "helpDesc": "The ? button opens the animated guide for that table and explains its effect on your totals, including its fiscal setting.",
+      "pdfTitle": "Six views. One PDF.",
+      "pdfDesc": "Choose formats, add charts, and select the year-to-date cutoff. “All in one PDF” combines all six reports for this business, ready to share.",
+      "available": "New version available",
+      "downloading": "Downloading…",
+      "restart": "Save and launch the new version",
+      "table": "Daily income",
+      "explainer": "This table adds to your income.",
+      "onePdf": "All in one PDF",
+      "pause": "Pause animations",
+      "play": "Play animations"
     }
   }
 }

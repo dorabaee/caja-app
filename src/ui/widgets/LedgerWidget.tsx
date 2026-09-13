@@ -1,3 +1,4 @@
+import { TableHelp } from "./TableHelp";
 import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -101,6 +102,7 @@ export const LedgerWidget = memo(function LedgerWidget({
             {t("widgets.ledgerPill")}
           </span>
         )}
+        <TableHelp table={table} />
         <ModeActions mode={mode} />
         {mode.mode === "idle" && <TableSortMenu monthIndex={monthIndex} table={table} />}
         {mode.mode === "idle" && (

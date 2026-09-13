@@ -35,7 +35,7 @@ export function ExportMenu() {
 
   return (
     <Menu trigger={trigger} align="end" minWidth={236}>
-      <MenuItem icon={<FileText />} onClick={() => project && exp.exportStatementPdf(project)}>
+      <MenuItem icon={<FileText />} onClick={() => project && openModal("pdf")}>
         {t("shell.exportStatementPdf")}
       </MenuItem>
       <MenuItem icon={<Table />} onClick={() => project && exp.exportResumenCsv(project)}>

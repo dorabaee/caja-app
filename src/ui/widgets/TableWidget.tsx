@@ -1,3 +1,4 @@
+import { TableHelp } from "./TableHelp";
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -121,6 +122,7 @@ export const TableWidget = memo(function TableWidget({
         />
 
         {table.fiscal && <BankTag bank={table.bank} />}
+        <TableHelp table={table} />
         <ModeActions mode={mode} />
         {mode.mode === "idle" && <TableSortMenu monthIndex={monthIndex} table={table} />}
 

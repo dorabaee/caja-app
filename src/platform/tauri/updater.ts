@@ -4,7 +4,7 @@ import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { flushPersistence } from "@core/store/persist";
 
-type Phase = "idle" | "checking" | "current" | "available" | "downloading" | "installing" | "restart" | "error";
+export type Phase = "idle" | "checking" | "current" | "available" | "downloading" | "installing" | "restart" | "error" | "downloadError" | "offline";
 export const useUpdater = create<{ phase: Phase; version: string; percent: number | null }>(() => ({
   phase: "idle", version: "", percent: null,
 }));
@@ -15,11 +15,16 @@ export const supportsUpdates = () => isTauri() && !import.meta.env.DEV;
 export function startUpdateCheck(): void {
   if (started || !supportsUpdates()) return;
   started = true;
-  void checkForUpdates();
+  if (navigator.onLine) void checkForUpdates();
+  else useUpdater.setState({ phase: "offline" });
+  window.addEventListener("online", () => {
+    if (["idle", "offline", "error"].includes(useUpdater.getState().phase)) void checkForUpdates();
+  });
 }
 
 export async function checkForUpdates(): Promise<void> {
   if (!supportsUpdates() || ["checking", "downloading", "installing", "restart"].includes(useUpdater.getState().phase)) return;
+  if (!navigator.onLine) { useUpdater.setState({ phase: "offline" }); return; }
   useUpdater.setState({ phase: "checking", percent: null });
   try {
     if (update) await update.close();
@@ -33,7 +38,7 @@ export async function checkForUpdates(): Promise<void> {
 }
 
 export async function installUpdate(): Promise<void> {
-  if (!update || useUpdater.getState().phase !== "available") return;
+  if (!update || !["available", "downloadError"].includes(useUpdater.getState().phase)) return;
   useUpdater.setState({ phase: "downloading", percent: null });
   try {
     let received = 0;
@@ -54,7 +59,7 @@ export async function installUpdate(): Promise<void> {
   } catch (error) {
     console.warn("Caja: update failed", error);
     // A completed install must only retry restarting, never reinstall the same resource.
-    if (useUpdater.getState().phase !== "restart") useUpdater.setState({ phase: "error", percent: null });
+    if (useUpdater.getState().phase !== "restart") useUpdater.setState({ phase: "downloadError", percent: null });
   }
 }
 
