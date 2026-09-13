@@ -26,7 +26,7 @@ jobs:
       - name: Validate tag and signing setup
         shell: pwsh
         env:
-          GITHUB_REF_NAME: ${{ inputs.tag }}
+          CAJA_RELEASE_TAG: ${{ inputs.tag }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           node scripts/check-release.mjs
